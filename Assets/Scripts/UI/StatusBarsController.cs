@@ -6,12 +6,17 @@ public class StatusBarsController : MonoBehaviour
     public Slider sleepBar;
     public Slider powerBar;
 
-    [Range(0f,1f)] public float sleep = 1f;
-
-    private void Update()
+    public void SetSleep(float normalized)
     {
-        if (sleepBar != null)
-            sleepBar.value = sleep;
+        if (sleepBar == null)
+            return;
+
+        normalized = Mathf.Clamp01(normalized);
+        sleepBar.value = normalized;
+
+        Image fill = sleepBar.fillRect != null ? sleepBar.fillRect.GetComponent<Image>() : null;
+        if (fill != null)
+            fill.color = normalized < 0.25f ? Color.red : Color.white;
     }
 
     public void SetPower(float normalized)
