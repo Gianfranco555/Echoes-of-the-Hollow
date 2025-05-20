@@ -1,22 +1,29 @@
 using UnityEngine;
+using TMPro;
 using UnityEngine.UI;
 
 public class NoteUIController : MonoBehaviour
 {
     public GameObject notePanel;
-    public Text noteText;
+    public TextMeshProUGUI noteText;
+    public Animator animator;
 
-    public void ShowNote(string text)
+    /// <summary>
+    /// Display a note with a fade-in animation.
+    /// </summary>
+    public void Show(string text)
     {
         if (notePanel != null)
             notePanel.SetActive(true);
         if (noteText != null)
             noteText.text = text;
+        if (animator != null)
+            animator.SetTrigger("FadeIn");
     }
 
-    public void HideNote()
+    public void Hide()
     {
-        if (notePanel != null)
-            notePanel.SetActive(false);
+        if (animator != null)
+            animator.SetTrigger("FadeOut");
     }
 }
