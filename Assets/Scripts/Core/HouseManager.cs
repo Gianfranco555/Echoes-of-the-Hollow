@@ -7,6 +7,7 @@ public class HouseManager : MonoBehaviour
     public ProjectManager projectManager;
     public StatusBarsController statusBars;
     public BreakerBox breakerBox;
+    public SleepSystem sleepSystem;
 
     public float currentLoad = 0f;
 
@@ -16,6 +17,15 @@ public class HouseManager : MonoBehaviour
             Instance = this;
         else
             Destroy(gameObject);
+    }
+
+    private void Start()
+    {
+        if (sleepSystem == null)
+            sleepSystem = gameObject.AddComponent<SleepSystem>();
+
+        if (sleepSystem != null && statusBars != null)
+            sleepSystem.OnSleepChanged.AddListener(statusBars.SetSleep);
     }
 
     public void ReportLoadDelta(float watts)
