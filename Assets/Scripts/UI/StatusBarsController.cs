@@ -7,13 +7,16 @@ public class StatusBarsController : MonoBehaviour
     public Slider powerBar;
 
     [Range(0f,1f)] public float sleep = 1f;
-    [Range(0f,1f)] public float power = 1f;
 
     private void Update()
     {
         if (sleepBar != null)
             sleepBar.value = sleep;
+    }
+
+    public void SetPower(float normalized)
+    {
         if (powerBar != null)
-            powerBar.value = power;
+            powerBar.value = Mathf.Clamp01(normalized);
     }
 }
