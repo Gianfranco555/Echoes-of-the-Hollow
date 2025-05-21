@@ -1,0 +1,27 @@
+# Unity generated files and directories
+Library/
+Logs/
+Temp/
+Obj/
+Build/
+Builds/
+UserSettings/
+
+# Visual Studio / MonoDevelop generated files
+*.csproj
+*.unityproj
+*.sln
+*.suo
+*.tmp
+*.user
+*.userprefs
+*.pidb
+*.booproj
+*.svd
+
+# Crash handler logs
+CrashHandler*
+
+# Other files
+.DS_Store
+
