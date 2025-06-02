@@ -60,6 +60,35 @@ public class AdvancedHouseBuilder : MonoBehaviour
         attic.SetParent(house, false);
     }
 
+    GameObject CreateCube(string name, Vector3 centre, Vector3 size, Material m, Transform parent)
+    {
+        var go = GameObject.CreatePrimitive(PrimitiveType.Cube);
+        go.name = name;
+        go.transform.SetParent(parent, false);
+        go.transform.localPosition = centre;
+        go.transform.localScale = size;
+        if (m != null)
+            go.GetComponent<Renderer>().material = m;
+        return go;
+    }
+
+    GameObject BuildSolidWall(string name, Vector3 start, float length, float height, float thick, bool alongX, Transform parent)
+    {
+        Vector3 size;
+        Vector3 centre;
+        if (alongX)
+        {
+            size = new Vector3(length, height, thick);
+            centre = start + new Vector3(length * 0.5f, height * 0.5f, 0f);
+        }
+        else
+        {
+            size = new Vector3(thick, height, length);
+            centre = start + new Vector3(0f, height * 0.5f, length * 0.5f);
+        }
+        return CreateCube(name, centre, size, wallMat, parent);
+    }
+
 #if UNITY_EDITOR
     [UnityEditor.MenuItem("House/Rebuild")]
     static void Rebuild() { UnityEditor.SceneView.lastActiveSceneView.FrameSelected(); }
