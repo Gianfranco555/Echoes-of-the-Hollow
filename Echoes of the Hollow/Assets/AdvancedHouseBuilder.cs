@@ -199,12 +199,32 @@ public class AdvancedHouseBuilder : MonoBehaviour
         return window.gameObject;
     }
 
-    void BuildWallWithOpening(string name, Vector3 start, float length, float height, float thick, bool alongX, bool opening, float openCenter, float openWidth, float openHeight, Transform parent)
+    Transform BuildWallWithOpening(string name, Vector3 start, float length, float height, float thick, bool alongX, bool opening, float openCenter, float openWidth, float openHeight, Transform parent, bool isWindow = false)
     {
+        var grp = new GameObject(name).transform;
+        grp.SetParent(parent, false);
+        grp.localPosition = start;
+
+        void SpawnSeg(float x0, float y0, float z0, float lenX, float lenY, float lenZ)
+        {
+            Vector3 size, centre;
+            if (alongX)
+            {
+                size = new Vector3(lenX, lenY, lenZ);
+                centre = new Vector3(x0 + lenX * 0.5f, y0 + lenY * 0.5f, z0);
+            }
+            else
+            {
+                size = new Vector3(lenZ, lenY, lenX);
+                centre = new Vector3(z0, y0 + lenY * 0.5f, x0 + lenX * 0.5f);
+            }
+            CreateCube("Seg", centre, size, wallMat, grp);
+        }
+
         if (!opening)
         {
-            BuildSolidWall(name, start, length, height, thick, alongX, parent);
-            return;
+            SpawnSeg(0f, 0f, 0f, length, height, thick);
+            return grp;
         }
 
         float halfOpen = openWidth * 0.5f;
@@ -214,22 +234,25 @@ public class AdvancedHouseBuilder : MonoBehaviour
 
         if (leftLen > 0f)
         {
-            BuildSolidWall(name + "_L", start, leftLen, height, thick, alongX, parent);
+            SpawnSeg(0f, 0f, 0f, leftLen, height, thick);
         }
 
         if (rightLen > 0f)
         {
-            Vector3 rs = alongX ? start + new Vector3(openCenter + halfOpen, 0f, 0f)
-                                : start + new Vector3(0f, 0f, openCenter + halfOpen);
-            BuildSolidWall(name + "_R", rs, rightLen, height, thick, alongX, parent);
+            SpawnSeg(openCenter + halfOpen, 0f, 0f, rightLen, height, thick);
+        }
+
+        if (isWindow && openHeight > 0f)
+        {
+            SpawnSeg(leftLen, 0f, 0f, openWidth, openHeight, thick);
         }
 
         if (aboveHeight > 0f)
         {
-            Vector3 ts = alongX ? start + new Vector3(leftLen, openHeight, 0f)
-                                : start + new Vector3(0f, openHeight, leftLen);
-            BuildSolidWall(name + "_T", ts, openWidth, aboveHeight, thick, alongX, parent);
+            SpawnSeg(leftLen, openHeight, 0f, openWidth, aboveHeight, thick);
         }
+
+        return grp;
     }
 
 #if UNITY_EDITOR
