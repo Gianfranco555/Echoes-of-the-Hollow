@@ -244,7 +244,9 @@ public class AdvancedHouseBuilder : MonoBehaviour
 
         if (isWindow && openHeight > 0f)
         {
-            SpawnSeg(leftLen, 0f, 0f, openWidth, openHeight, thick);
+            // Adjust the y-position of the sill segment to leave a gap
+            // when creating a window opening.
+            SpawnSeg(leftLen, 0.1f, 0f, openWidth, openHeight - 0.1f, thick);
         }
 
         if (aboveHeight > 0f)
