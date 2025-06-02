@@ -58,6 +58,39 @@ public class AdvancedHouseBuilder : MonoBehaviour
 
         attic = new GameObject("Attic").transform;
         attic.SetParent(house, false);
+
+        BuildGarage();
+    }
+
+    void BuildGarage()
+    {
+        const float INTERIOR_W = 11.33f * FT;
+        const float INTERIOR_D = 20f * FT;
+
+        float exteriorW = INTERIOR_W + WALL_THICKNESS * 2f;
+        float exteriorD = INTERIOR_D + WALL_THICKNESS * 2f;
+
+        var garage = new GameObject("Garage").transform;
+        garage.SetParent(mainFloor, false);
+
+        Vector3 start = new Vector3(cursor.x, 0f, cursor.z);
+
+        // Floor slab
+        CreateCube(
+            "Floor",
+            start + new Vector3(exteriorW * 0.5f, WALL_THICKNESS * 0.5f, exteriorD * 0.5f),
+            new Vector3(exteriorW, WALL_THICKNESS, exteriorD),
+            floorMat,
+            garage);
+
+        // Walls
+        BuildSolidWall("Front", start, exteriorW, FLOOR_HEIGHT, WALL_THICKNESS, true, garage);
+        BuildSolidWall("Back", start + new Vector3(0f, 0f, exteriorD - WALL_THICKNESS), exteriorW, FLOOR_HEIGHT, WALL_THICKNESS, true, garage);
+        BuildSolidWall("Left", start, exteriorD, FLOOR_HEIGHT, WALL_THICKNESS, false, garage);
+        BuildSolidWall("Right", start + new Vector3(exteriorW - WALL_THICKNESS, 0f, 0f), exteriorD, FLOOR_HEIGHT, WALL_THICKNESS, false, garage);
+
+        // Advance cursor to far interior edge
+        cursor.x += INTERIOR_W + WALL_THICKNESS;
     }
 
     GameObject CreateCube(string name, Vector3 centre, Vector3 size, Material m, Transform parent)
