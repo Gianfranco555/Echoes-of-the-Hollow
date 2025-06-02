@@ -62,6 +62,7 @@ public class AdvancedHouseBuilder : MonoBehaviour
         attic.SetParent(house, false);
 
         BuildGarage();
+        BuildFoyer();
     }
 
     void BuildGarage()
@@ -121,6 +122,86 @@ public class AdvancedHouseBuilder : MonoBehaviour
 
         // Advance cursor beyond the garage (far exterior edge)
         cursor.x += exteriorW;
+    }
+
+    void BuildFoyer()
+    {
+        const float W = 6f * FT;
+        const float D = 8f * FT;
+
+        float x0 = cursor.x;
+        float z0 = 0f;
+
+        float exteriorW = W + WALL_THICKNESS * 2f;
+        float exteriorD = D + WALL_THICKNESS * 2f;
+
+        var foyer = new GameObject("Foyer").transform;
+        foyer.SetParent(mainFloor, false);
+
+        Vector3 baseCorner = new Vector3(x0, 0f, z0);
+
+        // Floor slab
+        CreateCube(
+            "Floor",
+            baseCorner + new Vector3(exteriorW * 0.5f, WALL_THICKNESS * 0.5f, exteriorD * 0.5f),
+            new Vector3(exteriorW, WALL_THICKNESS, exteriorD),
+            floorMat,
+            foyer);
+
+        // Walls
+        var front = BuildWallWithOpening(
+            "Front",
+            baseCorner + new Vector3(0f, 0f, WALL_THICKNESS * 0.5f),
+            exteriorW,
+            FLOOR_HEIGHT,
+            WALL_THICKNESS,
+            true,
+            true,
+            exteriorW * 0.5f,
+            DOOR_WIDTH,
+            DOOR_HEIGHT,
+            foyer);
+        BuildDoor(
+            "EntryDoor",
+            new Vector3(exteriorW * 0.5f, DOOR_HEIGHT * 0.5f, 0f),
+            DOOR_WIDTH,
+            DOOR_HEIGHT,
+            WALL_THICKNESS,
+            Swing.InLeft,
+            front);
+
+        BuildSolidWall(
+            "Back",
+            baseCorner + new Vector3(0f, 0f, exteriorD - WALL_THICKNESS * 0.5f),
+            exteriorW,
+            FLOOR_HEIGHT,
+            WALL_THICKNESS,
+            true,
+            foyer);
+
+        BuildSolidWall(
+            "Left",
+            baseCorner + new Vector3(WALL_THICKNESS * 0.5f, 0f, 0f),
+            exteriorD,
+            FLOOR_HEIGHT,
+            WALL_THICKNESS,
+            false,
+            foyer);
+
+        BuildWallWithOpening(
+            "Right",
+            baseCorner + new Vector3(exteriorW - WALL_THICKNESS * 0.5f, 0f, 0f),
+            exteriorD,
+            FLOOR_HEIGHT,
+            WALL_THICKNESS,
+            false,
+            true,
+            exteriorD * 0.5f,
+            5f * FT,
+            DOOR_HEIGHT,
+            foyer);
+
+        cursor.x += W + WALL_THICKNESS;
     }
 
     GameObject CreateCube(string name, Vector3 centre, Vector3 size, Material m, Transform parent)
