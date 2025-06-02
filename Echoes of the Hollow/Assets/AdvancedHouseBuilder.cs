@@ -117,8 +117,8 @@ public class AdvancedHouseBuilder : MonoBehaviour
             false,
             garage);
 
-        // Advance cursor to far interior edge
-        cursor.x += INTERIOR_W + WALL_THICKNESS;
+        // Advance cursor beyond the garage (far exterior edge)
+        cursor.x += exteriorW;
     }
 
     GameObject CreateCube(string name, Vector3 centre, Vector3 size, Material m, Transform parent)
