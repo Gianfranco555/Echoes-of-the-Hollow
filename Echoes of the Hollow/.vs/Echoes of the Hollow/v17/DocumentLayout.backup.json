@@ -3,8 +3,8 @@
   "WorkspaceRootPath": "C:\\Users\\Michael Mulder\\Echoes-of-the-Hollow\\Echoes of the Hollow\\",
   "Documents": [
     {
-      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\Michael Mulder\\Echoes-of-the-Hollow\\Echoes of the Hollow\\Assets\\ProcedularHouse.cs||{3B902123-F8A7-4915-9F01-361F908088D0}",
-      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:Assets\\ProcedularHouse.cs||{3B902123-F8A7-4915-9F01-361F908088D0}"
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\Michael Mulder\\Echoes-of-the-Hollow\\Echoes of the Hollow\\Assets\\ProceduralHouse.cs||{3B902123-F8A7-4915-9F01-361F908088D0}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:Assets\\ProceduralHouse.cs||{3B902123-F8A7-4915-9F01-361F908088D0}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\Michael Mulder\\Echoes-of-the-Hollow\\Echoes of the Hollow\\Assets\\Player\\Movement.cs||{3B902123-F8A7-4915-9F01-361F908088D0}",
@@ -39,11 +39,11 @@
             {
               "$type": "Document",
               "DocumentIndex": 0,
-              "Title": "ProcedularHouse.cs",
-              "DocumentMoniker": "C:\\Users\\Michael Mulder\\Echoes-of-the-Hollow\\Echoes of the Hollow\\Assets\\ProcedularHouse.cs",
-              "RelativeDocumentMoniker": "Assets\\ProcedularHouse.cs",
-              "ToolTip": "C:\\Users\\Michael Mulder\\Echoes-of-the-Hollow\\Echoes of the Hollow\\Assets\\ProcedularHouse.cs",
-              "RelativeToolTip": "Assets\\ProcedularHouse.cs",
+              "Title": "ProceduralHouse.cs",
+              "DocumentMoniker": "C:\\Users\\Michael Mulder\\Echoes-of-the-Hollow\\Echoes of the Hollow\\Assets\\ProceduralHouse.cs",
+              "RelativeDocumentMoniker": "Assets\\ProceduralHouse.cs",
+              "ToolTip": "C:\\Users\\Michael Mulder\\Echoes-of-the-Hollow\\Echoes of the Hollow\\Assets\\ProceduralHouse.cs",
+              "RelativeToolTip": "Assets\\ProceduralHouse.cs",
               "ViewState": "AgIAAEMAAAAAAAAAAAAAAEMAAAABAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2025-05-29T19:40:23.092Z",
