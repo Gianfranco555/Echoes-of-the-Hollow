@@ -10,6 +10,8 @@
 */
 using UnityEngine;
 
+public enum Swing { InLeft, InRight, OutLeft, OutRight, SlideLeft, SlideRight }
+
 public class AdvancedHouseBuilder : MonoBehaviour
 {
     public const float FT = 0.3048f;
@@ -148,6 +150,80 @@ public class AdvancedHouseBuilder : MonoBehaviour
             centre = start + new Vector3(0f, height * 0.5f, length * 0.5f);
         }
         return CreateCube(name, centre, size, wallMat, parent);
+    }
+
+    GameObject BuildDoor(string name, Vector3 centre, float w, float h, float t, Swing swing, Transform parent)
+    {
+        float halfW = w * 0.5f;
+        var pivot = new GameObject(name).transform;
+        pivot.SetParent(parent, false);
+        Vector3 hingeOffset = Vector3.zero;
+        switch (swing)
+        {
+            case Swing.InLeft:
+            case Swing.OutLeft:
+                hingeOffset.x = -halfW;
+                break;
+            case Swing.InRight:
+            case Swing.OutRight:
+                hingeOffset.x = halfW;
+                break;
+        }
+        pivot.localPosition = centre + hingeOffset;
+
+        var panel = CreateCube("Panel", -hingeOffset + new Vector3(0f, 0f, 0f), new Vector3(w, h, t), wallMat, pivot);
+        return pivot.gameObject;
+    }
+
+    GameObject BuildWindow(string name, Vector3 centre, float w, float h, float frameT, Transform parent)
+    {
+        var window = new GameObject(name).transform;
+        window.SetParent(parent, false);
+        window.localPosition = centre;
+
+        float halfW = w * 0.5f;
+        float halfH = h * 0.5f;
+        float t = frameT;
+
+        CreateCube("Left", new Vector3(-halfW + t * 0.5f, 0f, 0f), new Vector3(t, h, t), wallMat, window);
+        CreateCube("Right", new Vector3(halfW - t * 0.5f, 0f, 0f), new Vector3(t, h, t), wallMat, window);
+        CreateCube("Top", new Vector3(0f, halfH - t * 0.5f, 0f), new Vector3(w, t, t), wallMat, window);
+        CreateCube("Bottom", new Vector3(0f, -halfH + t * 0.5f, 0f), new Vector3(w, t, t), wallMat, window);
+
+        return window.gameObject;
+    }
+
+    void BuildWallWithOpening(string name, Vector3 start, float length, float height, float thick, bool alongX, bool opening, float openCenter, float openWidth, float openHeight, Transform parent)
+    {
+        if (!opening)
+        {
+            BuildSolidWall(name, start, length, height, thick, alongX, parent);
+            return;
+        }
+
+        float halfOpen = openWidth * 0.5f;
+        float leftLen = openCenter - halfOpen;
+        float rightLen = length - (openCenter + halfOpen);
+        float aboveHeight = height - openHeight;
+
+        if (leftLen > 0f)
+        {
+            BuildSolidWall(name + "_L", start, leftLen, height, thick, alongX, parent);
+        }
+
+        if (rightLen > 0f)
+        {
+            Vector3 rs = alongX ? start + new Vector3(openCenter + halfOpen, 0f, 0f)
+                                : start + new Vector3(0f, 0f, openCenter + halfOpen);
+            BuildSolidWall(name + "_R", rs, rightLen, height, thick, alongX, parent);
+        }
+
+        if (aboveHeight > 0f)
+        {
+            Vector3 ts = alongX ? start + new Vector3(leftLen, openHeight, 0f)
+                                : start + new Vector3(0f, openHeight, leftLen);
+            BuildSolidWall(name + "_T", ts, openWidth, aboveHeight, thick, alongX, parent);
+        }
     }
 
 #if UNITY_EDITOR
