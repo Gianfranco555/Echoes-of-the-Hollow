@@ -152,32 +152,37 @@ public class AdvancedHouseBuilder : MonoBehaviour
         return CreateCube(name, centre, size, wallMat, parent);
     }
 
-    GameObject BuildDoor(string name, Vector3 centre, float w, float h, float t, Swing swing, Transform parent)
+    GameObject BuildDoor(string name, Vector3 centre, float width, float height, float thickness, Swing swing, Transform parent)
     {
-        float halfW = w * 0.5f;
+        // Distance from door centre to hinge pivot along the door width axis.
+        float hingeOffset = width * 0.5f - thickness * 0.5f;
+
         var pivot = new GameObject(name).transform;
         pivot.SetParent(parent, false);
-        Vector3 hingeOffset = Vector3.zero;
+
+        Vector3 hinge = Vector3.zero;
         switch (swing)
         {
             case Swing.InLeft:
             case Swing.OutLeft:
-                hingeOffset.x = -halfW;
+                hinge.x = -hingeOffset;
                 break;
             case Swing.InRight:
             case Swing.OutRight:
-                hingeOffset.x = halfW;
+                hinge.x = hingeOffset;
                 break;
             case Swing.SlideLeft:
             case Swing.SlideRight:
-                // Sliding doors aren't pivoted like regular doors. Warn for now
-                // until proper sliding mechanics are implemented.
+                // Sliding doors aren't pivoted like regular doors. Warn until
+                // proper sliding mechanics are implemented.
                 Debug.LogWarning($"Sliding door type {swing} for door '{name}' is not implemented.");
                 break;
         }
-        pivot.localPosition = centre + hingeOffset;
 
-        var panel = CreateCube("Panel", -hingeOffset + new Vector3(0f, 0f, 0f), new Vector3(w, h, t), wallMat, pivot);
+        // Place the pivot at the hinge and offset the panel so that it sits
+        // flush in the closed position.
+        pivot.localPosition = centre + hinge;
+        var panel = CreateCube("Panel", -hinge, new Vector3(width, height, thickness), wallMat, pivot);
         return pivot.gameObject;
     }
 
