@@ -18,15 +18,15 @@ public class InputManager : MonoBehaviour
 
         groundMovement.HorizontalMovement.performed += ctx => horizontalInput = ctx.ReadValue<Vector2>();
 
-        groundMovement.Jump.performed += _ => movement.onJumpPressed();
+        groundMovement.Jump.performed += _ => movement.OnJumpPressed();
 
         groundMovement.MouseX.performed += ctx => mouseInput.x = ctx.ReadValue<float>();
         groundMovement.MouseY.performed += ctx => mouseInput.y = ctx.ReadValue<float>();
     }
 
     private void Update (){
-        movement.RecieveInput(horizontalInput);
-        mouseLook.RecieveInput(mouseInput);
+        movement.ReceiveInput(horizontalInput);
+        mouseLook.ReceiveInput(mouseInput);
     }
 
     private void OnEnable (){
