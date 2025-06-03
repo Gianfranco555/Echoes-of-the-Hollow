@@ -169,9 +169,67 @@ public struct DoorSpec
 }
 
 [System.Serializable]
+public enum WindowType
+{
+    SingleHung,
+    Sliding,
+    Bay,
+    FixedGlass,
+    SkylightQuad
+}
+
+[System.Serializable]
 public struct WindowSpec
 {
-    // Placeholder for window specifications
+    /// <summary>
+    /// Unique identifier for the window.
+    /// </summary>
+    public string windowId;
+
+    /// <summary>
+    /// Type of window, e.g., single hung or bay.
+    /// </summary>
+    public WindowType type;
+
+    /// <summary>
+    /// Width of the window in meters.
+    /// </summary>
+    public float width;
+
+    /// <summary>
+    /// Height of the window in meters.
+    /// </summary>
+    public float height;
+
+    /// <summary>
+    /// Position of the window relative to its wall or room.
+    /// </summary>
+    public Vector3 position;
+
+    /// <summary>
+    /// Height from floor to the bottom of the window.
+    /// </summary>
+    public float sillHeight;
+
+    /// <summary>
+    /// Identifier of the wall this window is placed on.
+    /// </summary>
+    public string wallId;
+
+    /// <summary>
+    /// Whether the window can be opened.
+    /// </summary>
+    public bool isOperable;
+
+    /// <summary>
+    /// Number of panes for bay windows.
+    /// </summary>
+    public int bayPanes;
+
+    /// <summary>
+    /// Projection depth for bay windows in meters.
+    /// </summary>
+    public float bayProjectionDepth;
 }
 
 [System.Serializable]
