@@ -233,7 +233,58 @@ public struct WindowSpec
 }
 
 [System.Serializable]
+public enum OpeningType
+{
+    CasedOpening,
+    PassthroughCounter
+}
+
+[System.Serializable]
 public struct OpeningSpec
 {
-    // Placeholder for passthrough openings
+    /// <summary>
+    /// Unique identifier for this opening.
+    /// </summary>
+    public string openingId;
+
+    /// <summary>
+    /// Type of the opening such as a simple cased opening or a passthrough counter.
+    /// </summary>
+    public OpeningType type;
+
+    /// <summary>
+    /// Width of the opening in meters.
+    /// </summary>
+    public float width;
+
+    /// <summary>
+    /// Height of the opening in meters.
+    /// </summary>
+    public float height;
+
+    /// <summary>
+    /// Position of the opening relative to the house origin. This is generally
+    /// the center or bottom-center point.
+    /// </summary>
+    public Vector3 position;
+
+    /// <summary>
+    /// Identifier of the wall that this opening belongs to.
+    /// </summary>
+    public string wallId;
+
+    /// <summary>
+    /// Depth of the ledge for passthroughs. Zero if not applicable.
+    /// </summary>
+    public float passthroughLedgeDepth;
+
+    /// <summary>
+    /// ID of the first room that this opening connects to.
+    /// </summary>
+    public string connectsRoomA_Id;
+
+    /// <summary>
+    /// ID of the second room that this opening connects to.
+    /// </summary>
+    public string connectsRoomB_Id;
 }
