@@ -64,6 +64,7 @@ public class AdvancedHouseBuilder : MonoBehaviour
 
         BuildGarage();
         BuildFoyer();
+        BuildLivingRoom();
     }
 
     void BuildGarage()
@@ -122,6 +123,74 @@ public class AdvancedHouseBuilder : MonoBehaviour
             garage);
 
         // Advance cursor beyond the garage (far exterior edge)
+        cursor.x += exteriorW;
+    }
+
+    void BuildLivingRoom()
+    {
+        const float W = 12.67f * FT;
+        const float D = 15f * FT;
+
+        float x0 = cursor.x;
+        float z0 = 0f;
+
+        float exteriorW = W + WALL_THICKNESS;
+        float exteriorD = D + WALL_THICKNESS * 2f;
+
+        var living = new GameObject("LivingRoom").transform;
+        living.SetParent(mainFloor, false);
+
+        Vector3 baseCorner = new Vector3(x0, 0f, z0);
+
+        // Floor slab
+        CreateCube(
+            "Floor",
+            baseCorner + new Vector3(exteriorW * 0.5f, WALL_THICKNESS * 0.5f, exteriorD * 0.5f),
+            new Vector3(exteriorW, WALL_THICKNESS, exteriorD),
+            floorMat,
+            living);
+
+        // Walls
+        var front = BuildWallWithOpening(
+            "Front",
+            baseCorner + new Vector3(0f, 0f, WALL_THICKNESS * 0.5f),
+            exteriorW,
+            FLOOR_HEIGHT,
+            WALL_THICKNESS,
+            true,
+            true,
+            exteriorW * 0.5f,
+            8f * FT,
+            5f * FT,
+            living,
+            true);
+        BuildWindow(
+            "FrontWindow",
+            new Vector3(exteriorW * 0.5f, 2.5f * FT, 0f),
+            8f * FT,
+            5f * FT,
+            WALL_THICKNESS,
+            front);
+
+        BuildSolidWall(
+            "Back",
+            baseCorner + new Vector3(0f, 0f, exteriorD - WALL_THICKNESS * 0.5f),
+            exteriorW,
+            FLOOR_HEIGHT,
+            WALL_THICKNESS,
+            true,
+            living);
+
+        BuildSolidWall(
+            "Right",
+            baseCorner + new Vector3(exteriorW - WALL_THICKNESS * 0.5f, 0f, 0f),
+            exteriorD,
+            FLOOR_HEIGHT,
+            WALL_THICKNESS,
+            false,
+            living);
+
+        // Advance cursor by interior width plus the far wall thickness
         cursor.x += exteriorW;
     }
 
@@ -329,11 +398,10 @@ public class AdvancedHouseBuilder : MonoBehaviour
             SpawnSeg(openCenter + halfOpen, 0f, 0f, rightLen, height, thick);
         }
 
-        if (isWindow && openHeight > 0f)
+        if (isWindow)
         {
-            // Adjust the y-position of the sill segment to leave a gap
-            // when creating a window opening.
-            SpawnSeg(leftLen, 0.1f, 0f, openWidth, openHeight - 0.1f, thick);
+            // Leave the opening empty for windows. The window frame
+            // will be created separately by BuildWindow().
         }
 
         if (aboveHeight > 0f)
