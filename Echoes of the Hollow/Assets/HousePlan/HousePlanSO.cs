@@ -21,6 +21,59 @@ public struct RoomData
 }
 
 [System.Serializable]
+public enum WallSide
+{
+    North,
+    South,
+    East,
+    West
+}
+
+[System.Serializable]
+public struct WallSegment
+{
+    /// <summary>
+    /// Starting position of the wall relative to the room or global origin.
+    /// </summary>
+    public Vector3 startPoint;
+
+    /// <summary>
+    /// Ending position of the wall relative to the room or global origin.
+    /// </summary>
+    public Vector3 endPoint;
+
+    /// <summary>
+    /// Thickness of the wall in meters.
+    /// </summary>
+    public float thickness;
+
+    /// <summary>
+    /// Cardinal side of the room the wall sits on.
+    /// </summary>
+    public WallSide side;
+
+    /// <summary>
+    /// Whether this wall is part of the building exterior.
+    /// </summary>
+    public bool isExterior;
+
+    /// <summary>
+    /// IDs of doors contained within this wall.
+    /// </summary>
+    public List<string> doorIdsOnWall;
+
+    /// <summary>
+    /// IDs of windows contained within this wall.
+    /// </summary>
+    public List<string> windowIdsOnWall;
+
+    /// <summary>
+    /// IDs of openings such as passthroughs within this wall.
+    /// </summary>
+    public List<string> openingIdsOnWall;
+}
+
+[System.Serializable]
 public struct DoorSpec
 {
     // Placeholder for door specifications
