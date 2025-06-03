@@ -119,6 +119,18 @@ public static class BlueprintImporter
             notes = "TODO: dimensions for Staircase"
         });
 
+        // Conceptual enclosure around the staircase
+        plan.rooms.Add(new RoomData
+        {
+            roomId = "StairwellEnclosure",
+            roomLabel = "Stairwell Enclosure",
+            dimensions = new Vector2(0f, 0f), // TODO
+            position = Vector3.zero,
+            walls = new List<WallSegment>(),
+            connectedRoomIds = new List<string>(),
+            notes = "TODO: dimensions for Stairwell Enclosure"
+        });
+
         // ------------------------------------------------------------------
         plan.rooms.Add(new RoomData
     {
