@@ -58,6 +58,22 @@ public static class RoomBuilder
             }
         }
 
+        // Build the stairwell enclosure if the plan defines one
+        RoomData? stairwell = null;
+        foreach (RoomData room in housePlan.rooms)
+        {
+            if (room.roomId == "StairwellEnclosure")
+            {
+                stairwell = room;
+                break;
+            }
+        }
+
+        if (stairwell.HasValue && stairwell.Value.dimensions.x > 0f && stairwell.Value.dimensions.y > 0f)
+        {
+            BuildRectangularEnclosure(stairwell.Value, root.transform, storyHeight, housePlan.interiorWallThickness, builtKeys, ref wallIndex);
+        }
+
         return root;
     }
 
@@ -123,6 +139,39 @@ public static class RoomBuilder
         wall.transform.position = startWorld;
         wall.transform.rotation = Quaternion.FromToRotation(Vector3.right, direction);
         return wall;
+    }
+
+    private static void BuildRectangularEnclosure(RoomData stairwell,
+                                                  Transform parent,
+                                                  float height,
+                                                  float thickness,
+                                                  HashSet<string> builtKeys,
+                                                  ref int wallIndex)
+    {
+        Vector3 sw = stairwell.position;
+        Vector3 se = stairwell.position + new Vector3(stairwell.dimensions.x, 0f, 0f);
+        Vector3 ne = stairwell.position + new Vector3(stairwell.dimensions.x, 0f, stairwell.dimensions.y);
+        Vector3 nw = stairwell.position + new Vector3(0f, 0f, stairwell.dimensions.y);
+
+        Vector3[] corners = new[] { sw, se, ne, nw };
+        for (int i = 0; i < 4; i++)
+        {
+            Vector3 start = corners[i];
+            Vector3 end = corners[(i + 1) % 4];
+            string key = GetSegmentKey(start, end);
+            if (!builtKeys.Add(key))
+            {
+                continue;
+            }
+
+            GameObject wall = BuildWallSegment(start, end, height, thickness);
+            if (wall != null)
+            {
+                wall.name = $"Wall_{stairwell.roomId}_{wallIndex}";
+                wall.transform.SetParent(parent, false);
+                wallIndex++;
+            }
+        }
     }
 
     private static string GetSegmentKey(Vector3 start, Vector3 end)
