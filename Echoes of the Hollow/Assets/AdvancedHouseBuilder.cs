@@ -65,6 +65,8 @@ public class AdvancedHouseBuilder : MonoBehaviour
         BuildGarage();
         BuildFoyer();
         BuildLivingRoom();
+        BuildDiningRoom();
+        BuildKitchen();
     }
 
     void BuildGarage()
@@ -193,6 +195,124 @@ public class AdvancedHouseBuilder : MonoBehaviour
             living);
 
         // Advance cursor by interior width plus the far wall thickness
+        cursor.x += exteriorW;
+    }
+
+    void BuildDiningRoom()
+    {
+        const float W = 9.33f * FT;
+        const float D = 10.33f * FT;
+
+        float x0 = cursor.x;
+        float z0 = cursor.z;
+
+        float exteriorW = W + WALL_THICKNESS;
+        float exteriorD = D + WALL_THICKNESS * 2f;
+
+        var dining = new GameObject("DiningRoom").transform;
+        dining.SetParent(mainFloor, false);
+
+        Vector3 baseCorner = new Vector3(x0, 0f, z0);
+
+        // Floor slab
+        CreateCube(
+            "Floor",
+            baseCorner + new Vector3(exteriorW * 0.5f, WALL_THICKNESS * 0.5f, exteriorD * 0.5f),
+            new Vector3(exteriorW, WALL_THICKNESS, exteriorD),
+            floorMat,
+            dining);
+
+        // Walls
+        float halfW = exteriorW * 0.5f;
+
+        var frontWin = BuildWallWithOpening(
+            "FrontWindowSection",
+            baseCorner + new Vector3(0f, 0f, WALL_THICKNESS * 0.5f),
+            halfW,
+            FLOOR_HEIGHT,
+            WALL_THICKNESS,
+            true,
+            true,
+            halfW * 0.5f,
+            3f * FT,
+            5f * FT,
+            dining,
+            true);
+        BuildWindow(
+            "FrontWindow",
+            new Vector3(halfW * 0.5f, 2.5f * FT, 0f),
+            3f * FT,
+            5f * FT,
+            WALL_THICKNESS,
+            frontWin);
+
+        var frontDoor = BuildWallWithOpening(
+            "FrontDoorSection",
+            baseCorner + new Vector3(halfW, 0f, WALL_THICKNESS * 0.5f),
+            halfW,
+            FLOOR_HEIGHT,
+            WALL_THICKNESS,
+            true,
+            true,
+            halfW * 0.5f,
+            6f * FT,
+            DOOR_HEIGHT,
+            dining);
+        BuildDoor(
+            "SlidingDoor",
+            new Vector3(halfW * 0.5f, DOOR_HEIGHT * 0.5f, 0f),
+            6f * FT,
+            DOOR_HEIGHT,
+            WALL_THICKNESS,
+            Swing.SlideRight,
+            frontDoor);
+
+        BuildSolidWall(
+            "Back",
+            baseCorner + new Vector3(0f, 0f, exteriorD - WALL_THICKNESS * 0.5f),
+            exteriorW,
+            FLOOR_HEIGHT,
+            WALL_THICKNESS,
+            true,
+            dining);
+
+        BuildSolidWall(
+            "Right",
+            baseCorner + new Vector3(exteriorW - WALL_THICKNESS * 0.5f, 0f, 0f),
+            exteriorD,
+            FLOOR_HEIGHT,
+            WALL_THICKNESS,
+            false,
+            dining);
+
+        // Advance cursor beyond the dining room
+        cursor.x += exteriorW;
+    }
+
+    void BuildKitchen()
+    {
+        const float W = 12f * FT;
+        const float D = 12f * FT;
+
+        float x0 = cursor.x;
+        float z0 = cursor.z;
+
+        float exteriorW = W + WALL_THICKNESS;
+        float exteriorD = D + WALL_THICKNESS * 2f;
+
+        var kitchen = new GameObject("Kitchen").transform;
+        kitchen.SetParent(mainFloor, false);
+
+        Vector3 baseCorner = new Vector3(x0, 0f, z0);
+
+        // Floor slab only for now
+        CreateCube(
+            "Floor",
+            baseCorner + new Vector3(exteriorW * 0.5f, WALL_THICKNESS * 0.5f, exteriorD * 0.5f),
+            new Vector3(exteriorW, WALL_THICKNESS, exteriorD),
+            floorMat,
+            kitchen);
+
         cursor.x += exteriorW;
     }
 
