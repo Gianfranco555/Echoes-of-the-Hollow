@@ -17,7 +17,22 @@ public class HousePlanSO : ScriptableObject
 [System.Serializable]
 public struct RoomData
 {
-    // Placeholder for room details
+    public string roomId; // e.g., "Foyer", "LivingRoom"
+    public string roomLabel; // e.g., "Foyer", "Living Room"
+    public Vector2 dimensions; // (width, depth) in meters
+    public Vector3 position; // Relative to a common origin
+    public List<WallSegment> walls; // Details for each wall segment of the room
+    public List<string> connectedRoomIds; // IDs of rooms directly accessible
+    public string notes; // Any specific features mentioned in the blueprint
+}
+
+[System.Serializable]
+public struct WallSegment
+{
+    public Vector3 start;
+    public Vector3 end;
+    public float height;
+    public float thickness;
 }
 
 [System.Serializable]
