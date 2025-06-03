@@ -132,7 +132,7 @@ public class AdvancedHouseBuilder : MonoBehaviour
         const float D = 15f * FT;
 
         float x0 = cursor.x;
-        float z0 = 0f;
+        float z0 = cursor.z;
 
         float exteriorW = W + WALL_THICKNESS;
         float exteriorD = D + WALL_THICKNESS * 2f;
