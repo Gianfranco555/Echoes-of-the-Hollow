@@ -657,19 +657,14 @@ public class AdvancedHouseBuilder : MonoBehaviour
 
 #if UNITY_EDITOR
     [UnityEditor.MenuItem("House/Rebuild")]
-    static void Rebuild()
-    {
-        var builder = FindObjectOfType<AdvancedHouseBuilder>();
-        if (builder == null) return;
-
-        var existing = builder.transform.Find("House");
-        if (existing != null)
-            DestroyImmediate(existing.gameObject);
-
-        builder.cursor = new Cursor();
+    static void Rebuild() {
+        var old = GameObject.Find("House");
+        if (old) DestroyImmediate(old);
+        var builder = FindObjectOfType<AdvancedHouseBuilder>() ?? new GameObject("AdvancedHouseBuilder").AddComponent<AdvancedHouseBuilder>();
+        builder.cursor = new Cursor {x=0, z=0};
+        builder.Awake();
         builder.Start();
-
-        UnityEditor.SceneView.lastActiveSceneView.FrameSelected();
+        if (UnityEditor.SceneView.lastActiveSceneView) UnityEditor.SceneView.lastActiveSceneView.FrameSelected();
     }
 #endif
 }
