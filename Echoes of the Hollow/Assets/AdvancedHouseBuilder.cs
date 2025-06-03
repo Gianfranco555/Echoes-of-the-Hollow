@@ -20,6 +20,8 @@ public class AdvancedHouseBuilder : MonoBehaviour
     static readonly float DOOR_WIDTH = 3f * FT;
     static readonly float DOOR_HEIGHT = 7f * FT;
     static readonly float FLOOR_HEIGHT = 8f * FT;
+    static readonly float COUNTER_HEIGHT = 3f * FT;
+    static readonly float COUNTER_DEPTH = 2f * FT;
     public const float WIDE_CASED_OPENING_WIDTH = 5f * FT;
 
     Material wallMat;
@@ -312,6 +314,36 @@ public class AdvancedHouseBuilder : MonoBehaviour
             new Vector3(exteriorW, WALL_THICKNESS, exteriorD),
             floorMat,
             kitchen);
+
+        Vector3 interior = baseCorner + new Vector3(WALL_THICKNESS, 0f, WALL_THICKNESS);
+
+        // Left counter run along dining wall
+        float leftLen = D;
+        Vector3 leftCentre = interior + new Vector3(COUNTER_DEPTH * 0.5f, COUNTER_HEIGHT * 0.5f, leftLen * 0.5f);
+        CreateCube("Counter_Left", leftCentre, new Vector3(COUNTER_DEPTH, COUNTER_HEIGHT, leftLen), floorMat, kitchen);
+
+        // Front counter run with sink void centered
+        float sinkGap = 2f * FT;
+        float frontSeg = (W - sinkGap) * 0.5f;
+        Vector3 frontLC = interior + new Vector3(frontSeg * 0.5f, COUNTER_HEIGHT * 0.5f, COUNTER_DEPTH * 0.5f);
+        Vector3 frontRC = interior + new Vector3(frontSeg + sinkGap + frontSeg * 0.5f, COUNTER_HEIGHT * 0.5f, COUNTER_DEPTH * 0.5f);
+        CreateCube("Counter_Front_L", frontLC, new Vector3(frontSeg, COUNTER_HEIGHT, COUNTER_DEPTH), floorMat, kitchen);
+        CreateCube("Counter_Front_R", frontRC, new Vector3(frontSeg, COUNTER_HEIGHT, COUNTER_DEPTH), floorMat, kitchen);
+
+        // Right counter run leaving peninsula opening
+        float rightLen = D - 3f * FT;
+        Vector3 rightCentre = interior + new Vector3(W - COUNTER_DEPTH * 0.5f, COUNTER_HEIGHT * 0.5f, rightLen * 0.5f);
+        CreateCube("Counter_Right", rightCentre, new Vector3(COUNTER_DEPTH, COUNTER_HEIGHT, rightLen), floorMat, kitchen);
+
+        // Appliances placeholders
+        Vector3 sinkCentre = interior + new Vector3(W * 0.5f, COUNTER_HEIGHT * 0.5f, COUNTER_DEPTH * 0.5f);
+        CreateCube("Sink", sinkCentre, new Vector3(sinkGap, COUNTER_HEIGHT, COUNTER_DEPTH), floorMat, kitchen);
+
+        Vector3 dwCentre = interior + new Vector3(W * 0.5f - sinkGap, COUNTER_HEIGHT * 0.5f, COUNTER_DEPTH * 0.5f);
+        CreateCube("Dishwasher", dwCentre, new Vector3(2f * FT, COUNTER_HEIGHT, COUNTER_DEPTH), floorMat, kitchen);
+
+        Vector3 fridgeCentre = interior + new Vector3(W - COUNTER_DEPTH * 0.5f, 3f * FT, D - COUNTER_DEPTH * 0.5f);
+        CreateCube("Fridge", fridgeCentre, new Vector3(3f * FT, 6f * FT, COUNTER_DEPTH), floorMat, kitchen);
 
         cursor.x += exteriorW;
     }
