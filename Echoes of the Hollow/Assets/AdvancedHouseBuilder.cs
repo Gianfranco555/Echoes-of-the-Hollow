@@ -34,6 +34,8 @@ public class AdvancedHouseBuilder : MonoBehaviour
     static readonly float MAIN_FLOOR_WALL_HEIGHT = FLOOR_HEIGHT;
     static readonly float FLOOR_THICKNESS = WALL_THICKNESS;
     static readonly float CEILING_THICKNESS = WALL_THICKNESS;
+    static readonly float ATTIC_WALL_HEIGHT = 4f * FT;
+    static readonly float ROOF_RISE = 4f * FT;
 
     Material wallMat;
     Material floorMat;
@@ -83,6 +85,9 @@ public class AdvancedHouseBuilder : MonoBehaviour
         BuildStairs();
 
         BuildCeilings();
+        BuildBasement();
+        BuildAtticAndRoof();
+        BuildExteriorFeatures();
     }
 
     void BuildGarage()
@@ -527,6 +532,140 @@ public class AdvancedHouseBuilder : MonoBehaviour
                 AddCeiling(room, sz.x, sz.z, y);
             }
         }
+    }
+
+    void BuildBasement()
+    {
+        float width = cursor.x;
+        float depth = 0f;
+        foreach (Transform room in mainFloor)
+        {
+            var floor = room.Find("Floor");
+            if (floor != null)
+                depth = Mathf.Max(depth, floor.localScale.z);
+        }
+
+        Vector3 baseCorner = new Vector3(0f, -FLOOR_HEIGHT, 0f);
+
+        CreateCube(
+            "Floor",
+            baseCorner + new Vector3(width * 0.5f, WALL_THICKNESS * 0.5f, depth * 0.5f),
+            new Vector3(width, WALL_THICKNESS, depth),
+            floorMat,
+            basement);
+
+        BuildSolidWall(
+            "Front",
+            baseCorner + new Vector3(0f, 0f, WALL_THICKNESS * 0.5f),
+            width,
+            FLOOR_HEIGHT,
+            WALL_THICKNESS,
+            true,
+            basement);
+        BuildSolidWall(
+            "Back",
+            baseCorner + new Vector3(0f, 0f, depth - WALL_THICKNESS * 0.5f),
+            width,
+            FLOOR_HEIGHT,
+            WALL_THICKNESS,
+            true,
+            basement);
+        BuildSolidWall(
+            "Left",
+            baseCorner + new Vector3(WALL_THICKNESS * 0.5f, 0f, 0f),
+            depth,
+            FLOOR_HEIGHT,
+            WALL_THICKNESS,
+            false,
+            basement);
+        BuildSolidWall(
+            "Right",
+            baseCorner + new Vector3(width - WALL_THICKNESS * 0.5f, 0f, 0f),
+            depth,
+            FLOOR_HEIGHT,
+            WALL_THICKNESS,
+            false,
+            basement);
+    }
+
+    void BuildAtticAndRoof()
+    {
+        float width = cursor.x;
+        float depth = 0f;
+        foreach (Transform room in mainFloor)
+        {
+            var floor = room.Find("Floor");
+            if (floor != null)
+                depth = Mathf.Max(depth, floor.localScale.z);
+        }
+
+        Vector3 baseCorner = new Vector3(0f, MAIN_FLOOR_WALL_HEIGHT, 0f);
+
+        BuildSolidWall(
+            "LeftWall",
+            baseCorner + new Vector3(WALL_THICKNESS * 0.5f, 0f, 0f),
+            depth,
+            ATTIC_WALL_HEIGHT,
+            WALL_THICKNESS,
+            false,
+            attic);
+        BuildSolidWall(
+            "RightWall",
+            baseCorner + new Vector3(width - WALL_THICKNESS * 0.5f, 0f, 0f),
+            depth,
+            ATTIC_WALL_HEIGHT,
+            WALL_THICKNESS,
+            false,
+            attic);
+
+        float halfW = width * 0.5f;
+        float angle = Mathf.Atan2(ROOF_RISE, halfW);
+        float hyp = halfW / Mathf.Cos(angle);
+
+        Vector3 leftCentre = baseCorner + new Vector3(halfW * 0.5f, ATTIC_WALL_HEIGHT + ROOF_RISE * 0.5f, depth * 0.5f);
+        var left = CreateCube("Roof_Left", leftCentre, new Vector3(depth, WALL_THICKNESS, hyp), roofMat, attic);
+        left.transform.localRotation = Quaternion.Euler(0f, 0f, Mathf.Rad2Deg * angle);
+
+        Vector3 rightCentre = baseCorner + new Vector3(width - halfW * 0.5f, ATTIC_WALL_HEIGHT + ROOF_RISE * 0.5f, depth * 0.5f);
+        var right = CreateCube("Roof_Right", rightCentre, new Vector3(depth, WALL_THICKNESS, hyp), roofMat, attic);
+        right.transform.localRotation = Quaternion.Euler(0f, 0f, -Mathf.Rad2Deg * angle);
+    }
+
+    void BuildExteriorFeatures()
+    {
+        var foyer = mainFloor.Find("Foyer");
+        if (foyer == null) return;
+
+        var floor = foyer.Find("Floor");
+        if (floor == null) return;
+
+        float width = floor.localScale.x;
+        float x0 = floor.localPosition.x - width * 0.5f;
+        float depth = 4f * FT;
+
+        var entry = new GameObject("EntryCover").transform;
+        entry.SetParent(house, false);
+
+        Vector3 baseCorner = new Vector3(x0, 0f, -depth);
+
+        CreateCube(
+            "Slab",
+            baseCorner + new Vector3(width * 0.5f, WALL_THICKNESS * 0.5f, depth * 0.5f),
+            new Vector3(width, WALL_THICKNESS, depth),
+            floorMat,
+            entry);
+
+        Vector3 leftCol = baseCorner + new Vector3(WALL_THICKNESS * 0.5f, FLOOR_HEIGHT * 0.5f, depth - WALL_THICKNESS * 0.5f);
+        Vector3 rightCol = baseCorner + new Vector3(width - WALL_THICKNESS * 0.5f, FLOOR_HEIGHT * 0.5f, depth - WALL_THICKNESS * 0.5f);
+        CreateCube("Column_Left", leftCol, new Vector3(WALL_THICKNESS, FLOOR_HEIGHT, WALL_THICKNESS), wallMat, entry);
+        CreateCube("Column_Right", rightCol, new Vector3(WALL_THICKNESS, FLOOR_HEIGHT, WALL_THICKNESS), wallMat, entry);
+
+        CreateCube(
+            "Roof",
+            baseCorner + new Vector3(width * 0.5f, FLOOR_HEIGHT + WALL_THICKNESS * 0.5f, depth * 0.5f),
+            new Vector3(width, WALL_THICKNESS, depth),
+            roofMat,
+            entry);
     }
 
     GameObject BuildSolidWall(string name, Vector3 start, float length, float height, float thick, bool alongX, Transform parent)
