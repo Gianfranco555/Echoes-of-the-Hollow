@@ -266,7 +266,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: -0, z: -15.02}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalScale: {x: 0.25, y: 0.25, z: 0.25}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 614202509}
@@ -417,7 +417,6 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 627330133}
-  - component: {fileID: 627330132}
   m_Layer: 0
   m_Name: HouseGenerator
   m_TagString: Untagged
@@ -425,22 +424,6 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &627330132
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 627330131}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 07fc722436125e747b8688d77d672532, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  width: 25
-  depth: 30
-  height: 10
-  wallThickness: 0.4
 --- !u!4 &627330133
 Transform:
   m_ObjectHideFlags: 0
@@ -553,6 +536,64 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 50, y: -30, z: 0}
+--- !u!1 &1095154215
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1095154217}
+  - component: {fileID: 1095154216}
+  m_Layer: 0
+  m_Name: House
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1095154216
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1095154215}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 299f0eb94da81fa45967d871cb2e6792, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  wallMat: {fileID: 0}
+  floorMat: {fileID: 0}
+  roofMat: {fileID: 0}
+  glassMat: {fileID: 0}
+  patioMat: {fileID: 0}
+  house: {fileID: 0}
+  mainFloor: {fileID: 0}
+  exteriorFeaturesGroup: {fileID: 0}
+  mainFloorFootprint:
+    x: 0
+    y: 0
+    width: 0
+    height: 0
+  footprintCalculated: 0
+--- !u!4 &1095154217
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1095154215}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -6.18495, y: 0, z: -5.41664}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1974869294
 GameObject:
   m_ObjectHideFlags: 0
@@ -670,3 +711,4 @@ SceneRoots:
   - {fileID: 1974869298}
   - {fileID: 573620997}
   - {fileID: 627330133}
+  - {fileID: 1095154217}

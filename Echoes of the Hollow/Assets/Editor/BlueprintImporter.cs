@@ -1,6 +1,7 @@
 using System.IO;
 using UnityEditor;
 using UnityEngine;
+using System.Collections.Generic; // Add this line
 
 /// <summary>
 /// Utilities for creating HousePlanSO assets from blueprint data.
@@ -119,208 +120,207 @@ public static class BlueprintImporter
         });
 
         // ------------------------------------------------------------------
-        // 4. Bedroom → Office Wing
         plan.rooms.Add(new RoomData
-        {
-            roomId = "Office",
-            roomLabel = "Office",
-            dimensions = new Vector2(0f, 0f), // TODO
-            position = Vector3.zero,
-            walls = new List<WallSegment>(),
-            connectedRoomIds = new List<string>(),
-            notes = "TODO: dimensions for Office"
-        });
+    {
+        roomId = "Office", // Corresponds to "Secondary Bedroom" in the blueprint
+        roomLabel = "Office",
+        dimensions = new Vector2(9.166667f, 10f), // 9' 2" (E-W) × 10' (N-S)
+        position = Vector3.zero,
+        walls = new List<WallSegment>(),
+        connectedRoomIds = new List<string>(),
+        notes = "Dimensions for Office (Secondary Bedroom from blueprint)"
+    });
 
-        plan.rooms.Add(new RoomData
-        {
-            roomId = "MasterBedroom",
-            roomLabel = "Master Bedroom",
-            dimensions = new Vector2(0f, 0f), // TODO
-            position = Vector3.zero,
-            walls = new List<WallSegment>(),
-            connectedRoomIds = new List<string>(),
-            notes = "TODO: dimensions for Master Bedroom"
-        });
+    plan.rooms.Add(new RoomData
+    {
+        roomId = "MasterBedroom",
+        roomLabel = "Master Bedroom",
+        dimensions = new Vector2(11f, 12f), // 11' (E-W) × 12' (N-S)
+        position = Vector3.zero,
+        walls = new List<WallSegment>(),
+        connectedRoomIds = new List<string>(),
+        notes = "Dimensions for Master Bedroom"
+    });
 
-        plan.rooms.Add(new RoomData
-        {
-            roomId = "MasterCloset",
-            roomLabel = "Master Closet",
-            dimensions = new Vector2(0f, 0f), // TODO
-            position = Vector3.zero,
-            walls = new List<WallSegment>(),
-            connectedRoomIds = new List<string>(),
-            notes = "TODO: dimensions for Master Closet"
-        });
+    plan.rooms.Add(new RoomData
+    {
+        roomId = "MasterCloset",
+        roomLabel = "Master Closet",
+        dimensions = new Vector2(2f, 6f), // Assumed 2' deep (E-W) × 6' long (N-S) along the wall
+        position = Vector3.zero,
+        walls = new List<WallSegment>(),
+        connectedRoomIds = new List<string>(),
+        notes = "Dimensions for Master Closet (approx. 6ft span, assumed 2ft depth)"
+    });
 
-        plan.rooms.Add(new RoomData
-        {
-            roomId = "MasterVestibule",
-            roomLabel = "Master Vestibule",
-            dimensions = new Vector2(0f, 0f), // TODO
-            position = Vector3.zero,
-            walls = new List<WallSegment>(),
-            connectedRoomIds = new List<string>(),
-            notes = "TODO: dimensions for Master Vestibule"
-        });
+    plan.rooms.Add(new RoomData
+    {
+        roomId = "MasterVestibule",
+        roomLabel = "Master Vestibule",
+        dimensions = new Vector2(4f, 3f), // 4' wide (E-W) by 3' deep (N-S)
+        position = Vector3.zero,
+        walls = new List<WallSegment>(),
+        connectedRoomIds = new List<string>(),
+        notes = "Dimensions for Master Vestibule"
+    });
 
-        // ------------------------------------------------------------------
-        // 5. Bathrooms
-        plan.rooms.Add(new RoomData
-        {
-            roomId = "HallBath",
-            roomLabel = "Hall Bath",
-            dimensions = new Vector2(0f, 0f), // TODO
-            position = Vector3.zero,
-            walls = new List<WallSegment>(),
-            connectedRoomIds = new List<string>(),
-            notes = "TODO: dimensions for Hall Bath"
-        });
+    // ------------------------------------------------------------------
+    // 5. Bathrooms
+    plan.rooms.Add(new RoomData
+    {
+        roomId = "HallBath",
+        roomLabel = "Hall Bath",
+        dimensions = new Vector2(5f, 9f), // 5' (E-W) × 9' (N-S)
+        position = Vector3.zero,
+        walls = new List<WallSegment>(),
+        connectedRoomIds = new List<string>(),
+        notes = "Dimensions for Hall Bath"
+    });
 
-        plan.rooms.Add(new RoomData
-        {
-            roomId = "MasterBath",
-            roomLabel = "Master Bath",
-            dimensions = new Vector2(0f, 0f), // TODO
-            position = Vector3.zero,
-            walls = new List<WallSegment>(),
-            connectedRoomIds = new List<string>(),
-            notes = "TODO: dimensions for Master Bath"
-        });
+    plan.rooms.Add(new RoomData
+    {
+        roomId = "MasterBath",
+        roomLabel = "Master Bath",
+        dimensions = new Vector2(6f, 8.5f), // 6' (E-W) × 8'-9' (N-S), used 8.5'
+        position = Vector3.zero,
+        walls = new List<WallSegment>(),
+        connectedRoomIds = new List<string>(),
+        notes = "Dimensions for Master Bath"
+    });
 
-        // ------------------------------------------------------------------
-        // 6. Living Room & Dining Room
-        plan.rooms.Add(new RoomData
-        {
-            roomId = "LivingRoom",
-            roomLabel = "Living Room",
-            dimensions = new Vector2(0f, 0f), // TODO
-            position = Vector3.zero,
-            walls = new List<WallSegment>(),
-            connectedRoomIds = new List<string>(),
-            notes = "TODO: dimensions for Living Room"
-        });
+    // ------------------------------------------------------------------
+    // 6. Living Room & Dining Room
+    plan.rooms.Add(new RoomData
+    {
+        roomId = "LivingRoom",
+        roomLabel = "Living Room",
+        dimensions = new Vector2(12.666667f, 15f), // 12' 8" (E-W) × 15' (N-S)
+        position = Vector3.zero,
+        walls = new List<WallSegment>(),
+        connectedRoomIds = new List<string>(),
+        notes = "Dimensions for Living Room"
+    });
 
-        plan.rooms.Add(new RoomData
-        {
-            roomId = "DiningRoom",
-            roomLabel = "Dining Room",
-            dimensions = new Vector2(0f, 0f), // TODO
-            position = Vector3.zero,
-            walls = new List<WallSegment>(),
-            connectedRoomIds = new List<string>(),
-            notes = "TODO: east opening should slide right-behind-left"
-        });
+    plan.rooms.Add(new RoomData
+    {
+        roomId = "DiningRoom",
+        roomLabel = "Dining Room",
+        dimensions = new Vector2(9.333333f, 10.333333f), // 9' 4" (E-W) × 10' 4" (N-S)
+        position = Vector3.zero,
+        walls = new List<WallSegment>(),
+        connectedRoomIds = new List<string>(),
+        notes = "Dimensions for Dining Room; east opening should slide right-behind-left"
+    });
 
-        // ------------------------------------------------------------------
-        // 7. Kitchen & Nook
-        plan.rooms.Add(new RoomData
-        {
-            roomId = "Kitchen",
-            roomLabel = "Kitchen",
-            dimensions = new Vector2(0f, 0f), // TODO
-            position = Vector3.zero,
-            walls = new List<WallSegment>(),
-            connectedRoomIds = new List<string>(),
-            notes = "TODO: dimensions for Kitchen"
-        });
+    // ------------------------------------------------------------------
+    // 7. Kitchen & Nook
+    plan.rooms.Add(new RoomData
+    {
+        roomId = "Kitchen",
+        roomLabel = "Kitchen",
+        dimensions = new Vector2(10f, 9f), // Approx. 10' (E-W) by 9' (N-S) working space
+        position = Vector3.zero,
+        walls = new List<WallSegment>(),
+        connectedRoomIds = new List<string>(),
+        notes = "Dimensions for Kitchen"
+    });
 
-        plan.rooms.Add(new RoomData
-        {
-            roomId = "Nook",
-            roomLabel = "Nook",
-            dimensions = new Vector2(0f, 0f), // TODO
-            position = Vector3.zero,
-            walls = new List<WallSegment>(),
-            connectedRoomIds = new List<string>(),
-            notes = "TODO: dimensions for Nook"
-        });
+    plan.rooms.Add(new RoomData
+    {
+        roomId = "Nook",
+        roomLabel = "Nook",
+        dimensions = new Vector2(6f, 7f), // Approx. 6' (E-W) × 7' (N-S)
+        position = Vector3.zero,
+        walls = new List<WallSegment>(),
+        connectedRoomIds = new List<string>(),
+        notes = "Dimensions for Nook"
+    });
 
-        // ------------------------------------------------------------------
-        // 8. Family Room
-        plan.rooms.Add(new RoomData
-        {
-            roomId = "FamilyRoom",
-            roomLabel = "Family Room",
-            dimensions = new Vector2(0f, 0f), // TODO
-            position = Vector3.zero,
-            walls = new List<WallSegment>(),
-            connectedRoomIds = new List<string>(),
-            notes = "TODO: dimensions for Family Room"
-        });
+    // ------------------------------------------------------------------
+    // 8. Family Room
+    plan.rooms.Add(new RoomData
+    {
+        roomId = "FamilyRoom",
+        roomLabel = "Family Room",
+        dimensions = new Vector2(12.333333f, 15.5f), // 12' 4" (E-W) × 15' 6" (N-S)
+        position = Vector3.zero,
+        walls = new List<WallSegment>(),
+        connectedRoomIds = new List<string>(),
+        notes = "Dimensions for Family Room"
+    });
 
-        // ------------------------------------------------------------------
-        // 9. Covered Patio
-        plan.rooms.Add(new RoomData
-        {
-            roomId = "CoveredPatio",
-            roomLabel = "Covered Patio",
-            dimensions = new Vector2(0f, 0f), // TODO
-            position = Vector3.zero,
-            walls = new List<WallSegment>(),
-            connectedRoomIds = new List<string>(),
-            notes = "TODO: dimensions for Covered Patio"
-        });
+    // ------------------------------------------------------------------
+    // 9. Covered Patio
+    plan.rooms.Add(new RoomData
+    {
+        roomId = "CoveredPatio",
+        roomLabel = "Covered Patio",
+        dimensions = new Vector2(6f, 6f), // Approx. 6' × 6'
+        position = Vector3.zero,
+        walls = new List<WallSegment>(),
+        connectedRoomIds = new List<string>(),
+        notes = "Dimensions for Covered Patio"
+    });
 
-        // ------------------------------------------------------------------
-        // 10. Garage
-        plan.rooms.Add(new RoomData
-        {
-            roomId = "Garage",
-            roomLabel = "Garage",
-            dimensions = new Vector2(0f, 0f), // TODO
-            position = Vector3.zero,
-            walls = new List<WallSegment>(),
-            connectedRoomIds = new List<string>(),
-            notes = "TODO: dimensions for Garage"
-        });
+    // ------------------------------------------------------------------
+    // 10. Garage
+    plan.rooms.Add(new RoomData
+    {
+        roomId = "Garage",
+        roomLabel = "Garage",
+        dimensions = new Vector2(11.333333f, 20f), // 11' 4" (E-W) × 20' (N-S)
+        position = Vector3.zero,
+        walls = new List<WallSegment>(),
+        connectedRoomIds = new List<string>(),
+        notes = "Dimensions for Garage"
+    });
 
         // ------------------------------------------------------------------
         // Placeholder door
         plan.doors.Add(new DoorSpec
-        {
-            doorId = "ExampleDoor",
-            type = DoorType.Hinged,
-            width = 0f, // TODO
-            height = 0f, // TODO
-            position = Vector3.zero,
-            wallId = string.Empty,
-            swingDirection = SwingDirection.InwardNorth,
-            slideDirection = SlideDirection.SlidesLeft,
-            isExterior = false,
-            connectsRoomA_Id = string.Empty,
-            connectsRoomB_Id = string.Empty
-        });
+    {
+        doorId = "ExampleDoor",
+        type = DoorType.Hinged,
+        width = 2.666667f, // Standard 2' 8"
+        height = 6.666667f, // Standard 6' 8"
+        position = Vector3.zero,
+        wallId = string.Empty,
+        swingDirection = SwingDirection.InwardNorth,
+        slideDirection = SlideDirection.SlidesLeft,
+        isExterior = false,
+        connectsRoomA_Id = string.Empty,
+        connectsRoomB_Id = string.Empty
+    });
 
-        // Placeholder window
-        plan.windows.Add(new WindowSpec
-        {
-            windowId = "ExampleWindow",
-            type = WindowType.SingleHung,
-            width = 0f, // TODO
-            height = 0f, // TODO
-            position = Vector3.zero,
-            sillHeight = 0f, // TODO
-            wallId = string.Empty,
-            isOperable = true,
-            bayPanes = 0,
-            bayProjectionDepth = 0f
-        });
+    // Placeholder window
+    plan.windows.Add(new WindowSpec
+    {
+        windowId = "ExampleWindow",
+        type = WindowType.SingleHung,
+        width = 3.0f, // Common standard window width
+        height = 4.0f, // Common standard window height
+        position = Vector3.zero,
+        sillHeight = 0f, // TODO: Sill height varies, not specified in general terms
+        wallId = string.Empty,
+        isOperable = true,
+        bayPanes = 0,
+        bayProjectionDepth = 0f
+    });
 
-        // Placeholder opening (Master closet attic hatch)
-        plan.openings.Add(new OpeningSpec
-        {
-            openingId = "AtticHatch01",
-            type = OpeningType.CasedOpening,
-            width = 0f, // TODO
-            height = 0f, // TODO
-            position = Vector3.zero,
-            wallId = string.Empty,
-            passthroughLedgeDepth = 0f,
-            connectsRoomA_Id = string.Empty,
-            connectsRoomB_Id = string.Empty
-        });
-    }
+    // Placeholder opening (Master closet attic hatch)
+    plan.openings.Add(new OpeningSpec
+    {
+        openingId = "AtticHatch01",
+        type = OpeningType.CasedOpening,
+        width = 2.0f, // Common attic hatch size (24 inches)
+        height = 2.0f, // Common attic hatch size (24 inches)
+        position = Vector3.zero,
+        wallId = string.Empty,
+        passthroughLedgeDepth = 0f,
+        connectsRoomA_Id = string.Empty,
+        connectsRoomB_Id = string.Empty
+    });
+}
 
     [MenuItem("House Tools/Create House Plan from Blueprint")]
     private static void CreateHousePlanMenuItem()
