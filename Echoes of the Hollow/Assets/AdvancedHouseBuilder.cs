@@ -25,6 +25,9 @@ public class AdvancedHouseBuilder : MonoBehaviour
     static readonly float FRIDGE_WIDTH = 3f * FT;
     static readonly float FRIDGE_HEIGHT = 6f * FT;
     static readonly float FRIDGE_DEPTH = 2.5f * FT;
+    static readonly float STAIR_WIDTH = 3f * FT;
+    static readonly float STAIR_RISER_HEIGHT = 7f / 12f * FT; // 7" rise
+    static readonly float STAIR_TREAD_DEPTH = 11f / 12f * FT; // 11" tread
     public const float WIDE_CASED_OPENING_WIDTH = 5f * FT;
 
     // Additional dimensional constants used for ceiling generation
@@ -77,6 +80,7 @@ public class AdvancedHouseBuilder : MonoBehaviour
         BuildLivingRoom();
         BuildDiningRoom();
         BuildKitchen();
+        BuildStairs();
 
         BuildCeilings();
     }
@@ -358,6 +362,56 @@ public class AdvancedHouseBuilder : MonoBehaviour
         cursor.x += exteriorW;
     }
 
+    void BuildStairs()
+    {
+        float x0 = cursor.x;
+        float z0 = cursor.z;
+
+        var stairwell = new GameObject("Stairwell").transform;
+        stairwell.SetParent(mainFloor, false);
+
+        Vector3 baseCorner = new Vector3(x0, 0f, z0);
+
+        int numRisers = Mathf.CeilToInt(MAIN_FLOOR_WALL_HEIGHT / STAIR_RISER_HEIGHT);
+
+        for (int i = 0; i < numRisers; i++)
+        {
+            Vector3 centre = baseCorner + new Vector3(
+                STAIR_WIDTH * 0.5f,
+                i * STAIR_RISER_HEIGHT + STAIR_RISER_HEIGHT * 0.5f,
+                i * STAIR_TREAD_DEPTH + STAIR_TREAD_DEPTH * 0.5f);
+            CreateCube($"Step_{i + 1}", centre,
+                new Vector3(STAIR_WIDTH, STAIR_RISER_HEIGHT, STAIR_TREAD_DEPTH),
+                floorMat, stairwell);
+        }
+
+        float totalDepth = numRisers * STAIR_TREAD_DEPTH;
+        Vector3 leftCentre = baseCorner + new Vector3(
+            WALL_THICKNESS * 0.5f,
+            MAIN_FLOOR_WALL_HEIGHT * 0.5f,
+            totalDepth * 0.5f);
+        Vector3 rightCentre = baseCorner + new Vector3(
+            STAIR_WIDTH - WALL_THICKNESS * 0.5f,
+            MAIN_FLOOR_WALL_HEIGHT * 0.5f,
+            totalDepth * 0.5f);
+        Vector3 guardSize = new Vector3(
+            WALL_THICKNESS,
+            MAIN_FLOOR_WALL_HEIGHT,
+            totalDepth);
+        CreateCube("Guard_Left", leftCentre, guardSize, wallMat, stairwell);
+        CreateCube("Guard_Right", rightCentre, guardSize, wallMat, stairwell);
+
+        // Marker so BuildCeilings knows to leave an opening above the stairs
+        var voidMarker = new GameObject("CeilingVoid").transform;
+        voidMarker.SetParent(stairwell, false);
+        voidMarker.localPosition = new Vector3(
+            STAIR_WIDTH * 0.5f,
+            MAIN_FLOOR_WALL_HEIGHT,
+            totalDepth - STAIR_TREAD_DEPTH * 0.5f);
+
+        cursor.x += STAIR_WIDTH;
+    }
+
     void BuildFoyer()
     {
         const float W = 6f * FT;
@@ -466,7 +520,8 @@ public class AdvancedHouseBuilder : MonoBehaviour
         foreach (Transform room in mainFloor)
         {
             var floor = room.Find("Floor");
-            if (floor != null)
+            var voidMarker = room.Find("CeilingVoid");
+            if (floor != null && voidMarker == null)
             {
                 Vector3 sz = floor.localScale;
                 AddCeiling(room, sz.x, sz.z, y);
