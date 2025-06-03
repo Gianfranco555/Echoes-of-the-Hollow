@@ -34,12 +34,12 @@ public class Movement : MonoBehaviour
         controller.Move(verticalVelocity * Time.deltaTime);
     }
 
-    public void RecieveInput (Vector2 _horizontalInput){
+    public void ReceiveInput (Vector2 _horizontalInput){
         horizontalInput = _horizontalInput;
-        print(horizontalInput);
+        Debug.Log(horizontalInput);
     }
 
-    public void onJumpPressed (){
+    public void OnJumpPressed (){
         jump = true;
     }
 }

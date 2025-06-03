@@ -21,7 +21,7 @@ public class MouseLook : MonoBehaviour
         playerCamera.eulerAngles = targetRotation;
     }
 
-    public void RecieveInput (Vector2 mouseInput){
+    public void ReceiveInput (Vector2 mouseInput){
         mouseX = mouseInput.x * sensitivityX;
         mouseY = mouseInput.y * sensitivityY;
     }
