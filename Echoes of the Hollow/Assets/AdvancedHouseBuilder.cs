@@ -826,7 +826,7 @@ public class AdvancedHouseBuilder : MonoBehaviour
         Vector3 fpMin = new Vector3(mainFloorFootprint.xMin, 0, mainFloorFootprint.yMin);
 
         Vector3 basementFloorLevelBase = new Vector3(fpMin.x, -FLOOR_HEIGHT - FLOOR_THICKNESS, fpMin.z);
-        basement.position = basementFloorLevelBase; // Position basement group at its bottom-left-front world coord
+        basement.localPosition = new Vector3(mainFloorFootprint.xMin, -FLOOR_HEIGHT - FLOOR_THICKNESS, mainFloorFootprint.yMin);
 
         // Floor (local to basement group)
         CreateCube("Floor_Basement", new Vector3(fpWidth*0.5f, FLOOR_THICKNESS*0.5f, fpDepth*0.5f), new Vector3(fpWidth, FLOOR_THICKNESS, fpDepth), floorMat, basement);
