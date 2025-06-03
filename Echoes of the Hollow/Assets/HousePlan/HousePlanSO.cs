@@ -26,14 +26,6 @@ public struct RoomData
     public string notes; // Any specific features mentioned in the blueprint
 }
 
-[System.Serializable]
-public struct WallSegment
-{
-    public Vector3 start;
-    public Vector3 end;
-    public float height;
-    public float thickness;
-}
 
 [System.Serializable]
 public enum WallSide
@@ -42,6 +34,35 @@ public enum WallSide
     South,
     East,
     West
+}
+
+[System.Serializable]
+public enum DoorType
+{
+    Hinged,
+    Sliding,
+    BiFold,
+    Overhead
+}
+
+[System.Serializable]
+public enum SwingDirection
+{
+    InwardNorth,
+    InwardSouth,
+    InwardEast,
+    InwardWest,
+    OutwardNorth,
+    OutwardSouth,
+    OutwardEast,
+    OutwardWest
+}
+
+[System.Serializable]
+public enum SlideDirection
+{
+    SlidesLeft,
+    SlidesRight
 }
 
 [System.Serializable]
@@ -91,7 +112,60 @@ public struct WallSegment
 [System.Serializable]
 public struct DoorSpec
 {
-    // Placeholder for door specifications
+    /// <summary>
+    /// Unique identifier for the door.
+    /// </summary>
+    public string doorId;
+
+    /// <summary>
+    /// The type of door such as hinged or sliding.
+    /// </summary>
+    public DoorType type;
+
+    /// <summary>
+    /// Width of the door in meters. Example: 0.81 for a 2'-8" door.
+    /// </summary>
+    public float width;
+
+    /// <summary>
+    /// Height of the door in meters. Defaults to around 2.03m (6'8").
+    /// </summary>
+    public float height;
+
+    /// <summary>
+    /// Position of the door relative to its wall or room.
+    /// </summary>
+    public Vector3 position;
+
+    /// <summary>
+    /// Identifier of the wall this door sits on.
+    /// </summary>
+    public string wallId;
+
+    /// <summary>
+    /// Swing direction details for hinged doors.
+    /// </summary>
+    public SwingDirection swingDirection;
+
+    /// <summary>
+    /// Slide direction details for sliding doors.
+    /// </summary>
+    public SlideDirection slideDirection;
+
+    /// <summary>
+    /// Whether this door is located on an exterior wall.
+    /// </summary>
+    public bool isExterior;
+
+    /// <summary>
+    /// ID of the first room connected by this door.
+    /// </summary>
+    public string connectsRoomA_Id;
+
+    /// <summary>
+    /// ID of the second room connected by this door.
+    /// </summary>
+    public string connectsRoomB_Id;
 }
 
 [System.Serializable]
