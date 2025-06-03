@@ -27,6 +27,11 @@ public class AdvancedHouseBuilder : MonoBehaviour
     static readonly float FRIDGE_DEPTH = 2.5f * FT;
     public const float WIDE_CASED_OPENING_WIDTH = 5f * FT;
 
+    // Additional dimensional constants used for ceiling generation
+    static readonly float MAIN_FLOOR_WALL_HEIGHT = FLOOR_HEIGHT;
+    static readonly float FLOOR_THICKNESS = WALL_THICKNESS;
+    static readonly float CEILING_THICKNESS = WALL_THICKNESS;
+
     Material wallMat;
     Material floorMat;
     Material roofMat;
@@ -72,6 +77,8 @@ public class AdvancedHouseBuilder : MonoBehaviour
         BuildLivingRoom();
         BuildDiningRoom();
         BuildKitchen();
+
+        BuildCeilings();
     }
 
     void BuildGarage()
@@ -443,6 +450,28 @@ public class AdvancedHouseBuilder : MonoBehaviour
         return go;
     }
 
+    void AddCeiling(Transform room, float width, float depth, float y)
+    {
+        Vector3 centre = new Vector3(width * 0.5f, y, depth * 0.5f);
+        Vector3 size = new Vector3(width, CEILING_THICKNESS, depth);
+        CreateCube("Ceiling", centre, size, floorMat, room);
+    }
+
+    void BuildCeilings()
+    {
+        float y = MAIN_FLOOR_WALL_HEIGHT + FLOOR_THICKNESS + CEILING_THICKNESS * 0.5f;
+
+        foreach (Transform room in mainFloor)
+        {
+            var floor = room.Find("Floor");
+            if (floor != null)
+            {
+                Vector3 sz = floor.localScale;
+                AddCeiling(room, sz.x, sz.z, y);
+            }
+        }
+    }
+
     GameObject BuildSolidWall(string name, Vector3 start, float length, float height, float thick, bool alongX, Transform parent)
     {
         Vector3 size;
@@ -571,6 +600,19 @@ public class AdvancedHouseBuilder : MonoBehaviour
 
 #if UNITY_EDITOR
     [UnityEditor.MenuItem("House/Rebuild")]
-    static void Rebuild() { UnityEditor.SceneView.lastActiveSceneView.FrameSelected(); }
+    static void Rebuild()
+    {
+        var builder = FindObjectOfType<AdvancedHouseBuilder>();
+        if (builder == null) return;
+
+        var existing = builder.transform.Find("House");
+        if (existing != null)
+            DestroyImmediate(existing.gameObject);
+
+        builder.cursor = new Cursor();
+        builder.Start();
+
+        UnityEditor.SceneView.lastActiveSceneView.FrameSelected();
+    }
 #endif
 }
