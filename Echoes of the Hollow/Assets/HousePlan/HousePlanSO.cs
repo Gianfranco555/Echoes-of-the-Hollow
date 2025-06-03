@@ -12,6 +12,37 @@ public class HousePlanSO : ScriptableObject
     public List<DoorSpec> doors;
     public List<WindowSpec> windows;
     public List<OpeningSpec> openings; // For cased openings, passthroughs
+
+    /// <summary>
+    /// Calculates the overall bounding box that encompasses all rooms in the plan.
+    /// </summary>
+    /// <returns>Axis-aligned bounds covering the plan footprint.</returns>
+    public Bounds CalculateBounds()
+    {
+        if (rooms == null || rooms.Count == 0)
+        {
+            return new Bounds(Vector3.zero, Vector3.zero);
+        }
+
+        float minX = float.MaxValue;
+        float minZ = float.MaxValue;
+        float maxX = float.MinValue;
+        float maxZ = float.MinValue;
+
+        foreach (RoomData room in rooms)
+        {
+            Vector3 pos = room.position;
+            Vector2 size = room.dimensions;
+            minX = Mathf.Min(minX, pos.x);
+            minZ = Mathf.Min(minZ, pos.z);
+            maxX = Mathf.Max(maxX, pos.x + size.x);
+            maxZ = Mathf.Max(maxZ, pos.z + size.y);
+        }
+
+        Vector3 center = new Vector3((minX + maxX) * 0.5f, 0f, (minZ + maxZ) * 0.5f);
+        Vector3 sizeVector = new Vector3(maxX - minX, 0f, maxZ - minZ);
+        return new Bounds(center, sizeVector);
+    }
 }
 
 [System.Serializable]
