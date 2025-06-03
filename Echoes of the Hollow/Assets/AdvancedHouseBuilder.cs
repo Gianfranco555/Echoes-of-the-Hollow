@@ -459,7 +459,9 @@ public class AdvancedHouseBuilder : MonoBehaviour
 
     void BuildCeilings()
     {
-        float y = MAIN_FLOOR_WALL_HEIGHT + FLOOR_THICKNESS + CEILING_THICKNESS * 0.5f;
+        // Position the ceiling so its bottom sits flush with the top of the
+        // walls rather than above them.
+        float y = MAIN_FLOOR_WALL_HEIGHT + CEILING_THICKNESS * 0.5f;
 
         foreach (Transform room in mainFloor)
         {
