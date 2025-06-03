@@ -134,6 +134,8 @@ public class AdvancedHouseBuilder : MonoBehaviour
         float x0 = cursor.x;
         float z0 = cursor.z;
 
+        // Assuming the 'left' wall is shared or connects to an adjacent room's opening (e.g., Foyer's right wall),
+        // so the exterior width calculation only accounts for the new 'right' exterior wall.
         float exteriorW = W + WALL_THICKNESS;
         float exteriorD = D + WALL_THICKNESS * 2f;
 
