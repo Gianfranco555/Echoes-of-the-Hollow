@@ -849,7 +849,7 @@ public class AdvancedHouseBuilder : MonoBehaviour
         Vector3 fpMin = new Vector3(mainFloorFootprint.xMin, 0, mainFloorFootprint.yMin);
 
         Vector3 atticBaseWorldPos = new Vector3(fpMin.x, MAIN_FLOOR_WALL_HEIGHT, fpMin.z);
-        attic.position = atticBaseWorldPos; // Position attic group
+        attic.localPosition = new Vector3(mainFloorFootprint.xMin, MAIN_FLOOR_WALL_HEIGHT, mainFloorFootprint.yMin); // Position attic group relative to house
 
         // Attic Walls (local to attic group)
         BuildSolidWall("LeftWall_Attic", new Vector3(WALL_THICKNESS * 0.5f, ATTIC_WALL_HEIGHT*0.5f, fpDepth*0.5f), fpDepth, ATTIC_WALL_HEIGHT,WALL_THICKNESS,false,attic);
