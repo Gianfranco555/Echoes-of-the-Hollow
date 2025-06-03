@@ -59,16 +59,16 @@ public static class BlueprintImporter
         // provided.
 
         // ------------------------------------------------------------------
-        // 1. Overall Footprint & Circulation
+       // 1. Overall Footprint & Circulation
         plan.rooms.Add(new RoomData
         {
             roomId = "OverallFootprint",
             roomLabel = "Overall Footprint",
-            dimensions = new Vector2(0f, 0f), // TODO: width/depth from blueprint
+            dimensions = new Vector2(30f, 51f), // TODO: width/depth from blueprint -> Updated: Approx. 30ft E-W, 51ft N-S
             position = Vector3.zero,
             walls = new List<WallSegment>(),
             connectedRoomIds = new List<string>(),
-            notes = "TODO: populate footprint dimensions"
+            notes = "Calculated overall width (30ft) and depth (51ft) based on room layout and blueprint descriptions." // TODO: populate footprint dimensions -> Updated
         });
 
         // ------------------------------------------------------------------
@@ -77,22 +77,22 @@ public static class BlueprintImporter
         {
             roomId = "CoveredEntry",
             roomLabel = "Covered Entry",
-            dimensions = new Vector2(0f, 0f), // TODO
+            dimensions = new Vector2(6f, 3f), // TODO -> Updated: 6ft wide (E-W), 3ft deep (N-S)
             position = Vector3.zero,
             walls = new List<WallSegment>(),
             connectedRoomIds = new List<string> { "Foyer" },
-            notes = "TODO: dimensions for Covered Entry"
+            notes = "Dimensions for Covered Entry from blueprint: 6ft wide by 3ft deep." // TODO: dimensions for Covered Entry -> Updated
         });
 
         plan.rooms.Add(new RoomData
         {
             roomId = "Foyer",
             roomLabel = "Foyer",
-            dimensions = new Vector2(0f, 0f), // TODO
+            dimensions = new Vector2(6f, 6f), // TODO -> Updated: 6ft x 6ft
             position = Vector3.zero,
             walls = new List<WallSegment>(),
-            connectedRoomIds = new List<string> { "CoveredEntry" },
-            notes = "TODO: dimensions for Foyer"
+            connectedRoomIds = new List<string> { "CoveredEntry", "LivingRoom", "Garage", "CentralHallway" }, // Added potential connections
+            notes = "Dimensions for Foyer from blueprint: 6ft x 6ft." // TODO: dimensions for Foyer -> Updated
         });
 
         // ------------------------------------------------------------------
@@ -101,38 +101,26 @@ public static class BlueprintImporter
         {
             roomId = "CentralHallway",
             roomLabel = "Central Hallway",
-            dimensions = new Vector2(0f, 0f), // TODO
+            dimensions = new Vector2(3f, 22f), // TODO -> Updated: 3ft wide, approx. 22ft long
             position = Vector3.zero,
             walls = new List<WallSegment>(),
-            connectedRoomIds = new List<string>(),
-            notes = "TODO: dimensions for Central Hallway"
+            connectedRoomIds = new List<string> { "Foyer", "SecondaryBedroom", "HallBath", "MasterVestibule", "FamilyRoom", "Staircase" }, // Added potential connections
+            notes = "Dimensions for Central Hallway: 3ft wide (blueprint), length approx. 22ft (derived from adjacent N-S room depths)." // TODO: dimensions for Central Hallway -> Updated
         });
 
         plan.rooms.Add(new RoomData
         {
             roomId = "Staircase",
             roomLabel = "Enclosed Staircase",
-            dimensions = new Vector2(0f, 0f), // TODO
+            dimensions = new Vector2(3.5f, 12f), // TODO -> Updated: Approx. 3.5ft wide, 12ft long (N-S)
             position = Vector3.zero,
             walls = new List<WallSegment>(),
-            connectedRoomIds = new List<string>(),
-            notes = "TODO: dimensions for Staircase"
-        });
-
-        // Conceptual enclosure around the staircase
-        plan.rooms.Add(new RoomData
-        {
-            roomId = "StairwellEnclosure",
-            roomLabel = "Stairwell Enclosure",
-            dimensions = new Vector2(0f, 0f), // TODO
-            position = Vector3.zero,
-            walls = new List<WallSegment>(),
-            connectedRoomIds = new List<string>(),
-            notes = "TODO: dimensions for Stairwell Enclosure"
+            connectedRoomIds = new List<string> { "Foyer", "CentralHallway", "DiningRoom" }, // Added potential connections
+            notes = "Estimated dimensions for Staircase: approx. 3.5ft wide and 12ft long to descend one level." // TODO: dimensions for Staircase -> Updated
         });
 
         // ------------------------------------------------------------------
-        plan.rooms.Add(new RoomData
+    plan.rooms.Add(new RoomData
     {
         roomId = "Office", // Corresponds to "Secondary Bedroom" in the blueprint
         roomLabel = "Office",
