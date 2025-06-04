@@ -2,6 +2,8 @@ using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using UnityEngine.AI; // Added for NavMesh
+using Unity.AI.Navigation; // Added for NavMeshSurface
 // Make sure you have a using statement for your builder scripts if they are in a different namespace
 // using YourProject.Builders; // Example if you used namespaces
 
@@ -265,6 +267,37 @@ public static class SceneSetupHelper // It's good practice for MenuItem classes 
         wallWest.transform.localScale = new Vector3(0.1f, height, depth);
         wallWest.transform.SetParent(basementRoot.transform);
 
+        // --- NavMesh Generation ---
+        // Collect all GameObjects for NavMesh baking
+        var navMeshObjects = new System.Collections.Generic.List<GameObject>
+        {
+            floor, wallNorth, wallSouth, wallEast, wallWest
+        };
+
+        // Set GameObjects to be NavigationStatic
+        foreach (var obj in navMeshObjects)
+        {
+            if (obj != null) // Ensure object exists before trying to set flags
+            {
+                GameObjectUtility.SetStaticEditorFlags(obj, StaticEditorFlags.NavigationStatic);
+            }
+        }
+
+        // Add NavMeshSurface component to the root
+        NavMeshSurface navMeshSurface = basementRoot.AddComponent<NavMeshSurface>();
+
+        // Bake the NavMesh
+        if (navMeshSurface != null)
+        {
+            navMeshSurface.BuildNavMesh();
+            Debug.Log("NavMesh baked successfully.");
+        }
+        else
+        {
+            Debug.LogError("Failed to add NavMeshSurface component to basementRoot. NavMesh baking cannot proceed.");
+        }
+        // --- End of NavMesh Generation ---
+
         // Instantiate Breaker Box
         string breakerBoxPrefabPath = "Assets/Prefabs/BreakerBox.prefab";
         GameObject breakerBoxPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(breakerBoxPrefabPath);
@@ -308,7 +341,69 @@ public static class SceneSetupHelper // It's good practice for MenuItem classes 
             Debug.LogError($"Failed to load BreakerBox prefab at '{breakerBoxPrefabPath}'. Ensure it exists and the path is correct.");
         }
 
-        SetupLighting(basementScene);
+        // --- Add Point Light ---
+        GameObject pointLightGameObject = new GameObject("Basement_PointLight");
+        Light pointLight = pointLightGameObject.AddComponent<Light>();
+        pointLight.type = LightType.Point;
+        pointLight.intensity = 0.5f; // Low intensity
+        pointLight.range = 10f;     // Moderate range
+
+        // Position the light slightly below the ceiling center
+        // Ceiling Y position is height / 2f + 0.05f. We use height / 2f for the light.
+        pointLightGameObject.transform.position = new Vector3(0, height / 2f, 0);
+        SceneManager.MoveGameObjectToScene(pointLightGameObject, basementScene); // Ensure light is in the correct scene
+
+        // Parent to BreakerBox if found
+        // Note: BreakerBox_Instance was already parented to basementRoot earlier.
+        // We find it again here to attach the light to it.
+        GameObject breakerBoxInstanceForLight = GameObject.Find("BreakerBox_Instance");
+        if (breakerBoxInstanceForLight != null)
+        {
+            pointLightGameObject.transform.SetParent(breakerBoxInstanceForLight.transform);
+            Debug.Log("PointLight parented to BreakerBox_Instance.");
+        }
+        else
+        {
+            // Fallback: parent to basementRoot if breaker box not found (should not happen ideally)
+            pointLightGameObject.transform.SetParent(basementRoot.transform);
+            Debug.LogWarning("BreakerBox_Instance not found. PointLight parented to basementRoot instead.");
+        }
+        Debug.Log("PointLight added to the basement scene.");
+
+        // Subscribe PointLight to BreakerBoxController events
+        if (breakerBoxInstanceForLight != null && pointLightGameObject != null)
+        {
+            BreakerBoxController breakerController = breakerBoxInstanceForLight.GetComponent<BreakerBoxController>();
+            Light lightComponent = pointLightGameObject.GetComponent<Light>();
+
+            if (breakerController != null && lightComponent != null)
+            {
+                // Subscribe to the event
+                breakerController.OnPowerStateChanged += (isPoweredOn) =>
+                {
+                    if (lightComponent != null) // Check if lightComponent still exists
+                    {
+                        lightComponent.enabled = isPoweredOn;
+                    }
+                };
+                // Initialize light state
+                lightComponent.enabled = breakerController.IsPowerOn; // Use the IsPowerOn property
+                Debug.Log("Subscribed PointLight to BreakerBoxController events and initialized state.");
+            }
+            else
+            {
+                if (breakerController == null) Debug.LogError("BreakerBoxController component not found on BreakerBox_Instance.");
+                if (lightComponent == null) Debug.LogError("Light component not found on Basement_PointLight.");
+            }
+        }
+        else
+        {
+            if (breakerBoxInstanceForLight == null) Debug.LogWarning("Cannot subscribe light to breaker: BreakerBox_Instance not found.");
+            if (pointLightGameObject == null) Debug.LogWarning("Cannot subscribe light to breaker: Basement_PointLight GameObject not found.");
+        }
+        // --- End of Add Point Light ---
+
+        // SetupLighting(basementScene); // Commented out to prevent adding directional light
 
         EditorSceneManager.MarkSceneDirty(basementScene);
         EditorSceneManager.SaveScene(basementScene, BasementScenePath);
