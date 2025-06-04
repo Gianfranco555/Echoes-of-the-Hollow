@@ -51,10 +51,24 @@ public class Movement : MonoBehaviour
         Debug.Log($"Movement: Scene {scene.name} loaded. Mode: {mode}. Attempting to spawn player.");
         if (PlayerSpawnManager.Instance != null)
         {
-            // Disable CharacterController temporarily to allow teleportation
-            if (controller != null) controller.enabled = false;
-            PlayerSpawnManager.Instance.AttemptSpawnPlayer(gameObject);
-            if (controller != null) controller.enabled = true;
+            if (controller != null)
+            {
+                controller.enabled = false;
+                try
+                {
+                    PlayerSpawnManager.Instance.AttemptSpawnPlayer(gameObject);
+                }
+                finally
+                {
+                    // Ensure the controller is re-enabled even if an exception occurs
+                    controller.enabled = true;
+                }
+            }
+            else
+            {
+                // If there's no controller, just attempt to spawn
+                PlayerSpawnManager.Instance.AttemptSpawnPlayer(gameObject);
+            }
         }
         else
         {
