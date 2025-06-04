@@ -294,7 +294,7 @@ public static class SceneSetupHelper // It's good practice for MenuItem classes 
         }
         else
         {
-            Debug.LogError("Failed to add or find NavMeshSurface component on basementRoot.");
+            Debug.LogError("Failed to add NavMeshSurface component to basementRoot. NavMesh baking cannot proceed.");
         }
         // --- End of NavMesh Generation ---
 
@@ -387,7 +387,7 @@ public static class SceneSetupHelper // It's good practice for MenuItem classes 
                     }
                 };
                 // Initialize light state
-                lightComponent.enabled = breakerController.isPowerOn;
+                lightComponent.enabled = breakerController.IsPowerOn; // Use the IsPowerOn property
                 Debug.Log("Subscribed PointLight to BreakerBoxController events and initialized state.");
             }
             else
@@ -403,7 +403,7 @@ public static class SceneSetupHelper // It's good practice for MenuItem classes 
         }
         // --- End of Add Point Light ---
 
-        SetupLighting(basementScene);
+        // SetupLighting(basementScene); // Commented out to prevent adding directional light
 
         EditorSceneManager.MarkSceneDirty(basementScene);
         EditorSceneManager.SaveScene(basementScene, BasementScenePath);
