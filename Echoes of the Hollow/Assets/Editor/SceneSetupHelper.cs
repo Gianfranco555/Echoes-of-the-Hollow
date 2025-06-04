@@ -12,6 +12,7 @@ public static class SceneSetupHelper // It's good practice for MenuItem classes 
 {
     private const string ScenePath = "Assets/Scenes/House_MainLevel.unity";
     private const string HousePlanPath = "Assets/BlueprintData/NewHousePlan.asset"; // This seems correct for your asset
+    private const string BasementScenePath = "Assets/Scenes/House_Basement.unity";
 
     [MenuItem("House Tools/Setup Main Level Scene")] // This menu item will now build more
     // It's best practice for MenuItem methods to be public, though private can sometimes work.
@@ -179,5 +180,133 @@ public static class SceneSetupHelper // It's good practice for MenuItem classes 
         // Adjust camera distance based on overall size
         cam.transform.position = target + new Vector3(-size * 0.75f, size * 0.75f, -size * 0.75f);
         cam.transform.LookAt(target);
+    }
+
+    [MenuItem("House Tools/Setup Basement Scene")]
+    public static void SetupBasementScene()
+    {
+        Scene basementScene = EditorSceneManager.GetSceneByPath(BasementScenePath);
+        if (basementScene.IsValid())
+        {
+            bool clear = EditorUtility.DisplayDialog(
+                "Basement Scene Exists",
+                $"Scene at '{BasementScenePath}' already exists. Clear existing contents?",
+                "Clear", "Cancel");
+            if (!clear)
+            {
+                EditorSceneManager.OpenScene(BasementScenePath, OpenSceneMode.Single);
+                return;
+            }
+
+            basementScene = EditorSceneManager.OpenScene(BasementScenePath, OpenSceneMode.Single);
+            if (!basementScene.IsValid())
+            {
+                Debug.LogError($"Failed to re-open scene '{BasementScenePath}' for clearing.");
+                return;
+            }
+
+            // Clear all root GameObjects
+            GameObject[] rootObjects = basementScene.GetRootGameObjects();
+            foreach (GameObject rootObject in rootObjects)
+            {
+                Object.DestroyImmediate(rootObject);
+            }
+        }
+        else
+        {
+            basementScene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
+        }
+
+        // Create a root object for all generated basement parts
+        GameObject basementRoot = new GameObject("Basement_Generated");
+        SceneManager.MoveGameObjectToScene(basementRoot, basementScene);
+
+        // Define room dimensions
+        float width = 5f;
+        float depth = 5f;
+        float height = 2.4f;
+
+        // Create Floor
+        GameObject floor = GameObject.CreatePrimitive(PrimitiveType.Cube);
+        floor.name = "Floor";
+        floor.transform.position = new Vector3(0, -height / 2f - 0.05f, 0); // Adjust Y to be actual floor surface
+        floor.transform.localScale = new Vector3(width, 0.1f, depth);
+        floor.transform.SetParent(basementRoot.transform);
+
+        // Create Ceiling
+        GameObject ceiling = GameObject.CreatePrimitive(PrimitiveType.Cube);
+        ceiling.name = "Ceiling";
+        ceiling.transform.position = new Vector3(0, height / 2f + 0.05f, 0); // Adjust Y
+        ceiling.transform.localScale = new Vector3(width, 0.1f, depth);
+        ceiling.transform.SetParent(basementRoot.transform);
+
+        // Create Walls
+        GameObject wallNorth = GameObject.CreatePrimitive(PrimitiveType.Cube);
+        wallNorth.name = "Wall_North";
+        wallNorth.transform.position = new Vector3(0, 0, depth / 2f);
+        wallNorth.transform.localScale = new Vector3(width, height, 0.1f);
+        wallNorth.transform.SetParent(basementRoot.transform);
+
+        GameObject wallSouth = GameObject.CreatePrimitive(PrimitiveType.Cube);
+        wallSouth.name = "Wall_South";
+        wallSouth.transform.position = new Vector3(0, 0, -depth / 2f);
+        wallSouth.transform.localScale = new Vector3(width, height, 0.1f);
+        wallSouth.transform.SetParent(basementRoot.transform);
+
+        GameObject wallEast = GameObject.CreatePrimitive(PrimitiveType.Cube);
+        wallEast.name = "Wall_East";
+        wallEast.transform.position = new Vector3(width / 2f, 0, 0);
+        wallEast.transform.localScale = new Vector3(0.1f, height, depth);
+        wallEast.transform.SetParent(basementRoot.transform);
+
+        GameObject wallWest = GameObject.CreatePrimitive(PrimitiveType.Cube);
+        wallWest.name = "Wall_West";
+        wallWest.transform.position = new Vector3(-width / 2f, 0, 0);
+        wallWest.transform.localScale = new Vector3(0.1f, height, depth);
+        wallWest.transform.SetParent(basementRoot.transform);
+
+        // Instantiate Breaker Box
+        string breakerBoxPrefabPath = "Assets/Prefabs/BreakerBox.prefab";
+        GameObject breakerBoxPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(breakerBoxPrefabPath);
+        if (breakerBoxPrefab != null)
+        {
+            GameObject breakerBoxInstance = (GameObject)PrefabUtility.InstantiatePrefab(breakerBoxPrefab);
+            if (breakerBoxInstance != null)
+            {
+                breakerBoxInstance.name = "BreakerBox_Instance";
+                breakerBoxInstance.transform.SetParent(basementRoot.transform);
+                // Position on Wall_West. Wall_West is at x = -width/2. Its thickness is 0.1.
+                // Breaker box scale is (0.1f, 0.5f, 0.3f). Its X dimension is 0.1f.
+                // X position: center of wall_west (-width/2) + half wall thickness (0.05f) + half breaker box depth (0.05f for X)
+                // float breakerBoxXPos = -width / 2f + 0.05f + 0.05f; // Original calculation from prompt
+                float breakerBoxXPos = -width / 2f + 0.1f; // Simplified from prompt, assuming it means surface + offset for center
+
+                // Y position: floor surface is at -height/2 - 0.05f. We want bottom of breaker 1m from floor.
+                // Breaker box Y scale is 0.5f, so its half-height is 0.25f.
+                // Y position for center of breaker: (-height/2f - 0.05f) + 1.0f + 0.25f
+                // = -1.2f - 0.05f + 1.0f + 0.25f = -0.0f
+                // Let's re-evaluate from prompt: "y = -height/2 + 1.2f" (if pivot at base) or "y = 0.1f"
+                // Using y = 0.1f based on final prompt calculation.
+                float breakerBoxYPos = 0.1f;
+
+                breakerBoxInstance.transform.position = new Vector3(breakerBoxXPos, breakerBoxYPos, 0);
+                breakerBoxInstance.transform.localScale = new Vector3(0.1f, 0.5f, 0.3f);
+                SceneManager.MoveGameObjectToScene(breakerBoxInstance, basementScene);
+            }
+            else
+            {
+                Debug.LogError("Failed to instantiate BreakerBox prefab.");
+            }
+        }
+        else
+        {
+            Debug.LogError($"Failed to load BreakerBox prefab at '{breakerBoxPrefabPath}'. Ensure it exists and the path is correct.");
+        }
+
+        SetupLighting(basementScene);
+
+        EditorSceneManager.MarkSceneDirty(basementScene);
+        EditorSceneManager.SaveScene(basementScene, BasementScenePath);
+        Debug.Log($"Basement scene setup complete at '{BasementScenePath}'.");
     }
 }
