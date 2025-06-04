@@ -61,6 +61,7 @@ public struct RoomData
     public List<WallSegment> walls; // Details for each wall segment of the room
     public List<string> connectedRoomIds; // IDs of rooms directly accessible
     public string notes; // Any specific features mentioned in the blueprint
+    public Vector3 atticHatchLocalPosition; // ADDED: Local position for attic hatch, if any
 }
 
 

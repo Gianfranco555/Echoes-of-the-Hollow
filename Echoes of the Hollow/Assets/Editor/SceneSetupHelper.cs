@@ -4,6 +4,8 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.AI; // Added for NavMesh
 using Unity.AI.Navigation; // Added for NavMeshSurface
+using System.Linq; // For Enumerable.FirstOrDefault
+using System.Collections.Generic; // For List
 // Make sure you have a using statement for your builder scripts if they are in a different namespace
 // using YourProject.Builders; // Example if you used namespaces
 
@@ -15,6 +17,11 @@ public static class SceneSetupHelper // It's good practice for MenuItem classes 
     private const string ScenePath = "Assets/Scenes/House_MainLevel.unity";
     private const string HousePlanPath = "Assets/BlueprintData/NewHousePlan.asset"; // This seems correct for your asset
     private const string BasementScenePath = "Assets/Scenes/House_Basement.unity";
+
+    private const string FoldingLadderPrefabPath = "Assets/Prefabs/FoldingLadder.prefab"; // Path to the ladder prefab
+    private const string MasterClosetRoomId = "MasterCloset"; // roomId for the Master Bedroom Closet
+    private const string MasterBedroomRoomId = "MasterBedroom"; // roomId for the Master Bedroom
+    private const string OfficeRoomId = "Office"; // roomId for the Office
 
     [MenuItem("House Tools/Setup Main Level Scene")] // This menu item will now build more
     // It's best practice for MenuItem methods to be public, though private can sometimes work.
@@ -408,5 +415,134 @@ public static class SceneSetupHelper // It's good practice for MenuItem classes 
         EditorSceneManager.MarkSceneDirty(basementScene);
         EditorSceneManager.SaveScene(basementScene, BasementScenePath);
         Debug.Log($"Basement scene setup complete at '{BasementScenePath}'.");
+    }
+
+    [MenuItem("House Tools/Setup Attic")]
+    public static void SetupAttic()
+    {
+        var plan = AssetDatabase.LoadAssetAtPath<HousePlanSO>(HousePlanPath);
+        if (plan == null)
+        {
+            Debug.LogError($"Failed to load HousePlanSO at {HousePlanPath}");
+            return;
+        }
+
+        GameObject houseRoot = GameObject.Find("ProceduralHouse_Generated");
+        if (houseRoot == null)
+        {
+            houseRoot = new GameObject("ProceduralHouse_Generated");
+            // Ensure it's in the active scene. If no scene is open, this might be an issue.
+            // It's better if SetupMainLevelScene is run first or the scene is already set up.
+             if (EditorSceneManager.GetActiveScene().IsValid())
+            {
+                SceneManager.MoveGameObjectToScene(houseRoot, EditorSceneManager.GetActiveScene());
+            }
+            else
+            {
+                Debug.LogWarning("No active scene found for ProceduralHouse_Generated. It will be in a new unsaved scene.");
+            }
+        }
+
+        GameObject atticGroup = new GameObject("Attic_Generated");
+        atticGroup.transform.SetParent(houseRoot.transform);
+
+        // --- Instantiate Folding Ladder ---
+        RoomData masterCloset = plan.rooms.FirstOrDefault(r => r.roomId == MasterClosetRoomId);
+        if (masterCloset.roomId == MasterClosetRoomId && masterCloset.atticHatchLocalPosition != Vector3.zero)
+        {
+            GameObject ladderPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(FoldingLadderPrefabPath);
+            if (ladderPrefab != null)
+            {
+                // Calculate world position for the hatch.
+                // atticHatchLocalPosition is relative to the room's origin.
+                // RoomData.position is the world origin of the room.
+                // Assumes masterCloset.atticHatchLocalPosition.y is correctly set to the ceiling height
+                // relative to the room's own origin (e.g., plan.storyHeight).
+                Vector3 hatchWorldPosition = masterCloset.position + masterCloset.atticHatchLocalPosition;
+
+                GameObject ladderInstance = (GameObject)PrefabUtility.InstantiatePrefab(ladderPrefab, atticGroup.transform);
+                ladderInstance.name = "FoldingAtticLadder";
+                ladderInstance.transform.position = hatchWorldPosition;
+                // Assuming ladder prefab is designed with Y-up, and deploys along its local -Y.
+                // Hatch part is on its local XZ plane. Placed at ceiling, it deploys downwards.
+                ladderInstance.transform.rotation = Quaternion.identity;
+                Debug.Log($"Instantiated FoldingLadder at {hatchWorldPosition} in {MasterClosetRoomId}");
+            }
+            else
+            {
+                Debug.LogError($"Failed to load FoldingLadder prefab at {FoldingLadderPrefabPath}");
+            }
+        }
+        else
+        {
+            if (masterCloset.roomId != MasterClosetRoomId)
+                Debug.LogWarning($"Master Bedroom Closet with roomId '{MasterClosetRoomId}' not found in HousePlanSO.");
+            else
+                Debug.LogWarning($"Attic hatch local position not defined for '{MasterClosetRoomId}' or is Vector3.zero. Ladder not placed.");
+        }
+
+        // --- Procedurally Generate Attic Geometry ---
+        RoomData masterBedroom = plan.rooms.FirstOrDefault(r => r.roomId == MasterBedroomRoomId);
+        RoomData office = plan.rooms.FirstOrDefault(r => r.roomId == OfficeRoomId);
+
+        if (masterBedroom.roomId == null || office.roomId == null)
+        {
+            Debug.LogError("Master Bedroom or Office not found in HousePlanSO. Cannot generate attic geometry.");
+        }
+        else
+        {
+            // Calculate combined bounds of Master Bedroom and Office
+            // Assuming room.position is bottom-corner, so center for bounds calculation needs offset.
+            Vector3 masterBedroomCenter = masterBedroom.position + new Vector3(masterBedroom.dimensions.x / 2, plan.storyHeight / 2, masterBedroom.dimensions.y / 2);
+            Bounds combinedBounds = new Bounds(masterBedroomCenter,
+                                             new Vector3(masterBedroom.dimensions.x, plan.storyHeight, masterBedroom.dimensions.y));
+
+            Vector3 officeCenter = office.position + new Vector3(office.dimensions.x / 2, plan.storyHeight / 2, office.dimensions.y / 2);
+            combinedBounds.Encapsulate(new Bounds(officeCenter,
+                                             new Vector3(office.dimensions.x, plan.storyHeight, office.dimensions.y)));
+
+            float atticFloorThickness = 0.2f;
+            float atticWallHeight = 1.5f; // Low attic ceiling
+            float roofThickness = 0.3f;
+
+            // Create Attic Floor
+            GameObject atticFloor = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            atticFloor.name = "AtticFloor";
+            atticFloor.transform.SetParent(atticGroup.transform);
+            // The combinedBounds.center.y is at plan.storyHeight / 2. We want the floor top at plan.storyHeight.
+            // So bottom of attic floor is at plan.storyHeight. Center is plan.storyHeight + thickness/2.
+            atticFloor.transform.position = new Vector3(combinedBounds.center.x, plan.storyHeight + atticFloorThickness / 2, combinedBounds.center.z);
+            atticFloor.transform.localScale = new Vector3(combinedBounds.size.x + 0.5f, atticFloorThickness, combinedBounds.size.z + 0.5f); // Slightly larger floor
+
+            // Create simple Attic Walls
+            GameObject atticWalls = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            atticWalls.name = "AtticBoundary";
+            atticWalls.transform.SetParent(atticGroup.transform);
+            atticWalls.transform.position = new Vector3(combinedBounds.center.x,
+                                                       plan.storyHeight + atticFloorThickness + atticWallHeight / 2,
+                                                       combinedBounds.center.z);
+            atticWalls.transform.localScale = new Vector3(combinedBounds.size.x, atticWallHeight, combinedBounds.size.z);
+
+            // Create a simple flat ceiling placeholder
+            GameObject atticCeiling = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            atticCeiling.name = "AtticCeiling";
+            atticCeiling.transform.SetParent(atticGroup.transform);
+            atticCeiling.transform.position = new Vector3(combinedBounds.center.x,
+                                                          plan.storyHeight + atticFloorThickness + atticWallHeight + roofThickness / 2,
+                                                          combinedBounds.center.z);
+            atticCeiling.transform.localScale = new Vector3(combinedBounds.size.x + 0.5f, roofThickness, combinedBounds.size.z + 0.5f);
+
+            Debug.Log($"Generated placeholder attic geometry above {MasterBedroomRoomId} and {OfficeRoomId}.");
+        }
+
+        if (EditorSceneManager.GetActiveScene().IsValid())
+        {
+            EditorSceneManager.MarkSceneDirty(EditorSceneManager.GetActiveScene());
+            Debug.Log("Attic setup complete. Remember to save the scene.");
+        }
+        else
+        {
+            Debug.LogWarning("Attic setup processed, but no valid scene was active to mark as dirty.");
+        }
     }
 }
