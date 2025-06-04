@@ -270,7 +270,8 @@ public static class SceneSetupHelper // It's good practice for MenuItem classes 
         GameObject breakerBoxPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(breakerBoxPrefabPath);
         if (breakerBoxPrefab != null)
         {
-            GameObject breakerBoxInstance = (GameObject)PrefabUtility.InstantiatePrefab(breakerBoxPrefab);
+            // Instantiate the prefab directly into the basementScene
+            GameObject breakerBoxInstance = (GameObject)PrefabUtility.InstantiatePrefab(breakerBoxPrefab, basementScene);
             if (breakerBoxInstance != null)
             {
                 breakerBoxInstance.name = "BreakerBox_Instance";
@@ -287,11 +288,15 @@ public static class SceneSetupHelper // It's good practice for MenuItem classes 
                 // = -1.2f - 0.05f + 1.0f + 0.25f = -0.0f
                 // Let's re-evaluate from prompt: "y = -height/2 + 1.2f" (if pivot at base) or "y = 0.1f"
                 // Using y = 0.1f based on final prompt calculation.
-                float breakerBoxYPos = 0.1f;
+                // The comment calculation (-height/2f - 0.05f) + 1.0f + 0.25f = -1.25f + 1.25f = 0.0f.
+                // Updating to reflect this calculation.
+                float breakerBoxYPos = 0.0f;
 
                 breakerBoxInstance.transform.position = new Vector3(breakerBoxXPos, breakerBoxYPos, 0);
+                // Explicitly set scale for the breaker box to ensure consistent dimensions in this procedurally generated scene.
+                // This overrides any scale settings defined within the BreakerBox.prefab itself.
                 breakerBoxInstance.transform.localScale = new Vector3(0.1f, 0.5f, 0.3f);
-                SceneManager.MoveGameObjectToScene(breakerBoxInstance, basementScene);
+                // SceneManager.MoveGameObjectToScene(breakerBoxInstance, basementScene); // No longer needed
             }
             else
             {

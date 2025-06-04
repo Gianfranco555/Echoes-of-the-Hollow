@@ -32,48 +32,38 @@ public static class PortalPlacer
         collider.isTrigger = true;
         collider.size = new Vector3(1, 2, 1);
 
-        // Attempt to find the script asset using its GUID
-        string[] scriptAssetPaths = AssetDatabase.FindAssets($"t:MonoScript {PortalScriptName}");
         MonoScript scenePortalScriptAsset = null;
 
-        foreach (string scriptAssetPathGuid in scriptAssetPaths) // AssetDatabase.FindAssets returns GUIDs
+        // Attempt 1: Direct GUID Load
+        string scriptPathByGuid = AssetDatabase.GUIDToAssetPath(PortalScriptGUID);
+        if (!string.IsNullOrEmpty(scriptPathByGuid))
         {
-            string path = AssetDatabase.GUIDToAssetPath(scriptAssetPathGuid);
-            if (AssetDatabase.AssetPathToGUID(path) == PortalScriptGUID)
+            scenePortalScriptAsset = AssetDatabase.LoadAssetAtPath<MonoScript>(scriptPathByGuid);
+            // Verify that the loaded asset is indeed a valid script with a class
+            if (scenePortalScriptAsset != null && scenePortalScriptAsset.GetClass() == null)
             {
-                 scenePortalScriptAsset = AssetDatabase.LoadAssetAtPath<MonoScript>(path);
-                 if (scenePortalScriptAsset != null && scenePortalScriptAsset.GetClass() != null) // Check if class is valid
-                 {
-                    break;
-                 }
+                scenePortalScriptAsset = null; // Invalid script, treat as not loaded
             }
         }
 
-        // Fallback if GUID search fails (e.g. if FindAssets by GUID isn't working as expected or script name is more reliable)
-        // This part is a bit redundant if the GUID search is robust but acts as a safety.
+        // Attempt 2: Fallback to Name Search + GUID Check
         if (scenePortalScriptAsset == null)
         {
-            scriptAssetPaths = AssetDatabase.FindAssets($"t:MonoScript {PortalScriptName}");
-            foreach (string scriptAssetPathGuid in scriptAssetPaths)
+            string[] scriptAssetPathGuidsByName = AssetDatabase.FindAssets($"t:MonoScript {PortalScriptName}");
+            foreach (string guidInList in scriptAssetPathGuidsByName)
             {
-                string path = AssetDatabase.GUIDToAssetPath(scriptAssetPathGuid);
-                MonoScript tempScript = AssetDatabase.LoadAssetAtPath<MonoScript>(path);
-                if (tempScript != null && tempScript.GetClass() != null && tempScript.name == PortalScriptName)
+                string pathByName = AssetDatabase.GUIDToAssetPath(guidInList);
+                MonoScript tempScript = AssetDatabase.LoadAssetAtPath<MonoScript>(pathByName);
+
+                // Check if the script name matches and, crucially, if its GUID matches the expected PortalScriptGUID
+                if (tempScript != null && tempScript.GetClass() != null && tempScript.name == PortalScriptName &&
+                    AssetDatabase.AssetPathToGUID(pathByName) == PortalScriptGUID)
                 {
-                    // To be more certain, one could also check the GUID here if available through another means,
-                    // but we are in the fallback, so we assume the GUID search might have had an issue.
-                    // For now, matching name is the best we can do in this fallback.
-                    var guidFromPath = AssetDatabase.AssetPathToGUID(path);
-                    if (guidFromPath == PortalScriptGUID) { // Double check GUID
-                        scenePortalScriptAsset = tempScript;
-                        break;
-                    }
-                    // If we don't have the GUID match, we might be picking the wrong script if names collide.
-                    // But since we created the .meta with the GUID, this should ideally work.
+                    scenePortalScriptAsset = tempScript;
+                    break; // Found the correct script
                 }
             }
         }
-
 
         if (scenePortalScriptAsset == null || scenePortalScriptAsset.GetClass() == null)
         {
