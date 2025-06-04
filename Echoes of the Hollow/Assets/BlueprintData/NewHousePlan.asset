@@ -23,6 +23,7 @@ MonoBehaviour:
     walls: []
     connectedRoomIds: []
     notes: Overall house footprint.
+    atticHatchLocalPosition: {x: 0, y: 0, z: 0}
   - roomId: Garage
     roomLabel: Garage
     dimensions: {x: 11.333333, y: 20}
@@ -88,6 +89,7 @@ MonoBehaviour:
     - Foyer
     - Office
     notes: South-West corner of the house.
+    atticHatchLocalPosition: {x: 0, y: 0, z: 0}
   - roomId: CoveredEntry
     roomLabel: Covered Entry
     dimensions: {x: 6, y: 3}
@@ -120,6 +122,7 @@ MonoBehaviour:
     connectedRoomIds:
     - Foyer
     notes: Exterior, South of Foyer.
+    atticHatchLocalPosition: {x: 0, y: 0, z: 0}
   - roomId: Foyer
     roomLabel: Foyer
     dimensions: {x: 6, y: 6}
@@ -195,6 +198,7 @@ MonoBehaviour:
     - Garage
     - CentralHallway
     notes: North of Covered Entry, East of Garage.
+    atticHatchLocalPosition: {x: 0, y: 0, z: 0}
   - roomId: Office
     roomLabel: Office
     dimensions: {x: 9.166667, y: 10}
@@ -245,6 +249,7 @@ MonoBehaviour:
     - Garage
     - HallBath
     notes: North of Garage, West of Central Hall.
+    atticHatchLocalPosition: {x: 0, y: 0, z: 0}
   - roomId: HallBath
     roomLabel: Hall Bath
     dimensions: {x: 5, y: 9}
@@ -287,6 +292,7 @@ MonoBehaviour:
     - Office
     - MasterBedroom
     notes: North of Office.
+    atticHatchLocalPosition: {x: 0, y: 0, z: 0}
   - roomId: MasterBedroom
     roomLabel: Master Bedroom
     dimensions: {x: 11, y: 12}
@@ -352,6 +358,7 @@ MonoBehaviour:
     - MasterVestibule
     - HallBath
     notes: NW corner of house.
+    atticHatchLocalPosition: {x: 0, y: 0, z: 0}
   - roomId: MasterCloset
     roomLabel: Master Closet
     dimensions: {x: 2, y: 6}
@@ -383,7 +390,8 @@ MonoBehaviour:
       openingIdsOnWall: []
     connectedRoomIds:
     - MasterBedroom
-    notes: Shallow closet room.
+    notes: Shallow closet room, assumed open on its West side to Master Bedroom.
+    atticHatchLocalPosition: {x: 1, y: 2.7, z: 3}
   - roomId: MasterVestibule
     roomLabel: Master Vestibule
     dimensions: {x: 4, y: 3}
@@ -449,7 +457,9 @@ MonoBehaviour:
     - MasterBedroom
     - MasterBath
     - FamilyRoom
+    - CentralHallway
     notes: Transition to Master Bath.
+    atticHatchLocalPosition: {x: 0, y: 0, z: 0}
   - roomId: MasterBath
     roomLabel: Master Bath
     dimensions: {x: 6, y: 8.5}
@@ -506,6 +516,7 @@ MonoBehaviour:
     connectedRoomIds:
     - MasterVestibule
     notes: South of Master Vestibule.
+    atticHatchLocalPosition: {x: 0, y: 0, z: 0}
   - roomId: LivingRoom
     roomLabel: Living Room
     dimensions: {x: 12.666667, y: 15}
@@ -528,14 +539,14 @@ MonoBehaviour:
       windowIdsOnWall: []
       openingIdsOnWall: []
     - startPoint: {x: 2.3335, y: 0, z: 0}
-      endPoint: {x: 1.3334999, y: 0, z: -2}
+      endPoint: {x: 1.3335, y: 0, z: -2}
       thickness: 0
       side: 0
       isExterior: 1
       doorIdsOnWall: []
       windowIdsOnWall: []
       openingIdsOnWall: []
-    - startPoint: {x: 1.3334999, y: 0, z: -2}
+    - startPoint: {x: 1.3335, y: 0, z: -2}
       endPoint: {x: 11.3335, y: 0, z: -2}
       thickness: 0
       side: 0
@@ -548,6 +559,14 @@ MonoBehaviour:
       thickness: 0
       side: 0
       isExterior: 1
+      doorIdsOnWall: []
+      windowIdsOnWall: []
+      openingIdsOnWall: []
+    - startPoint: {x: 0, y: 0, z: 0.5}
+      endPoint: {x: 0, y: 0, z: 0}
+      thickness: 0
+      side: 0
+      isExterior: 0
       doorIdsOnWall: []
       windowIdsOnWall: []
       openingIdsOnWall: []
@@ -595,6 +614,7 @@ MonoBehaviour:
     - Foyer
     - DiningRoom
     notes: SE Corner.
+    atticHatchLocalPosition: {x: 0, y: 0, z: 0}
   - roomId: DiningRoom
     roomLabel: Dining Room
     dimensions: {x: 9.333333, y: 10.333333}
@@ -675,8 +695,9 @@ MonoBehaviour:
     connectedRoomIds:
     - LivingRoom
     - Kitchen
-    - Staircase
+    - StairwellEnclosure
     notes: North of Living Room.
+    atticHatchLocalPosition: {x: 0, y: 0, z: 0}
   - roomId: Kitchen
     roomLabel: Kitchen
     dimensions: {x: 10, y: 9}
@@ -698,7 +719,7 @@ MonoBehaviour:
       doorIdsOnWall: []
       windowIdsOnWall: []
       openingIdsOnWall: []
-    - startPoint: {x: 0, y: 0, z: 8}
+    - startPoint: {x: 0, y: 0, z: 3}
       endPoint: {x: 0, y: 0, z: 9}
       thickness: 0
       side: 0
@@ -736,6 +757,7 @@ MonoBehaviour:
     - FamilyRoom
     - CoveredPatio
     notes: North of Dining Room.
+    atticHatchLocalPosition: {x: 0, y: 0, z: 0}
   - roomId: Nook
     roomLabel: Nook
     dimensions: {x: 6, y: 7}
@@ -786,6 +808,7 @@ MonoBehaviour:
     - FamilyRoom
     - CoveredPatio
     notes: North of Kitchen.
+    atticHatchLocalPosition: {x: 0, y: 0, z: 0}
   - roomId: FamilyRoom
     roomLabel: Family Room
     dimensions: {x: 12.333333, y: 15.5}
@@ -827,11 +850,11 @@ MonoBehaviour:
       endPoint: {x: 12.333333, y: 0, z: 13}
       thickness: 0
       side: 0
-      isExterior: 1
+      isExterior: 0
       doorIdsOnWall: []
       windowIdsOnWall: []
       openingIdsOnWall: []
-    - startPoint: {x: 0, y: 0, z: 0}
+    - startPoint: {x: 3, y: 0, z: 0}
       endPoint: {x: 8.333333, y: 0, z: 0}
       thickness: 0
       side: 0
@@ -846,6 +869,7 @@ MonoBehaviour:
     - MasterVestibule
     - CoveredPatio
     notes: North-Central.
+    atticHatchLocalPosition: {x: 0, y: 0, z: 0}
   - roomId: CoveredPatio
     roomLabel: Covered Patio
     dimensions: {x: 6, y: 6}
@@ -880,6 +904,7 @@ MonoBehaviour:
     - Nook
     - FamilyRoom
     notes: NE area, attached to K,N,FR.
+    atticHatchLocalPosition: {x: 0, y: 0, z: 0}
   - roomId: CentralHallway
     roomLabel: Central Hallway
     dimensions: {x: 3, y: 22}
@@ -893,6 +918,7 @@ MonoBehaviour:
     - FamilyRoom
     - StairwellEnclosure
     notes: Central circulation spine.
+    atticHatchLocalPosition: {x: 0, y: 0, z: 0}
   - roomId: StairwellEnclosure
     roomLabel: Stairwell Enclosure
     dimensions: {x: 3.5, y: 12}
@@ -903,36 +929,37 @@ MonoBehaviour:
     - CentralHallway
     - DiningRoom
     notes: Central staircase.
+    atticHatchLocalPosition: {x: 0, y: 0, z: 0}
   doors:
-  - doorId: ExampleDoor
+  - doorId: ExampleFoyerToGarage
     type: 0
-    width: 2.666667
-    height: 6.666667
+    width: 2.667
+    height: 6.667
     position: {x: 0, y: 0, z: 0}
-    wallId: 
+    wallId: Wall_Foyer_W_Segment1
     swingDirection: 0
     slideDirection: 0
     isExterior: 0
-    connectsRoomA_Id: 
-    connectsRoomB_Id: 
+    connectsRoomA_Id: Foyer
+    connectsRoomB_Id: Garage
   windows:
-  - windowId: ExampleWindow
+  - windowId: LivingRoom_SouthTestWindow
     type: 0
     width: 3
     height: 4
-    position: {x: 0, y: 0, z: 0}
-    sillHeight: 0
-    wallId: 
+    position: {x: 1, y: 0, z: 0}
+    sillHeight: 3
+    wallId: Wall_LivingRoom_7
     isOperable: 1
     bayPanes: 0
     bayProjectionDepth: 0
   openings:
-  - openingId: AtticHatch01
+  - openingId: ExampleFoyerToLiving
     type: 0
-    width: 2
-    height: 2
+    width: 5
+    height: 6.667
     position: {x: 0, y: 0, z: 0}
-    wallId: 
+    wallId: Wall_Foyer_E_Segment1
     passthroughLedgeDepth: 0
     connectsRoomA_Id: 
     connectsRoomB_Id: 

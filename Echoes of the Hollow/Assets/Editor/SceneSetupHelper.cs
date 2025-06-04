@@ -2,163 +2,132 @@ using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.SceneManagement;
-using UnityEngine.AI; // Added for NavMesh
-using Unity.AI.Navigation; // Added for NavMeshSurface
-using System.Linq; // For Enumerable.FirstOrDefault
-using System.Collections.Generic; // For List
-// Make sure you have a using statement for your builder scripts if they are in a different namespace
-// using YourProject.Builders; // Example if you used namespaces
+using System.IO; // Added for Directory.Exists
+using System.Linq; // For FirstOrDefault
+using Unity.AI.Navigation;
 
-/// <summary>
-/// Editor utilities for setting up the main level scene based on a HousePlanSO asset.
-/// </summary>
-public static class SceneSetupHelper // It's good practice for MenuItem classes to be static or for methods to be static
+// Assuming your builder scripts (FoundationBuilder, WallBuilder, RoomBuilder, RoofBuilder, WindowPlacer)
+// are in the global namespace or you have a 'using' directive for them.
+
+public static class SceneSetupHelper
 {
     private const string ScenePath = "Assets/Scenes/House_MainLevel.unity";
-    private const string HousePlanPath = "Assets/BlueprintData/NewHousePlan.asset"; // This seems correct for your asset
+    private const string HousePlanPath = "Assets/BlueprintData/NewHousePlan.asset"; // Ensure this is your asset name
     private const string BasementScenePath = "Assets/Scenes/House_Basement.unity";
+    private const string FoldingLadderPrefabPath = "Assets/Prefabs/FoldingLadder.prefab";
+    private const string MasterClosetRoomId = "MasterCloset";
+    private const string MasterBedroomRoomId = "MasterBedroom";
+    private const string OfficeRoomId = "Office";
 
-    private const string FoldingLadderPrefabPath = "Assets/Prefabs/FoldingLadder.prefab"; // Path to the ladder prefab
-    private const string MasterClosetRoomId = "MasterCloset"; // roomId for the Master Bedroom Closet
-    private const string MasterBedroomRoomId = "MasterBedroom"; // roomId for the Master Bedroom
-    private const string OfficeRoomId = "Office"; // roomId for the Office
 
-    [MenuItem("House Tools/Setup Main Level Scene")] // This menu item will now build more
-    // It's best practice for MenuItem methods to be public, though private can sometimes work.
-    public static void SetupMainLevelScene() // Changed to public
+    [MenuItem("House Tools/Setup Main Level Scene (Full Build)")]
+    public static void SetupMainLevelSceneWithEverything()
     {
         Scene scene = EditorSceneManager.GetSceneByPath(ScenePath);
+        if (!Directory.Exists("Assets/Scenes")) // Ensure Scenes folder exists
+        {
+            AssetDatabase.CreateFolder("Assets", "Scenes");
+        }
+
         if (scene.IsValid())
         {
-            bool clear = EditorUtility.DisplayDialog(
-                "Scene Exists",
-                "House_MainLevel already exists. Clear existing contents?",
-                "Clear", "Cancel");
-            if (!clear)
-            {
-                EditorSceneManager.OpenScene(ScenePath, OpenSceneMode.Single);
-                return;
-            }
-
+            bool clear = EditorUtility.DisplayDialog("Scene Exists", "House_MainLevel already exists. Clear existing contents?", "Clear", "Cancel");
+            if (!clear) { EditorSceneManager.OpenScene(ScenePath, OpenSceneMode.Single); return; }
             scene = EditorSceneManager.OpenScene(ScenePath, OpenSceneMode.Single);
-            if (!scene.IsValid())
-            {
-                Debug.LogError($"Failed to re-open scene '{ScenePath}' for clearing.");
-                return;
-            }
-
-            // Clear existing specific house root object instead of all root objects
-            // This assumes you parent everything under a main "ProceduralHouse_Generated" GameObject
-            GameObject existingHouseRoot = GameObject.Find("ProceduralHouse_Generated"); // Choose a consistent root name
-            if (existingHouseRoot != null)
-            {
-                Object.DestroyImmediate(existingHouseRoot);
-            }
+            if (!scene.IsValid()) { Debug.LogError($"Failed to re-open scene '{ScenePath}' for clearing."); return; }
+            GameObject existingHouseRoot = GameObject.Find("ProceduralHouse_Generated");
+            if (existingHouseRoot != null) Object.DestroyImmediate(existingHouseRoot);
         }
         else
         {
             scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
-            // Scene will be saved at the end
         }
 
         var plan = AssetDatabase.LoadAssetAtPath<HousePlanSO>(HousePlanPath);
-        if (plan == null)
-        {
-            Debug.LogError($"Failed to load HousePlanSO at {HousePlanPath}");
-            return;
-        }
+        if (plan == null) { Debug.LogError($"Failed to load HousePlanSO at {HousePlanPath}"); return; }
 
-        // Create a root object for all generated house parts
         GameObject houseRoot = new GameObject("ProceduralHouse_Generated");
-        SceneManager.MoveGameObjectToScene(houseRoot, scene); // Move root to the correct scene
+        SceneManager.MoveGameObjectToScene(houseRoot, scene);
 
-        // --- Generate Foundation ---
-        // Assuming FoundationBuilder methods are static or you have an instance
+        float storyHeight = plan.storyHeight > 0 ? plan.storyHeight : 2.7f;
+
         GameObject foundationGO = FoundationBuilder.GenerateFoundation(plan);
-        if (foundationGO != null)
-        {
-            foundationGO.name = "Foundation";
-            foundationGO.transform.SetParent(houseRoot.transform); // Parent to houseRoot
-            // No need to MoveGameObjectToScene if parent is already in the scene
-        }
+        if (foundationGO != null) { foundationGO.name = "Foundation"; foundationGO.transform.SetParent(houseRoot.transform); }
 
-        // --- ADDED: Generate Exterior Walls ---
-        // Assuming WallBuilder methods are static or you have an instance
-        // And that you have a WallBuilder.cs script
-        float storyHeight = plan.storyHeight > 0 ? plan.storyHeight : 2.7f; // Get story height
         GameObject exteriorWallsGO = WallBuilder.GenerateExteriorWalls(plan, storyHeight);
+        if (exteriorWallsGO != null) { exteriorWallsGO.name = "ExteriorWalls"; exteriorWallsGO.transform.SetParent(houseRoot.transform); }
+
+        GameObject interiorWallsGO = RoomBuilder.GenerateInteriorWalls(plan, storyHeight);
+        if (interiorWallsGO != null) { interiorWallsGO.name = "InteriorWalls"; interiorWallsGO.transform.SetParent(houseRoot.transform); }
+        else { Debug.LogWarning("InteriorWallsGO was null or empty from RoomBuilder."); }
+
+
+        GameObject roofGO = RoofBuilder.GenerateRoof(plan, exteriorWallsGO); // exteriorWallsGO for bounds
+        if (roofGO != null) { roofGO.name = "Roof"; roofGO.transform.SetParent(houseRoot.transform); }
+
+        // --- Place Windows ---
+        Debug.Log("Attempting to place windows...");
+        // We need a container that holds all wall segments.
+        // If exterior and interior walls are parented directly to houseRoot, that's complex for WindowPlacer.
+        // For now, let's assume windows are mostly on exterior walls.
+        // Or, WindowPlacer needs to search within houseRoot for wall segments.
+        // The current WindowPlacer takes a specific wallsContainer.
         if (exteriorWallsGO != null)
         {
-            exteriorWallsGO.name = "ExteriorWalls";
-            exteriorWallsGO.transform.SetParent(houseRoot.transform); // Parent to houseRoot
+             WindowPlacer.PlaceAllWindows(plan, exteriorWallsGO);
         }
-
-        Debug.Log("Attempting to generate interior walls..."); // For checking console
-        GameObject interiorWallsGO = RoomBuilder.GenerateInteriorWalls(plan, storyHeight);
-        if (interiorWallsGO != null && interiorWallsGO.transform.childCount > 0)
+        if (interiorWallsGO != null) // If windows can be on interior walls
         {
-            interiorWallsGO.name = "InteriorWalls";
-            interiorWallsGO.transform.SetParent(houseRoot.transform);
-            Debug.Log("Interior walls generated and parented.");
+            // WindowPlacer.PlaceAllWindows(plan, interiorWallsGO); // Uncomment if needed and WindowPlacer handles multiple calls or combined containers
         }
-        else
-        {
-            Debug.LogWarning("InteriorWallsGO was null or empty. Check RoomBuilder logic and HousePlanSO data for interior walls.");
-            if(interiorWallsGO != null) Object.DestroyImmediate(interiorWallsGO); // Clean up empty parent if it was created
-        }
-        // --- >>> END OF SECTION FOR INTERIOR WALLS <<< ---
+        Debug.Log("Window placement call finished.");
 
-        // --- Generate Placeholder Roof ---
-        // ... (your existing code for the roof) ...
 
-        // --- ADDED: Generate Placeholder Roof ---
-        // Assuming RoofBuilder methods are static or you have an instance
-        // And that you have a RoofBuilder.cs script
-        GameObject roofGO = RoofBuilder.GenerateRoof(plan, exteriorWallsGO);
-        if (roofGO != null)
-        {
-            roofGO.name = "PlaceholderRoof";
-            roofGO.transform.SetParent(houseRoot.transform); // Parent to houseRoot
-        }
-
-        // (Later, you will add calls for Interior Walls, Windows, Doors, etc. here)
-
-        SetupLighting(scene); // Pass the active scene
-        SetupCamera(houseRoot, plan); // Pass houseRoot or foundation for better camera targeting
+        SetupLighting(scene);
+        SetupCamera(houseRoot, plan);
 
         EditorSceneManager.MarkSceneDirty(scene);
-        EditorSceneManager.SaveScene(scene, ScenePath); // Ensure scene is saved with the new path if it was new
-        Debug.Log("House generation process (Foundation, Walls, Roof) complete.");
+        EditorSceneManager.SaveScene(scene, ScenePath);
+        Debug.Log("Full house generation process complete.");
     }
 
-    // ... (SetupLighting method remains the same) ...
     private static void SetupLighting(Scene scene)
     {
-        GameObject lightObj = new GameObject("Directional Light");
-        Light light = lightObj.AddComponent<Light>();
-        light.type = LightType.Directional;
-        light.color = new Color(1f, 0.956f, 0.839f);
-        light.intensity = 1f;
-        lightObj.transform.rotation = Quaternion.Euler(50f, -30f, 0f);
-        SceneManager.MoveGameObjectToScene(lightObj, scene); // Ensure light is moved to the correct scene
+        // Check if a light already exists to avoid duplicates if scene wasn't fully cleared
+        if (Object.FindObjectOfType<Light>() == null)
+        {
+            GameObject lightObj = new GameObject("Directional Light");
+            Light light = lightObj.AddComponent<Light>();
+            light.type = LightType.Directional;
+            light.color = new Color(1f, 0.956f, 0.839f); // A warmer sun color
+            light.intensity = 1.2f;
+            light.shadows = LightShadows.Soft;
+            lightObj.transform.rotation = Quaternion.Euler(50f, -30f, 0f);
+            SceneManager.MoveGameObjectToScene(lightObj, scene);
+        }
     }
 
-
-    // Modified SetupCamera to potentially target the houseRoot
-    private static void SetupCamera(GameObject housePivot, HousePlanSO plan) // Changed first parameter
+    private static void SetupCamera(GameObject housePivot, HousePlanSO plan)
     {
-        Camera cam = Object.FindObjectOfType<Camera>();
+        Camera cam = Camera.main; // Camera.main is often more reliable
         if (cam == null)
         {
-            GameObject camObj = new GameObject("Main Camera");
-            cam = camObj.AddComponent<Camera>();
-            cam.tag = "MainCamera";
-            // If creating a new camera, ensure it's moved to the active scene
-            SceneManager.MoveGameObjectToScene(cam.gameObject, SceneManager.GetActiveScene());
+            // Try to find any camera
+            cam = Object.FindAnyObjectByType<Camera>(); // Updated from FindObjectOfType
+            if (cam == null) // If still no camera, create one
+            {
+                GameObject camObj = new GameObject("Main Camera");
+                cam = camObj.AddComponent<Camera>();
+                cam.tag = "MainCamera"; // Important for Camera.main to work next time
+                SceneManager.MoveGameObjectToScene(cam.gameObject, SceneManager.GetActiveScene());
+            }
         }
 
-        Bounds bounds;
-        if (housePivot != null) // Try to get bounds from all children of housePivot if possible
+
+        Bounds bounds = default;
+        bool boundsInitialized = false;
+
+        if (housePivot != null)
         {
             Renderer[] renderers = housePivot.GetComponentsInChildren<Renderer>();
             if (renderers.Length > 0)
@@ -168,22 +137,40 @@ public static class SceneSetupHelper // It's good practice for MenuItem classes 
                 {
                     bounds.Encapsulate(renderers[i].bounds);
                 }
-            }
-            else // Fallback to plan bounds if no renderers
-            {
-                bounds = plan.CalculateBounds();
+                boundsInitialized = true;
             }
         }
-        else // Fallback to plan bounds if no housePivot
+
+        if (!boundsInitialized && plan != null && plan.rooms != null && plan.rooms.Count > 0) // Fallback to plan bounds
         {
-            bounds = plan.CalculateBounds();
+            // This CalculateBounds method needs to be implemented in HousePlanSO.cs
+            // It should iterate through plan.rooms, use their global position and dimensions
+            // to calculate an overall bounding box for the house.
+            // For now, let's assume a simple fallback or use the OverallFootprint room.
+            RoomData overall = plan.rooms.FirstOrDefault(r => r.roomId == "OverallFootprint");
+            if (overall.roomId != null && overall.dimensions != Vector2.zero)
+            {
+                bounds = new Bounds(overall.position + new Vector3(overall.dimensions.x / 2, 0, overall.dimensions.y / 2),
+                                    new Vector3(overall.dimensions.x, plan.storyHeight, overall.dimensions.y));
+                boundsInitialized = true;
+            }
         }
-        
-        Vector3 target = bounds.center;
-        float size = Mathf.Max(bounds.size.x, bounds.size.y, bounds.size.z, 5f); // Ensure size is not too small
-        // Adjust camera distance based on overall size
-        cam.transform.position = target + new Vector3(-size * 0.75f, size * 0.75f, -size * 0.75f);
-        cam.transform.LookAt(target);
+
+        if (boundsInitialized)
+        {
+            Vector3 target = bounds.center;
+            float size = Mathf.Max(bounds.size.x, bounds.size.y, bounds.size.z, 10f); // Ensure a minimum size
+            cam.transform.position = target + new Vector3(-size * 0.8f, size * 0.6f, -size * 0.8f);
+            cam.transform.LookAt(target);
+            cam.nearClipPlane = 0.1f;
+            cam.farClipPlane = Mathf.Max(1000f, size * 3); // Adjust far clip plane
+        }
+        else
+        {
+            cam.transform.position = new Vector3(15, 15, -15); // Default fallback position
+            cam.transform.LookAt(Vector3.zero);
+            Debug.LogWarning("Could not determine house bounds for camera setup. Using default camera position.");
+        }
     }
 
     [MenuItem("House Tools/Setup Basement Scene")]
