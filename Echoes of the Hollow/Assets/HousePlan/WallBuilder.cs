@@ -43,6 +43,7 @@ public static class WallBuilder
                 {
                     wallObj.name = $"Wall_{room.roomId}_{wallIndex}";
                     wallObj.transform.SetParent(root.transform, false);
+                    ProcessWallCutouts(segment, wallObj.name, housePlan);
                 }
                 wallIndex++;
             }
@@ -121,6 +122,59 @@ public static class WallBuilder
         wall.transform.position = startWorld;
         wall.transform.rotation = Quaternion.FromToRotation(Vector3.right, direction);
         return wall;
+    }
+
+    private static void ProcessWallCutouts(WallSegment segment, string wallId, HousePlanSO plan)
+    {
+        if (plan == null)
+        {
+            return;
+        }
+
+        if (segment.doorIdsOnWall != null)
+        {
+            foreach (string id in segment.doorIdsOnWall)
+            {
+                foreach (DoorSpec spec in plan.doors)
+                {
+                    if (spec.doorId == id)
+                    {
+                        Log.Info($"Placeholder for cut-out: {spec.doorId} on wall {wallId} at position {spec.position} with size {spec.width}x{spec.height}");
+                        break;
+                    }
+                }
+            }
+        }
+
+        if (segment.windowIdsOnWall != null)
+        {
+            foreach (string id in segment.windowIdsOnWall)
+            {
+                foreach (WindowSpec spec in plan.windows)
+                {
+                    if (spec.windowId == id)
+                    {
+                        Log.Info($"Placeholder for cut-out: {spec.windowId} on wall {wallId} at position {spec.position} with size {spec.width}x{spec.height}");
+                        break;
+                    }
+                }
+            }
+        }
+
+        if (segment.openingIdsOnWall != null)
+        {
+            foreach (string id in segment.openingIdsOnWall)
+            {
+                foreach (OpeningSpec spec in plan.openings)
+                {
+                    if (spec.openingId == id)
+                    {
+                        Log.Info($"Placeholder for cut-out: {spec.openingId} on wall {wallId} at position {spec.position} with size {spec.width}x{spec.height}");
+                        break;
+                    }
+                }
+            }
+        }
     }
 }
 
