@@ -1,7 +1,7 @@
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
-using UnityEngine.SceneManagement; // Required for SceneManager
+using UnityEngine.SceneManagement;// Required for SceneManager
 
 public static class PortalPlacer
 {

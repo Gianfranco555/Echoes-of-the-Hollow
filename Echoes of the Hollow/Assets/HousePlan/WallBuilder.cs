@@ -143,7 +143,11 @@ public static class WallBuilder
                 foreach (string doorId in segment.doorIdsOnWall)
                 {
                     DoorSpec door = housePlan.doors.Find(d => d.doorId == doorId);
-                    if (door != null) relevantDoors.Add(door);
+                    // Corrected check: If doorId is a string, it will be null for a default(DoorSpec)
+                    if (door.doorId != null) // Or if doorId is not a string, use another appropriate default check
+                    {
+                        relevantDoors.Add(door);
+                    }
                 }
             }
 
@@ -152,7 +156,7 @@ public static class WallBuilder
                 foreach (string windowId in segment.windowIdsOnWall)
                 {
                     WindowSpec window = housePlan.windows.Find(w => w.windowId == windowId);
-                    if (window != null) relevantWindows.Add(window);
+                    if (window.windowId != null) relevantWindows.Add(window);
                 }
             }
 
@@ -161,7 +165,7 @@ public static class WallBuilder
                 foreach (string openingId in segment.openingIdsOnWall)
                 {
                     OpeningSpec opening = housePlan.openings.Find(o => o.openingId == openingId);
-                    if (opening != null) relevantOpenings.Add(opening);
+                    if (opening.openingId != null) relevantOpenings.Add(opening);
                 }
             }
         }

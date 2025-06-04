@@ -103,11 +103,6 @@ public static class SceneSetupHelper // It's good practice for MenuItem classes 
 
         // --- Generate Placeholder Roof ---
         // ... (your existing code for the roof) ...
-        if (roofGO != null)
-        {
-            roofGO.name = "PlaceholderRoof"; // Or "ActualRoof" if you prefer
-            roofGO.transform.SetParent(houseRoot.transform); // Parent to houseRoot
-        }
 
         // --- ADDED: Generate Placeholder Roof ---
         // Assuming RoofBuilder methods are static or you have an instance
