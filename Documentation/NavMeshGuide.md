@@ -15,6 +15,6 @@ This checklist explains how to bake a navigation mesh for `House_MainLevel.unity
 2. Enable **Carve** so the obstacle removes its space from the NavMesh whenever the door is closed.
 
 ## 4. Bake the NavMesh
-1. Open **Unity &gt; AI &gt; Navigation** to display the Navigation window.
+1. Open **Window &gt; AI &gt; Navigation** to display the Navigation window.
 2. On the **Bake** tab, review the agent settings and bake options.
 3. Click **Bake** to generate the NavMesh for the scene.
