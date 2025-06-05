@@ -7,6 +7,7 @@ using System.Globalization; // Add this line
 using System.Collections.Generic; // For List<T>
 using System.Linq; // For Linq operations
 using System.IO; // Added for Path and Directory operations
+using UnityEditor.UIElements; // For SettingsProvider
 
 /// <summary>
 /// Editor window for capturing transform data of GameObjects related to house components.
@@ -48,6 +49,21 @@ public class TransformCaptureWindow : EditorWindow
     private CoordinateSpaceSetting selectedCoordinateSpace = CoordinateSpaceSetting.World;
     private bool useContextualFormatting = false; // Added field
     private bool groupByRoom = false;
+    private int floatPrecision = 3;
+
+    private static List<string> captureHistory = new List<string>();
+    private int historyIndex = -1;
+
+    private static Dictionary<int, HouseComponentType> cachedTypeResults;
+    private static Dictionary<int, GameObject> cachedRoomResults;
+
+    private const string PREF_COORD_SPACE = "TCW_DefaultCoordSpace";
+    private const string PREF_CONTEXT = "TCW_UseContextualFormatting";
+    private const string PREF_GROUP = "TCW_GroupByRoom";
+    private const string PREF_PRECISION = "TCW_FloatPrecision";
+
+    private string statusMessage = string.Empty;
+    private MessageType statusType = MessageType.Info;
 
     private static HashSet<GameObject> recentlySelectedForCapture = new HashSet<GameObject>();
     private static HashSet<GameObject> successfullyCapturedLastRun = new HashSet<GameObject>();
@@ -63,64 +79,111 @@ public class TransformCaptureWindow : EditorWindow
         GetWindow<TransformCaptureWindow>("Transform Capturer");
     }
 
-    void OnGUI()
+    private void OnEnable()
     {
-        selectedCoordinateSpace = (CoordinateSpaceSetting)EditorGUILayout.EnumPopup("Coordinate Space:", selectedCoordinateSpace);
+        selectedCoordinateSpace = (CoordinateSpaceSetting)EditorPrefs.GetInt(PREF_COORD_SPACE, (int)CoordinateSpaceSetting.World);
+        useContextualFormatting = EditorPrefs.GetBool(PREF_CONTEXT, false);
+        groupByRoom = EditorPrefs.GetBool(PREF_GROUP, false);
+        floatPrecision = EditorPrefs.GetInt(PREF_PRECISION, 3);
+    }
 
+    private void OnDisable()
+    {
+        EditorPrefs.SetInt(PREF_COORD_SPACE, (int)selectedCoordinateSpace);
+        EditorPrefs.SetBool(PREF_CONTEXT, useContextualFormatting);
+        EditorPrefs.SetBool(PREF_GROUP, groupByRoom);
+        EditorPrefs.SetInt(PREF_PRECISION, floatPrecision);
+    }
+
+        EditorGUILayout.BeginVertical();
+        if (!string.IsNullOrEmpty(statusMessage))
+        {
+            EditorGUILayout.HelpBox(statusMessage, statusType);
+        }
+        if (captureMode == CaptureMode.SelectedObjects && Selection.gameObjects.Length == 0)
+        {
+            EditorGUILayout.HelpBox("No objects selected for capture.", MessageType.Warning);
+        }
+        selectedCoordinateSpace = (CoordinateSpaceSetting)EditorGUILayout.EnumPopup("Coordinate Space:", selectedCoordinateSpace);
         EditorGUI.BeginChangeCheck();
         showCaptureGizmos = EditorGUILayout.Toggle("Show Capture Gizmos", showCaptureGizmos);
         if (EditorGUI.EndChangeCheck())
         {
             SceneView.RepaintAll();
         }
-
-        // Add this before the capture button
         useContextualFormatting = EditorGUILayout.Toggle("Use Contextual House Formatting", useContextualFormatting);
         captureMode = (CaptureMode)EditorGUILayout.EnumPopup("Capture Mode:", captureMode);
         EditorGUI.BeginDisabledGroup(!useContextualFormatting);
         groupByRoom = EditorGUILayout.Toggle("Group by Room", groupByRoom);
         EditorGUI.EndDisabledGroup();
-
         updateAction = (UpdateAction)EditorGUILayout.EnumPopup("Update Action:", updateAction);
-
-        if (GUILayout.Button("Capture Selected Transforms"))
-        {
-            CaptureTransforms();
-        }
-
-        EditorGUILayout.Space(); // Added for layout
+        EditorGUILayout.BeginHorizontal();
+        if (GUILayout.Button("Capture Selected Transforms")) { CaptureTransforms(); }
+        if (GUILayout.Button("Copy Output")) { CopyOutputToClipboard(); }
+        EditorGUILayout.EndHorizontal();
+        EditorGUILayout.Space();
         housePlanAssetPath = EditorGUILayout.TextField("House Plan Asset Path", housePlanAssetPath);
-
-        bool originalGuiEnabledState = GUI.enabled; // Store original GUI.enabled state
+        bool originalGuiEnabledState = GUI.enabled;
         GUI.enabled = (updateAction == UpdateAction.ApplyChangesToAsset);
-        if (GUILayout.Button("Execute Update on Asset"))
-        {
-            ExecuteUpdateOnAsset();
-        }
-        GUI.enabled = originalGuiEnabledState; // Restore original GUI.enabled state
-
-        if (GUILayout.Button("Compare Captured with Current Plan"))
-        {
-            CompareWithPlan();
-        }
-        EditorGUILayout.Space(); // Added for layout
-
+        if (GUILayout.Button("Execute Update on Asset")) { ExecuteUpdateOnAsset(); }
+        GUI.enabled = originalGuiEnabledState;
+        if (GUILayout.Button("Compare Captured with Current Plan")) { CompareWithPlan(); }
+        EditorGUILayout.BeginHorizontal();
+        if (GUILayout.Button("Export Captured Text")) { ExportCapturedText(); }
+        if (GUILayout.Button("Import Text to View")) { ImportTextToView(); }
+        EditorGUILayout.EndHorizontal();
+        EditorGUILayout.Space();
         EditorGUILayout.LabelField("Generated C# Code:", EditorStyles.boldLabel);
         scrollPosition = EditorGUILayout.BeginScrollView(scrollPosition, GUILayout.ExpandHeight(true));
-        // Make TextArea read-only by using a style with normal.textColor set to a non-editable look,
-        // or by simply not providing a way to change `generatedCode` other than CaptureTransforms.
-        // For actual read-only behavior, one might use EditorGUI.SelectableLabel.
-        // However, TextArea is fine for typical editor script usage if modification isn't intended.
         EditorGUILayout.TextArea(generatedCode, GUILayout.ExpandHeight(true), GUILayout.ExpandWidth(true));
         EditorGUILayout.EndScrollView();
+        EditorGUILayout.BeginHorizontal();
+        GUI.enabled = historyIndex > 0;
+        if (GUILayout.Button("Previous")) { historyIndex = Mathf.Clamp(historyIndex - 1, 0, captureHistory.Count - 1); if (captureHistory.Count > 0) generatedCode = captureHistory[historyIndex]; }
+        GUI.enabled = historyIndex < captureHistory.Count - 1;
+        if (GUILayout.Button("Next")) { historyIndex = Mathf.Clamp(historyIndex + 1, 0, captureHistory.Count - 1); if (captureHistory.Count > 0) generatedCode = captureHistory[historyIndex]; }
+        GUI.enabled = true;
+        EditorGUILayout.EndHorizontal();
+        EditorGUILayout.EndVertical();
     }
 
+    private void CopyOutputToClipboard()
+    {
+        EditorGUIUtility.systemCopyBuffer = generatedCode;
+        statusMessage = "Copied output to clipboard.";
+        statusType = MessageType.Info;
+    }
+
+    private void ExportCapturedText()
+    {
+        string path = EditorUtility.SaveFilePanel("Export Captured Text", "", "CapturedText.txt", "txt");
+        if (!string.IsNullOrEmpty(path))
+        {
+            File.WriteAllText(path, generatedCode);
+            statusMessage = $"Exported to {path}";
+            statusType = MessageType.Info;
+        }
+    }
+
+    private void ImportTextToView()
+    {
+        string path = EditorUtility.OpenFilePanel("Import Text", "", "txt");
+        if (!string.IsNullOrEmpty(path))
+        {
+            generatedCode = File.ReadAllText(path);
+            statusMessage = $"Imported from {path}";
+            statusType = MessageType.Info;
+        }
+    }
     private void CaptureTransforms()
     {
         successfullyCapturedLastRun.Clear();
         objectsWithCaptureErrorsLastRun.Clear();
         StringBuilder sb = new StringBuilder();
         List<GameObject> objectsToProcess = new List<GameObject>();
+
+        cachedTypeResults = new Dictionary<int, HouseComponentType>();
+        cachedRoomResults = new Dictionary<int, GameObject>();
 
         // 1. Get GameObjects based on captureMode
         switch (captureMode)
@@ -155,7 +218,12 @@ public class TransformCaptureWindow : EditorWindow
         {
             sb.AppendLine("// No objects found or selected for capture.");
             generatedCode = sb.ToString();
+            captureHistory.Add(generatedCode);
+            if (captureHistory.Count > 10) captureHistory.RemoveAt(0);
+            historyIndex = captureHistory.Count - 1;
             Repaint(); // Repaint to show update
+            cachedTypeResults = null;
+            cachedRoomResults = null;
             return;
         }
 
@@ -291,10 +359,14 @@ public class TransformCaptureWindow : EditorWindow
         {
             var sortedObjectsToProcess = objectsToProcess.Distinct()
                 .OrderBy(obj => useContextualFormatting ? DetectComponentType(obj).ToString() : "")
-                .ThenBy(obj => obj.name);
+                .ThenBy(obj => obj.name).ToList();
 
+            int total = sortedObjectsToProcess.Count;
+            int index = 0;
             foreach (GameObject obj in sortedObjectsToProcess)
             {
+                if (total > 20 && index % 10 == 0)
+                    EditorUtility.DisplayProgressBar("Capture Transforms", obj.name, (float)index / total);
                 if (useContextualFormatting)
                 {
                     HouseComponentType componentType = DetectComponentType(obj);
@@ -322,10 +394,17 @@ public class TransformCaptureWindow : EditorWindow
                 {
                     sb.AppendLine(FormatGenericTransformData(obj));
                 }
+                index++;
             }
+            if (total > 20) EditorUtility.ClearProgressBar();
         }
 
         generatedCode = sb.ToString();
+        captureHistory.Add(generatedCode);
+        if (captureHistory.Count > 10) captureHistory.RemoveAt(0);
+        historyIndex = captureHistory.Count - 1;
+        cachedTypeResults = null;
+        cachedRoomResults = null;
         Repaint();
     }
 
@@ -435,41 +514,54 @@ public class TransformCaptureWindow : EditorWindow
     /// <returns>The detected HouseComponentType.</returns>
     public static HouseComponentType DetectComponentType(GameObject obj)
     {
-        if (obj.name == "ProceduralHouse_Generated") return HouseComponentType.ProceduralHouseRoot;
-        if (obj.name == "Foundation") return HouseComponentType.Foundation;
-        if (obj.name.StartsWith("Roof_")) return HouseComponentType.Roof;
-        if (obj.name.StartsWith("Wall_")) return HouseComponentType.Wall;
-        if (obj.name.StartsWith("Door_")) return HouseComponentType.Door;
-        if (obj.name.StartsWith("Window_")) return HouseComponentType.Window;
+        if (cachedTypeResults != null && cachedTypeResults.TryGetValue(obj.GetInstanceID(), out var cachedType))
+            return cachedType;
 
-        if (obj.GetComponent<RoomIdentifier>() != null) return HouseComponentType.Room;
-        if (obj.name.Contains("Room")) return HouseComponentType.Room;
+        if (obj.name == "ProceduralHouse_Generated") cachedType = HouseComponentType.ProceduralHouseRoot;
+        else if (obj.name == "Foundation") cachedType = HouseComponentType.Foundation;
+        else if (obj.name.StartsWith("Roof_")) cachedType = HouseComponentType.Roof;
+        else if (obj.name.StartsWith("Wall_")) cachedType = HouseComponentType.Wall;
+        else if (obj.name.StartsWith("Door_")) cachedType = HouseComponentType.Door;
+        else if (obj.name.StartsWith("Window_")) cachedType = HouseComponentType.Window;
 
-        return HouseComponentType.Unknown;
+        if (obj.GetComponent<RoomIdentifier>() != null) cachedType = HouseComponentType.Room;
+        else if (obj.name.Contains("Room")) cachedType = HouseComponentType.Room;
+        else cachedType = HouseComponentType.Unknown;
+
+        if (cachedTypeResults != null)
+            cachedTypeResults[obj.GetInstanceID()] = cachedType;
+        return cachedType;
     }
 
     private GameObject GetRoomContext(GameObject obj)
     {
         if (obj == null) return null;
 
-        // Check if the object itself is a room
+        if (cachedRoomResults != null && cachedRoomResults.TryGetValue(obj.GetInstanceID(), out var room))
+            return room;
+
         if (DetectComponentType(obj) == HouseComponentType.Room)
         {
-            return obj;
+            room = obj;
         }
-
-        // Traverse up the hierarchy
-        Transform currentParent = obj.transform.parent;
-        while (currentParent != null)
+        else
         {
-            if (DetectComponentType(currentParent.gameObject) == HouseComponentType.Room)
+            Transform currentParent = obj.transform.parent;
+            while (currentParent != null)
             {
-                return currentParent.gameObject;
+                if (DetectComponentType(currentParent.gameObject) == HouseComponentType.Room)
+                {
+                    room = currentParent.gameObject;
+                    break;
+                }
+                currentParent = currentParent.parent;
             }
-            currentParent = currentParent.parent;
         }
 
-        return null; // No room context found
+        if (cachedRoomResults != null)
+            cachedRoomResults[obj.GetInstanceID()] = room;
+
+        return room;
     }
 
     private Vector3 GetRoomOrigin(GameObject objInRoom)
@@ -1743,6 +1835,37 @@ public class TransformCaptureWindow : EditorWindow
 
             Handles.Label(transform.position + Vector3.up * (size.y * 0.5f + 0.2f), finalLabel);
         }
+    }
+}
+
+internal class TransformCaptureSettingsProvider : SettingsProvider
+{
+    public TransformCaptureSettingsProvider(string path, SettingsScope scope = SettingsScope.User) : base(path, scope) { }
+
+    public override void OnGUI(string searchContext)
+    {
+        EditorGUILayout.LabelField("Defaults", EditorStyles.boldLabel);
+        TransformCaptureWindow.CoordinateSpaceSetting coord = (TransformCaptureWindow.CoordinateSpaceSetting)EditorPrefs.GetInt("TCW_DefaultCoordSpace", (int)TransformCaptureWindow.CoordinateSpaceSetting.World);
+        coord = (TransformCaptureWindow.CoordinateSpaceSetting)EditorGUILayout.EnumPopup("Coordinate Space", coord);
+        EditorPrefs.SetInt("TCW_DefaultCoordSpace", (int)coord);
+
+        bool contextual = EditorPrefs.GetBool("TCW_UseContextualFormatting", false);
+        contextual = EditorGUILayout.Toggle("Use Contextual Formatting", contextual);
+        EditorPrefs.SetBool("TCW_UseContextualFormatting", contextual);
+
+        bool group = EditorPrefs.GetBool("TCW_GroupByRoom", false);
+        group = EditorGUILayout.Toggle("Group by Room", group);
+        EditorPrefs.SetBool("TCW_GroupByRoom", group);
+
+        int precision = EditorPrefs.GetInt("TCW_FloatPrecision", 3);
+        precision = EditorGUILayout.IntField("Float Precision", precision);
+        EditorPrefs.SetInt("TCW_FloatPrecision", precision);
+    }
+
+    [SettingsProvider]
+    public static SettingsProvider CreateProvider()
+    {
+        return new TransformCaptureSettingsProvider("Preferences/Transform Capture Tool", SettingsScope.User);
     }
 }
 
