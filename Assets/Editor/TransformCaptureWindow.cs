@@ -1,11 +1,7 @@
-// Placeholder Enums (to be defined properly if they exist elsewhere or requirements are clarified)
-public enum DoorType { Hinged, Sliding, Pocket, Other }
-public enum SwingDirection { InwardNorth, InwardSouth, InwardEast, InwardWest, OutwardNorth, OutwardSouth, OutwardEast, OutwardWest, None }
-public enum SlideDirection { SlidesLeft, SlidesRight, SlidesUp, SlidesDown, None }
-public enum WindowType { SingleHung, DoubleHung, Casement, Sliding, Picture, Bay, Bow, Other }
-
 using UnityEditor;
 using UnityEngine;
+// Placeholder enums (DoorType, SwingDirection, SlideDirection, WindowType) removed.
+// These should now be referenced from HousePlanSO if needed, e.g. global::DoorType
 using System.Text;
 using System.Globalization; // Add this line
 using System.Collections.Generic; // For List<T>
@@ -27,6 +23,7 @@ public class TransformCaptureWindow : EditorWindow
 
     private string generatedCode = "";
     private Vector2 scrollPosition;
+    private string housePlanAssetPath = "Assets/BlueprintData/NewHousePlan.asset"; // Added for plan comparison
     private CoordinateSpaceSetting selectedCoordinateSpace = CoordinateSpaceSetting.World;
     private bool useContextualFormatting = false; // Added field
     private bool groupByRoom = false;
@@ -51,6 +48,14 @@ public class TransformCaptureWindow : EditorWindow
         {
             CaptureTransforms();
         }
+
+        EditorGUILayout.Space(); // Added for layout
+        housePlanAssetPath = EditorGUILayout.TextField("House Plan Asset Path", housePlanAssetPath);
+        if (GUILayout.Button("Compare Captured with Current Plan"))
+        {
+            CompareWithPlan();
+        }
+        EditorGUILayout.Space(); // Added for layout
 
         EditorGUILayout.LabelField("Generated C# Code:", EditorStyles.boldLabel);
         scrollPosition = EditorGUILayout.BeginScrollView(scrollPosition, GUILayout.ExpandHeight(true));
@@ -750,21 +755,21 @@ public class TransformCaptureWindow : EditorWindow
         string windowId = windowObject.name;
 
         // Infer Type - Defaulting as WindowPlaceholder is not confirmed to exist.
-        // Assumes a WindowType enum (e.g. WindowType.SingleHung) is defined elsewhere.
-        WindowType type = WindowType.SingleHung; // Default
+        // Assumes a WindowType enum (e.g. global::WindowType.SingleHung) is defined elsewhere.
+        global::WindowType type = global::WindowType.SingleHung; // Default
 
         // Commented out WindowPlaceholder logic as the component presence is unconfirmed by ls()
         // WindowPlaceholder placeholder = windowObject.GetComponent<WindowPlaceholder>();
         // if (placeholder != null)
         // {
         //     // Assumes WindowPlaceholder.PlaceholderType enum values match string names of WindowType enum values
-        //     if (System.Enum.TryParse(placeholder.placeholderType.ToString(), out WindowType parsedType))
+        //     if (System.Enum.TryParse(placeholder.placeholderType.ToString(), out global::WindowType parsedType))
         //     {
         //         type = parsedType;
         //     }
         //     else
         //     {
-        //         Debug.LogWarning($"Window '{windowObject.name}': Could not parse WindowPlaceholder.PlaceholderType '{placeholder.placeholderType.ToString()}' to WindowType. Defaulting to {type}.");
+        //         Debug.LogWarning($"Window '{windowObject.name}': Could not parse WindowPlaceholder.PlaceholderType '{placeholder.placeholderType.ToString()}' to global::WindowType. Defaulting to {type}.");
         //     }
         // }
 
@@ -860,7 +865,7 @@ public class TransformCaptureWindow : EditorWindow
         sb.AppendLine("new WindowSpec");
         sb.AppendLine("{");
         sb.AppendLine($"    windowId = \"{windowId}\",");
-        sb.AppendLine($"    type = WindowType.{type.ToString()},"); // Assumes WindowType enum
+        sb.AppendLine($"    type = global::WindowType.{type.ToString()},"); // Assumes WindowType enum from HousePlanSO
         sb.AppendLine($"    width = {width.ToString("f3", CultureInfo.InvariantCulture)}f,");
         sb.AppendLine($"    height = {height.ToString("f3", CultureInfo.InvariantCulture)}f,");
         sb.AppendLine($"    position = {formattedPosition},{positionComment}");
@@ -873,5 +878,323 @@ public class TransformCaptureWindow : EditorWindow
         sb.AppendLine();
 
         return sb.ToString();
+    }
+
+    // Stub methods for the new comparison functionality
+    private void CompareWithPlan()
+    {
+        generatedCode = "Starting comparison...\n";
+        HousePlanSO loadedPlan = HousePlanDiffer.LoadTargetHousePlan(housePlanAssetPath);
+
+        if (loadedPlan == null)
+        {
+            generatedCode += "<color=red>Error: Could not load the House Plan SO from path: " + housePlanAssetPath + ". Check path and console.</color>";
+            EditorUtility.DisplayDialog("Error", "Failed to load HousePlanSO. Check asset path and console for details.", "OK");
+            return;
+        }
+        generatedCode += $"Loaded plan '{loadedPlan.name}' successfully from '{housePlanAssetPath}'.\nCapturing scene data...\n";
+        Repaint(); // Update UI
+
+        var capturedData = CaptureSceneDataAsStructs(loadedPlan);
+        generatedCode += $"Scene data capture attempt finished. Rooms: {capturedData.rooms.Count}, Doors: {capturedData.doors.Count}, Windows: {capturedData.windows.Count}, Openings: {capturedData.openings.Count}\n";
+        Repaint(); // Update UI
+
+        generatedCode += "Performing comparison with HousePlanDiffer...\n";
+        Repaint(); // Update UI
+
+        DiffResultSet diffResult = HousePlanDiffer.ComparePlanToScene(
+            loadedPlan,
+            capturedData.rooms,
+            capturedData.doors,
+            capturedData.windows,
+            capturedData.openings
+        );
+
+        if (diffResult == null)
+        {
+            generatedCode += "<color=red>Error: Comparison failed. HousePlanDiffer.ComparePlanToScene returned null.</color>";
+            EditorUtility.DisplayDialog("Error", "Comparison failed. DiffResultSet is null. Check console for errors from HousePlanDiffer.", "OK");
+            return;
+        }
+
+        DisplayDiffResults(diffResult);
+        generatedCode += "\nComparison complete.";
+        Repaint(); // Update UI
+    }
+
+    private (List<RoomData> rooms, List<DoorSpec> doors, List<WindowSpec> windows, List<OpeningSpec> openings) CaptureSceneDataAsStructs(HousePlanSO existingPlanForContext)
+    {
+        generatedCode += "\nStarting scene data capture...\n";
+        List<RoomData> capturedRooms = new List<RoomData>();
+        List<DoorSpec> capturedDoors = new List<DoorSpec>();
+        List<WindowSpec> capturedWindows = new List<WindowSpec>();
+        List<OpeningSpec> capturedOpenings = new List<OpeningSpec>();
+
+        // Use existing FindAllHouseComponents to get all relevant GameObjects.
+        // This method might need refinement if it doesn't find all desired objects or finds too many.
+        List<GameObject> allGameObjects = FindAllHouseComponents();
+
+        // Default values from existing plan context if available
+        float storyHeight = existingPlanForContext?.storyHeight ?? 2.7f;
+        float defaultWallThickness = existingPlanForContext?.exteriorWallThickness ?? 0.15f; // Default, might need interior too
+
+        foreach (GameObject go in allGameObjects)
+        {
+            HouseComponentType componentType = DetectComponentType(go);
+
+            switch (componentType)
+            {
+                case HouseComponentType.Room:
+                    RoomData roomData = new RoomData();
+                    roomData.roomId = go.name; // Use GameObject name as ID. Consider a more robust ID system.
+                    roomData.roomLabel = go.name; // Label can be same as ID or a "cleaner" version.
+
+                    Renderer roomRenderer = go.GetComponent<Renderer>();
+                    if (roomRenderer != null) {
+                        roomData.dimensions = new Vector2(roomRenderer.bounds.size.x, roomRenderer.bounds.size.z);
+                        roomData.position = new Vector3(roomRenderer.bounds.center.x, GetRoomFloorY(go), roomRenderer.bounds.center.z - roomRenderer.bounds.extents.z); // Assuming center pivot, adjust to corner
+                    } else {
+                        roomData.dimensions = new Vector2(1,1); // Default if no renderer
+                        roomData.position = go.transform.position; // Fallback to transform position
+                        Debug.LogWarning($"Room '{go.name}' has no Renderer. Using default dimensions and transform position.");
+                    }
+
+                    roomData.notes = ""; // Scene capture typically doesn't include notes.
+                    roomData.connectedRoomIds = new List<string>(); // Connection logic is complex, not part of basic capture.
+                    roomData.atticHatchLocalPosition = Vector3.zero; // Default, specific capture needed if required.
+                    roomData.walls = new List<WallSegment>();
+
+                    float roomFloorY = GetRoomFloorY(go);
+
+                    // Capture Walls for this Room
+                    foreach (Transform childTransform in go.transform)
+                    {
+                        if (DetectComponentType(childTransform.gameObject) == HouseComponentType.Wall)
+                        {
+                            GameObject wallGO = childTransform.gameObject;
+                            WallSegmentAnalyzer.AnalyzedWallData analyzedWall = WallSegmentAnalyzer.AnalyzeWallGeometry(
+                                wallGO,
+                                roomFloorY,
+                                storyHeight,
+                                defaultWallThickness // Pass a sensible default or context-based thickness
+                            );
+
+                            WallSegment wallSeg = new WallSegment();
+                            // WallSegment ID/Key: For diffing, WallSegment needs a stable identifier.
+                            // Using its world start/end points (rounded) is done in HousePlanDiffer.
+                            // Here, we just populate the data.
+
+                            // Approximating start/end points based on wall's transform and analyzed length.
+                            // This assumes wallGO.transform.position is the center of the wall.
+                            // And wallGO.transform.right is the direction of its length.
+                            Vector3 center = wallGO.transform.position;
+                            Vector3 halfLengthDir = wallGO.transform.right * analyzedWall.wallLength / 2f;
+                            wallSeg.startPoint = center - halfLengthDir;
+                            wallSeg.endPoint = center + halfLengthDir;
+
+                            wallSeg.thickness = analyzedWall.determinedThickness;
+                            wallSeg.isExterior = analyzedWall.isLikelyExterior;
+                            wallSeg.side = WallSide.North; // Default. Inferring side is complex.
+
+                            wallSeg.doorIdsOnWall = new List<string>();
+                            wallSeg.windowIdsOnWall = new List<string>();
+                            wallSeg.openingIdsOnWall = new List<string>();
+
+                            // Capture items on this wall (Doors, Windows, Openings from WallSegmentAnalyzer)
+                            foreach (Transform itemOnWallTransform in wallGO.transform)
+                            {
+                                GameObject itemGO = itemOnWallTransform.gameObject;
+                                ComponentType itemType = DetectComponentType(itemGO);
+                                string itemId = itemGO.name; // Using name as ID.
+
+                                if (itemType == ComponentType.Door) wallSeg.doorIdsOnWall.Add(itemId);
+                                else if (itemType == ComponentType.Window) wallSeg.windowIdsOnWall.Add(itemId);
+                                // Explicit "Opening" GameObjects as children of walls are less common than analyzed openings.
+                                else if (itemType == ComponentType.Opening) wallSeg.openingIdsOnWall.Add(itemId);
+                            }
+
+                            // Convert WallSegmentAnalyzer.OpeningData to global OpeningSpec list
+                            // And add their IDs to wallSeg.openingIdsOnWall
+                            if (analyzedWall.openings != null)
+                            {
+                                int openingIdx = 0;
+                                foreach (var openingData in analyzedWall.openings)
+                                {
+                                    OpeningSpec os = new OpeningSpec();
+                                    os.openingId = $"{wallGO.name}_AnalyzedOpening_{openingIdx++}"; // Generate unique ID
+
+                                    // Map WallSegmentAnalyzer.OpeningTypeEnum to global::OpeningType
+                                    switch(openingData.type) {
+                                        case WallSegmentAnalyzer.OpeningTypeEnum.Doorway: os.type = global::OpeningType.CasedOpening; break; // Example mapping
+                                        case WallSegmentAnalyzer.OpeningTypeEnum.Window: os.type = global::OpeningType.CasedOpening; break; // Or handle as window?
+                                        case WallSegmentAnalyzer.OpeningTypeEnum.Passthrough: os.type = global::OpeningType.PassthroughCounter; break;
+                                        default: os.type = global::OpeningType.CasedOpening; break;
+                                    }
+                                    os.width = openingData.size.x;
+                                    os.height = openingData.size.y;
+                                    // Position needs to be world space.
+                                    os.position = wallGO.transform.TransformPoint(openingData.localPositionOnWall);
+                                    os.wallId = wallGO.name; // Associate with this wall.
+                                    // connectsRoomA/B_Id are hard to determine here.
+
+                                    bool alreadyCaptured = capturedOpenings.Any(co => co.openingId == os.openingId);
+                                    if(!alreadyCaptured) capturedOpenings.Add(os); // Add to global list
+
+                                    if(!wallSeg.openingIdsOnWall.Contains(os.openingId)) wallSeg.openingIdsOnWall.Add(os.openingId);
+                                }
+                            }
+                            roomData.walls.Add(wallSeg);
+                        }
+                    }
+                    capturedRooms.Add(roomData);
+                    break;
+
+                case HouseComponentType.Door:
+                    DoorSpec doorSpec = new DoorSpec();
+                    doorSpec.doorId = go.name; // Use name as ID
+                    doorSpec.position = go.transform.position;
+
+                    Renderer doorRenderer = go.GetComponent<Renderer>();
+                    doorSpec.width = doorRenderer != null ? doorRenderer.bounds.size.x : 0.8f;
+                    doorSpec.height = doorRenderer != null ? doorRenderer.bounds.size.y : 2.0f;
+
+                    if (go.name.ToLower().Contains("sliding")) doorSpec.type = global::DoorType.Sliding;
+                    else if (go.name.ToLower().Contains("pocket")) doorSpec.type = global::DoorType.Pocket; // Assuming Pocket is in HousePlanSO.DoorType
+                    else if (go.name.ToLower().Contains("bifold")) doorSpec.type = global::DoorType.BiFold; // Assuming BiFold is in HousePlanSO.DoorType
+                    else if (go.name.ToLower().Contains("overhead")) doorSpec.type = global::DoorType.Overhead; // Assuming Overhead is in HousePlanSO.DoorType
+                    else doorSpec.type = global::DoorType.Hinged; // Default
+
+                    doorSpec.swingDirection = global::SwingDirection.InwardEast; // Default
+                    doorSpec.slideDirection = global::SlideDirection.SlidesLeft; // Default if sliding
+                    doorSpec.isExterior = go.name.ToLower().Contains("exterior");
+                    doorSpec.wallId = go.transform.parent?.name ?? "";
+                    // doorSpec.connectsRoomA_Id / B_Id - hard to determine from this capture method
+                    capturedDoors.Add(doorSpec);
+                    break;
+
+                case HouseComponentType.Window:
+                    WindowSpec windowSpec = new WindowSpec();
+                    windowSpec.windowId = go.name; // Use name as ID
+                    windowSpec.position = go.transform.position;
+
+                    Renderer windowRenderer = go.GetComponent<Renderer>();
+                    windowSpec.width = windowRenderer != null ? windowRenderer.bounds.size.x : 1.2f;
+                    windowSpec.height = windowRenderer != null ? windowRenderer.bounds.size.y : 1.0f;
+
+                    float parentRoomFloorY = 0;
+                    if(go.transform.parent != null) { // Try to get wall's parent (room) for floor Y
+                        GameObject wallObj = go.transform.parent.gameObject;
+                        if(DetectComponentType(wallObj) == HouseComponentType.Wall && wallObj.transform.parent != null) {
+                             parentRoomFloorY = GetRoomFloorY(wallObj.transform.parent.gameObject);
+                        } else { // If parent is not a wall, or wall has no parent, try GetRoomContext directly for window
+                            parentRoomFloorY = GetRoomFloorY(go);
+                        }
+                    } else { // No parent for window, try GetRoomContext directly
+                        parentRoomFloorY = GetRoomFloorY(go);
+                    }
+                    windowSpec.sillHeight = go.transform.position.y - parentRoomFloorY;
+
+
+                    if (go.name.ToLower().Contains("bay")) windowSpec.type = global::WindowType.Bay;
+                    else if (go.name.ToLower().Contains("sliding")) windowSpec.type = global::WindowType.Sliding;
+                    else if (go.name.ToLower().Contains("skylight")) windowSpec.type = global::WindowType.SkylightQuad; // Assuming SkylightQuad
+                    else windowSpec.type = global::WindowType.SingleHung; // Default
+
+                    windowSpec.isOperable = true; // Default
+                    windowSpec.wallId = go.transform.parent?.name ?? "";
+                    // Bay specific properties (bayPanes, bayProjectionDepth) would need more detailed capture.
+                    capturedWindows.Add(windowSpec);
+                    break;
+            }
+        }
+        generatedCode += $"Finished scene data capture. Rooms: {capturedRooms.Count}, Doors: {capturedDoors.Count}, Windows: {capturedWindows.Count}, Openings: {capturedOpenings.Count}.\n";
+        Repaint();
+        return (capturedRooms, capturedDoors, capturedWindows, capturedOpenings);
+    }
+
+    private void DisplayDiffResults(DiffResultSet diffResultSet)
+    {
+        StringBuilder sb = new StringBuilder();
+        sb.AppendLine("<b>Comparison Results:</b>");
+
+        // Basic formatter, can be expanded if specific fields are needed for summary.
+        var formatData = new System.Func<object, string>(data => {
+            if (data == null) return "N/A";
+            if (data is RoomData rd) return $"Label: {rd.roomLabel}, Pos:{rd.position.ToString("F1")}, Dims:{rd.dimensions.ToString("F1")}";
+            if (data is WallSegment ws) return $"Start:{ws.startPoint.ToString("F1")}, End:{ws.endPoint.ToString("F1")}, Thick:{ws.thickness.ToString("F2")}";
+            if (data is DoorSpec ds) return $"Type:{ds.type}, Pos:{ds.position.ToString("F1")}, W:{ds.width.ToString("F2")}, H:{ds.height.ToString("F2")}";
+            if (data is WindowSpec wd) return $"Type:{wd.type}, Pos:{wd.position.ToString("F1")}, W:{wd.width.ToString("F2")}, H:{wd.height.ToString("F2")}";
+            if (data is OpeningSpec os) return $"Type:{os.type}, Pos:{os.position.ToString("F1")}, W:{os.width.ToString("F2")}, H:{os.height.ToString("F2")}";
+            return data.ToString();
+        });
+
+        int changeCount = 0;
+
+        if (diffResultSet.roomDiffs != null && diffResultSet.roomDiffs.Count > 0) {
+            sb.AppendLine("\n<b>--- Rooms ---</b>");
+            foreach (var entry in diffResultSet.roomDiffs.OrderBy(e => e.change).ThenBy(e => e.id)) {
+                AppendDiffEntry(sb, "Room", entry, formatData);
+                if(entry.change != ChangeType.Unchanged) changeCount++;
+            }
+        }
+        if (diffResultSet.wallDiffs != null && diffResultSet.wallDiffs.Count > 0) {
+            sb.AppendLine("\n<b>--- Walls ---</b>");
+             foreach (var entry in diffResultSet.wallDiffs.OrderBy(e => e.change).ThenBy(e => e.id)) {
+                AppendDiffEntry(sb, "Wall", entry, formatData);
+                if(entry.change != ChangeType.Unchanged) changeCount++;
+            }
+        }
+        if (diffResultSet.doorDiffs != null && diffResultSet.doorDiffs.Count > 0) {
+            sb.AppendLine("\n<b>--- Doors ---</b>");
+            foreach (var entry in diffResultSet.doorDiffs.OrderBy(e => e.change).ThenBy(e => e.id)) {
+                AppendDiffEntry(sb, "Door", entry, formatData);
+                if(entry.change != ChangeType.Unchanged) changeCount++;
+            }
+        }
+        if (diffResultSet.windowDiffs != null && diffResultSet.windowDiffs.Count > 0) {
+            sb.AppendLine("\n<b>--- Windows ---</b>");
+            foreach (var entry in diffResultSet.windowDiffs.OrderBy(e => e.change).ThenBy(e => e.id)) {
+                AppendDiffEntry(sb, "Window", entry, formatData);
+                if(entry.change != ChangeType.Unchanged) changeCount++;
+            }
+        }
+        if (diffResultSet.openingDiffs != null && diffResultSet.openingDiffs.Count > 0) {
+            sb.AppendLine("\n<b>--- Openings ---</b>");
+            foreach (var entry in diffResultSet.openingDiffs.OrderBy(e => e.change).ThenBy(e => e.id)) {
+                AppendDiffEntry(sb, "Opening", entry, formatData);
+                if(entry.change != ChangeType.Unchanged) changeCount++;
+            }
+        }
+
+        if (changeCount == 0)
+        {
+            sb.AppendLine("\n<color=green>No differences found between the loaded plan and the captured scene data (based on current capture logic).</color>");
+        }
+        generatedCode = sb.ToString(); // Append to existing logs or replace, for now it replaces.
+    }
+
+    private void AppendDiffEntry<T>(StringBuilder sb, string typeLabel, DiffEntry<T> entry, System.Func<object, string> formatter)
+    {
+        switch (entry.change)
+        {
+            case ChangeType.Added:
+                sb.AppendLine($"<color=green>ADDED [{typeLabel}] ID: {entry.id} - Captured: {formatter(entry.capturedData)}</color>");
+                break;
+            case ChangeType.Removed:
+                sb.AppendLine($"<color=red>REMOVED [{typeLabel}] ID: {entry.id} - Existing: {formatter(entry.existingData)}</color>");
+                break;
+            case ChangeType.Modified:
+                sb.AppendLine($"<color=yellow>MODIFIED [{typeLabel}] ID: {entry.id}</color>");
+                if (entry.differences != null) {
+                    foreach (var diff in entry.differences) { sb.AppendLine($"    - {diff}"); }
+                }
+                sb.AppendLine($"  <color=#FFA500>└─ Existing: {formatter(entry.existingData)}</color>"); // Orange
+                sb.AppendLine($"  <color=#FFFF00>└─ Captured: {formatter(entry.capturedData)}</color>"); // Yellow
+                break;
+            case ChangeType.Unchanged:
+                 // Optionally show unchanged items, can be very verbose.
+                 // sb.AppendLine($"UNCHANGED [{typeLabel}] ID: {entry.id} - Data: {formatter(entry.existingData)}");
+                break;
+        }
     }
 }
