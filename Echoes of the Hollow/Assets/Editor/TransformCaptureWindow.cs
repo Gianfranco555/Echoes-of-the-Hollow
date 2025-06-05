@@ -721,7 +721,7 @@ public class TransformCaptureWindow : EditorWindow
     private static HouseComponentType CalculateComponentType(GameObject obj)
     {
         if (obj.name == "ProceduralHouse_Generated") return HouseComponentType.ProceduralHouseRoot;
-        if (obj.name == "Foundation") return HouseComponentType.Foundation;
+        if (obj.name.StartsWith("Foundation")) return HouseComponentType.Foundation;
         if (obj.name.StartsWith("Roof_")) return HouseComponentType.Roof;
         if (obj.name.StartsWith("Wall_")) return HouseComponentType.Wall;
         if (obj.name.StartsWith("Door_")) return HouseComponentType.Door;
@@ -1153,7 +1153,7 @@ public class TransformCaptureWindow : EditorWindow
         sb.AppendLine($"    type = DoorType.{type.ToString()},"); // Assumes DoorType enum
         sb.AppendLine($"    width = {width.ToString(formatString, CultureInfo.InvariantCulture)}f,");
         sb.AppendLine($"    height = {height.ToString(formatString, CultureInfo.InvariantCulture)}f,");
-        sb.AppendLine($"    position = {formattedPosition},{positionComment}");
+        sb.AppendLine($"    position = {formattedPosition};{positionComment}");
         sb.AppendLine($"    wallId = \"{wallId}\", {wallIdComment}"); // NEW LINE
         sb.AppendLine($"    swingDirection = SwingDirection.{swingDirection.ToString()},"); // Assumes SwingDirection enum
         if (type == DoorType.Sliding)
@@ -1297,7 +1297,7 @@ public class TransformCaptureWindow : EditorWindow
         sb.AppendLine($"    type = global::WindowType.{type.ToString()},"); // Assumes WindowType enum from HousePlanSO
         sb.AppendLine($"    width = {width.ToString(formatString, CultureInfo.InvariantCulture)}f,");
         sb.AppendLine($"    height = {height.ToString(formatString, CultureInfo.InvariantCulture)}f,");
-        sb.AppendLine($"    position = {formattedPosition},{positionComment}");
+        sb.AppendLine($"    position = {formattedPosition};{positionComment}");
         sb.AppendLine($"    sillHeight = {sillHeight.ToString(formatString, CultureInfo.InvariantCulture)}f,");
         sb.AppendLine($"    wallId = \"{wallId}\", {wallIdComment}"); // NEW LINE
         sb.AppendLine($"    isOperable = {isOperable.ToString().ToLowerInvariant()},");

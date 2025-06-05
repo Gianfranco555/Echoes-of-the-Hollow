@@ -207,7 +207,7 @@ public class TransformCaptureTests
         wallRoot.transform.rotation = Quaternion.Euler(0f, 90f, 0f);
 
         Vector3 worldPoint = new Vector3(5f, 1f, 7f);
-        Vector3 expectedWallRelativePoint = new Vector3(2f, 1f, 0f);
+        Vector3 expectedWallRelativePoint = new Vector3(-2f, 1f, 0f);
 
         Vector3 actualWallRelativePoint = TransformCaptureWindow.ConvertToWallRelative(worldPoint, wallRoot.transform);
 
@@ -227,7 +227,7 @@ public class TransformCaptureTests
         wallRoot.transform.localRotation = Quaternion.Euler(0, 60f, 0);
 
         Vector3 worldPoint = new Vector3(1f, 2f, 3f);
-        Vector3 expectedWallRelativePoint = new Vector3(2f, 1f, 0f);
+        Vector3 expectedWallRelativePoint = new Vector3(-2f, 1f, 0f);
 
         Vector3 actualWallRelativePoint = TransformCaptureWindow.ConvertToWallRelative(worldPoint, wallRoot.transform);
 
