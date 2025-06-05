@@ -416,7 +416,7 @@ public class TransformCaptureTests
 
         string result = captureWindowInstance.FormatAsRoomData(roomObj);
 
-        StringAssert.Contains("roomId = "TestRoom1"", result);
+        StringAssert.Contains("roomId = \"TestRoom1\"", result);
         StringAssert.Contains("dimensions = new Vector2(4.000f, 5.000f)", result);
         StringAssert.Contains("position = new Vector3(1.000f, 0.000f, 3.000f)", result);
     }
@@ -434,7 +434,7 @@ public class TransformCaptureTests
 
         string result = captureWindowInstance.FormatAsWallSegment(wallRoot, roomFloorY, storyHeight, wallThickness);
 
-        StringAssert.Contains($"// WallSegment for "{wallRoot.name}"", result);
+        StringAssert.Contains($"// WallSegment for \"{wallRoot.name}\"", result);
         StringAssert.Contains("startPoint = new Vector3(10.000f, 0.000f, 10.000f)", result);
         StringAssert.Contains("endPoint = new Vector3(13.000f, 0.000f, 10.000f)", result);
         StringAssert.Contains($"thickness = {wallThickness.ToString("F3")}", result);
@@ -450,7 +450,7 @@ public class TransformCaptureTests
 
         string result = captureWindowInstance.FormatAsDoorSpec(doorObj);
 
-        StringAssert.Contains("doorId = "TestDoor_01"", result);
+        StringAssert.Contains("doorId = \"TestDoor_01\"", result);
         StringAssert.Contains("width = 0.800f", result);
         StringAssert.Contains("height = 2.000f", result);
         StringAssert.Contains("position = new Vector3(2.000f, 0.000f, 5.000f); // Position (World Space)", result);
@@ -479,7 +479,7 @@ public class TransformCaptureTests
 
         string result = captureWindowInstance.FormatAsWindowSpec(windowObj, roomFloorY);
 
-        StringAssert.Contains("windowId = "TestWindow_01"", result);
+        StringAssert.Contains("windowId = \"TestWindow_01\"", result);
         StringAssert.Contains("width = 1.200f", result);
         StringAssert.Contains("height = 1.000f", result);
         StringAssert.Contains("position = new Vector3(1.000f, 0.500f, 0.200f); // Window Position (Room Relative to 'TestRoomForWin')", result);
