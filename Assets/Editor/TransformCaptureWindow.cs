@@ -8,10 +8,24 @@ using System.Collections.Generic; // For List<T>
 using System.Linq; // For Linq operations
 using System.IO; // Added for Path and Directory operations
 
+/// <summary>
+/// Editor window for capturing transform data of GameObjects related to house components.
+/// Provides functionality to generate C# code snippets for selected or scene-wide objects,
+/// format data in various coordinate spaces, and compare with/update a HousePlanSO ScriptableObject.
+/// </summary>
 public class TransformCaptureWindow : EditorWindow
 {
+    /// <summary>
+    /// Defines the type of a house component.
+    /// </summary>
     public enum HouseComponentType { Unknown, Room, Wall, Door, Window, Foundation, Roof, ProceduralHouseRoot }
+    /// <summary>
+    /// Specifies the coordinate space for outputting position data.
+    /// </summary>
     public enum CoordinateSpaceSetting { World, RoomRelative, WallRelative }
+    /// <summary>
+    /// Defines the scope of GameObjects to capture.
+    /// </summary>
     public enum CaptureMode
     {
         SelectedObjects,
@@ -22,6 +36,9 @@ public class TransformCaptureWindow : EditorWindow
     }
     private CaptureMode captureMode = CaptureMode.SelectedObjects;
 
+    /// <summary>
+    /// Defines the action to take when updating a HousePlanSO asset.
+    /// </summary>
     public enum UpdateAction { GenerateCodeOnly, PreviewAssetChanges, ApplyChangesToAsset }
     private UpdateAction updateAction = UpdateAction.GenerateCodeOnly;
 
@@ -37,6 +54,9 @@ public class TransformCaptureWindow : EditorWindow
     private static HashSet<GameObject> objectsWithCaptureErrorsLastRun = new HashSet<GameObject>();
     private static bool showCaptureGizmos = false;
 
+    /// <summary>
+    /// Opens the Transform Capturer editor window.
+    /// </summary>
     [MenuItem("House Tools/Transform Data Capturer")]
     public static void ShowWindow()
     {
@@ -408,7 +428,12 @@ public class TransformCaptureWindow : EditorWindow
         }
     }
 
-    private static HouseComponentType DetectComponentType(GameObject obj)
+    /// <summary>
+    /// Detects the type of house component based on the GameObject's name or attached components.
+    /// </summary>
+    /// <param name="obj">The GameObject to analyze.</param>
+    /// <returns>The detected HouseComponentType.</returns>
+    public static HouseComponentType DetectComponentType(GameObject obj)
     {
         if (obj.name == "ProceduralHouse_Generated") return HouseComponentType.ProceduralHouseRoot;
         if (obj.name == "Foundation") return HouseComponentType.Foundation;
@@ -464,12 +489,24 @@ public class TransformCaptureWindow : EditorWindow
         }
     }
 
-    private Vector3 ConvertToRoomRelative(Vector3 worldPosition, Vector3 roomWorldOrigin)
+    /// <summary>
+    /// Converts a world position to a position relative to a room's world origin.
+    /// </summary>
+    /// <param name="worldPosition">The world position to convert.</param>
+    /// <param name="roomWorldOrigin">The world origin of the room.</param>
+    /// <returns>The position relative to the room's origin.</returns>
+    public static Vector3 ConvertToRoomRelative(Vector3 worldPosition, Vector3 roomWorldOrigin)
     {
         return worldPosition - roomWorldOrigin;
     }
 
-    private Vector3 ConvertToWallRelative(Vector3 worldPosition, Transform wallSegmentRootTransform)
+    /// <summary>
+    /// Converts a world position to a position relative to a wall segment's root transform.
+    /// </summary>
+    /// <param name="worldPosition">The world position to convert.</param>
+    /// <param name="wallSegmentRootTransform">The Transform of the wall segment's root.</param>
+    /// <returns>The position relative to the wall segment's root transform.</returns>
+    public static Vector3 ConvertToWallRelative(Vector3 worldPosition, Transform wallSegmentRootTransform)
     {
         if (wallSegmentRootTransform == null)
         {
@@ -576,7 +613,12 @@ public class TransformCaptureWindow : EditorWindow
         return $"Vector3 position = new Vector3({positionToOutput.x.ToString("f3", CultureInfo.InvariantCulture)}f, {positionToOutput.y.ToString("f3", CultureInfo.InvariantCulture)}f, {positionToOutput.z.ToString("f3", CultureInfo.InvariantCulture)}f);{positionComment}";
     }
 
-    private string FormatAsRoomData(GameObject roomObject) // Changed parameter name for clarity
+    /// <summary>
+    /// Formats the data of a given room GameObject into a C# string representation for a RoomData structure.
+    /// </summary>
+    /// <param name="roomObject">The GameObject representing the room.</param>
+    /// <returns>A C# string snippet representing the room data.</returns>
+    public string FormatAsRoomData(GameObject roomObject) // Changed parameter name for clarity
     {
         StringBuilder sb = new StringBuilder();
 
@@ -619,7 +661,16 @@ public class TransformCaptureWindow : EditorWindow
         return sb.ToString();
     }
 
-    private string FormatAsWallSegment(GameObject wallRootObject, float roomFloorY, float storyHeight, float wallThickness)
+    /// <summary>
+    /// Formats the data of a given wall root GameObject into a C# string representation for a WallSegment structure.
+    /// It uses WallSegmentAnalyzer.AnalyzeWallGeometry to get geometric details.
+    /// </summary>
+    /// <param name="wallRootObject">The GameObject representing the root of the wall segment.</param>
+    /// <param name="roomFloorY">The Y coordinate of the room's floor, in world space.</param>
+    /// <param name="storyHeight">The height of the story/room.</param>
+    /// <param name="wallThickness">The thickness of the wall.</param>
+    /// <returns>A C# string snippet representing the wall segment data.</returns>
+    public string FormatAsWallSegment(GameObject wallRootObject, float roomFloorY, float storyHeight, float wallThickness)
     {
         StringBuilder sb = new StringBuilder();
 
@@ -662,7 +713,13 @@ public class TransformCaptureWindow : EditorWindow
         return sb.ToString();
     }
 
-    private string FormatAsDoorSpec(GameObject doorObject) // Changed param name
+    /// <summary>
+    /// Formats the data of a given door GameObject into a C# string representation for a DoorSpec structure.
+    /// Handles coordinate space conversion based on the window's settings.
+    /// </summary>
+    /// <param name="doorObject">The GameObject representing the door.</param>
+    /// <returns>A C# string snippet representing the door specification.</returns>
+    public string FormatAsDoorSpec(GameObject doorObject) // Changed param name
     {
         StringBuilder sb = new StringBuilder();
 
@@ -786,7 +843,14 @@ public class TransformCaptureWindow : EditorWindow
         return sb.ToString();
     }
 
-    private string FormatAsWindowSpec(GameObject windowObject, float roomFloorY) // Added roomFloorY, changed param name
+    /// <summary>
+    /// Formats the data of a given window GameObject into a C# string representation for a WindowSpec structure.
+    /// Handles coordinate space conversion and calculates sill height relative to the room floor.
+    /// </summary>
+    /// <param name="windowObject">The GameObject representing the window.</param>
+    /// <param name="roomFloorY">The Y coordinate of the room's floor, in world space, used for sill height calculation.</param>
+    /// <returns>A C# string snippet representing the window specification.</returns>
+    public string FormatAsWindowSpec(GameObject windowObject, float roomFloorY) // Added roomFloorY, changed param name
     {
         StringBuilder sb = new StringBuilder();
 
