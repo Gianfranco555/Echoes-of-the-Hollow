@@ -46,6 +46,8 @@ public class TransformCaptureWindow : EditorWindow
     private Vector2 scrollPosition;
     private string housePlanAssetPath = "Assets/BlueprintData/NewHousePlan.asset"; // Added for plan comparison
     private CoordinateSpaceSetting selectedCoordinateSpace = CoordinateSpaceSetting.World;
+    private string currentInfoMessage;
+    private MessageType currentInfoMessageType;
     private bool useContextualFormatting = false; // Added field
     private bool groupByRoom = false;
 
@@ -53,6 +55,12 @@ public class TransformCaptureWindow : EditorWindow
     private static HashSet<GameObject> successfullyCapturedLastRun = new HashSet<GameObject>();
     private static HashSet<GameObject> objectsWithCaptureErrorsLastRun = new HashSet<GameObject>();
     private static bool showCaptureGizmos = false;
+
+    private static Dictionary<int, GameObject> s_roomContextCache;
+    private static Dictionary<int, HouseComponentType> s_componentTypeCache;
+
+    private static List<string> s_captureHistory = new List<string>(10);
+    private static int s_currentHistoryIndex = -1;
 
     /// <summary>
     /// Opens the Transform Capturer editor window.
@@ -65,45 +73,61 @@ public class TransformCaptureWindow : EditorWindow
 
     void OnGUI()
     {
-        selectedCoordinateSpace = (CoordinateSpaceSetting)EditorGUILayout.EnumPopup("Coordinate Space:", selectedCoordinateSpace);
+        // Display Info/Error Messages
+        if (!string.IsNullOrEmpty(currentInfoMessage))
+        {
+            EditorGUILayout.HelpBox(currentInfoMessage, currentInfoMessageType);
+        }
+        EditorGUILayout.Space();
 
-        EditorGUI.BeginChangeCheck();
+        EditorGUILayout.LabelField("Capture Configuration", EditorStyles.boldLabel);
+        EditorGUILayout.BeginVertical("box");
+        selectedCoordinateSpace = (CoordinateSpaceSetting)EditorGUILayout.EnumPopup("Coordinate Space:", selectedCoordinateSpace);
         showCaptureGizmos = EditorGUILayout.Toggle("Show Capture Gizmos", showCaptureGizmos);
-        if (EditorGUI.EndChangeCheck())
+        if (EditorGUI.EndChangeCheck()) // Assuming this check is for gizmos, should be tied to it
         {
             SceneView.RepaintAll();
         }
-
-        // Add this before the capture button
         useContextualFormatting = EditorGUILayout.Toggle("Use Contextual House Formatting", useContextualFormatting);
         captureMode = (CaptureMode)EditorGUILayout.EnumPopup("Capture Mode:", captureMode);
         EditorGUI.BeginDisabledGroup(!useContextualFormatting);
         groupByRoom = EditorGUILayout.Toggle("Group by Room", groupByRoom);
         EditorGUI.EndDisabledGroup();
+        EditorGUILayout.EndVertical();
+        EditorGUILayout.Space();
 
-        updateAction = (UpdateAction)EditorGUILayout.EnumPopup("Update Action:", updateAction);
-
-        if (GUILayout.Button("Capture Selected Transforms"))
+        EditorGUILayout.LabelField("Primary Action", EditorStyles.boldLabel);
+        EditorGUILayout.BeginVertical("box");
+        if (GUILayout.Button("Capture Selected Transforms", GUILayout.Height(35))) // Made button larger
         {
             CaptureTransforms();
         }
+        EditorGUILayout.EndVertical();
+        EditorGUILayout.Space();
 
-        EditorGUILayout.Space(); // Added for layout
+        EditorGUILayout.LabelField("House Plan ScriptableObject Interaction", EditorStyles.boldLabel);
+        EditorGUILayout.BeginVertical("box");
+        updateAction = (UpdateAction)EditorGUILayout.EnumPopup("Update Action:", updateAction);
+        EditorGUILayout.Space();
         housePlanAssetPath = EditorGUILayout.TextField("House Plan Asset Path", housePlanAssetPath);
 
-        bool originalGuiEnabledState = GUI.enabled; // Store original GUI.enabled state
-        GUI.enabled = (updateAction == UpdateAction.ApplyChangesToAsset);
+        EditorGUI.BeginDisabledGroup(updateAction != UpdateAction.ApplyChangesToAsset);
         if (GUILayout.Button("Execute Update on Asset"))
         {
             ExecuteUpdateOnAsset();
         }
-        GUI.enabled = originalGuiEnabledState; // Restore original GUI.enabled state
+        EditorGUI.EndDisabledGroup();
 
+        // Disable "Compare" if "Apply" is the mode, or if some other condition makes compare invalid.
+        // For now, just disabling if ApplyChangesToAsset is chosen, as comparison is usually a pre-step.
+        EditorGUI.BeginDisabledGroup(updateAction == UpdateAction.ApplyChangesToAsset);
         if (GUILayout.Button("Compare Captured with Current Plan"))
         {
             CompareWithPlan();
         }
-        EditorGUILayout.Space(); // Added for layout
+        EditorGUI.EndDisabledGroup();
+        EditorGUILayout.EndVertical();
+        EditorGUILayout.Space();
 
         EditorGUILayout.LabelField("Generated C# Code:", EditorStyles.boldLabel);
         scrollPosition = EditorGUILayout.BeginScrollView(scrollPosition, GUILayout.ExpandHeight(true));
@@ -113,10 +137,208 @@ public class TransformCaptureWindow : EditorWindow
         // However, TextArea is fine for typical editor script usage if modification isn't intended.
         EditorGUILayout.TextArea(generatedCode, GUILayout.ExpandHeight(true), GUILayout.ExpandWidth(true));
         EditorGUILayout.EndScrollView();
+
+        EditorGUILayout.Space(); // Space after text area
+
+        EditorGUILayout.BeginHorizontal();
+        GUI.enabled = s_captureHistory.Count > 0 && s_currentHistoryIndex > 0;
+        if (GUILayout.Button("Previous Capture", GUILayout.MinWidth(120))) { ShowPreviousCapture(); }
+        GUI.enabled = s_captureHistory.Count > 0 && s_currentHistoryIndex < s_captureHistory.Count - 1;
+        if (GUILayout.Button("Next Capture", GUILayout.MinWidth(120))) { ShowNextCapture(); }
+        GUI.enabled = true;
+        if (s_captureHistory.Count > 0)
+        {
+            GUILayout.Label($"History: {s_currentHistoryIndex + 1}/{s_captureHistory.Count}", EditorStyles.miniLabel, GUILayout.ExpandWidth(false));
+        }
+        EditorGUILayout.EndHorizontal();
+        EditorGUILayout.Space();
+
+        EditorGUILayout.BeginHorizontal();
+        if (GUILayout.Button("Import Text to View", GUILayout.MinWidth(150))) { ImportTextToView(); }
+        if (GUILayout.Button("Export Captured Text", GUILayout.MinWidth(150))) { ExportCapturedText(); }
+        EditorGUILayout.EndHorizontal();
+        EditorGUILayout.Space();
+
+        if (GUILayout.Button("Copy Output to Clipboard", GUILayout.Height(30)))
+        {
+            InternalCopyGeneratedCodeToClipboard();
+        }
+        EditorGUILayout.Space(); // Final space at the bottom
+    }
+
+    void OnEnable()
+    {
+        TransformCapturePreferences.LoadPreferences(); // Ensure static class is up-to-date
+
+        selectedCoordinateSpace = TransformCapturePreferences.DefaultCoordinateSpaceSetting;
+        useContextualFormatting = TransformCapturePreferences.DefaultUseContextualFormattingSetting;
+        groupByRoom = TransformCapturePreferences.DefaultGroupByRoomSetting;
+        // The float precision is used directly from TransformCapturePreferences.FloatPrecisionForOutputSetting where needed.
+
+        // Initialize history related things
+        if (s_captureHistory.Count > 0 && s_currentHistoryIndex == -1)
+        {
+            s_currentHistoryIndex = s_captureHistory.Count - 1;
+        }
+        else if (s_currentHistoryIndex >= s_captureHistory.Count && s_captureHistory.Count > 0)
+        {
+             s_currentHistoryIndex = s_captureHistory.Count - 1;
+        } else if (s_captureHistory.Count == 0) {
+             s_currentHistoryIndex = -1;
+        }
+    }
+
+    private void ImportTextToView()
+    {
+        string path = EditorUtility.OpenFilePanel(
+            "Import Text to View", // Title
+            "",                    // Directory
+            "cs;txt"               // Allowed extensions
+        );
+
+        if (!string.IsNullOrEmpty(path))
+        {
+            try
+            {
+                generatedCode = System.IO.File.ReadAllText(path);
+                scrollPosition = Vector2.zero; // Reset scroll to see the new content
+                currentInfoMessage = $"Text imported from {System.IO.Path.GetFileName(path)}";
+                currentInfoMessageType = MessageType.Info;
+                ShowNotification(new GUIContent(currentInfoMessage)); // Also show notification
+                Debug.Log($"Transform Capture: Text imported from {path}");
+                Repaint(); // Update the window to show imported text
+            }
+            catch (System.Exception ex)
+            {
+                currentInfoMessage = $"Import failed: {ex.Message}";
+                currentInfoMessageType = MessageType.Error;
+                ShowNotification(new GUIContent("Import failed. See console.")); // Keep notification
+                Debug.LogError($"Transform Capture: Error importing text from {path}. Exception: {ex.Message}");
+                EditorUtility.DisplayDialog("Import Error", $"Failed to import text: {ex.Message}", "OK");
+            }
+        }
+    }
+
+    private void ExportCapturedText()
+    {
+        if (string.IsNullOrEmpty(generatedCode))
+        {
+            ShowNotification(new GUIContent("No text to export."));
+            EditorUtility.DisplayDialog("Export Text", "There is no captured text to export.", "OK");
+            return;
+        }
+
+        string path = EditorUtility.SaveFilePanel(
+            "Export Captured Text", // Title
+            "",                   // Directory
+            "CapturedTransformData.cs", // Default file name
+            "cs;txt"              // Allowed extensions (cs for C# code, txt for plain text)
+        );
+
+        if (!string.IsNullOrEmpty(path))
+        {
+            try
+            {
+                System.IO.File.WriteAllText(path, generatedCode);
+                currentInfoMessage = $"Text exported to {System.IO.Path.GetFileName(path)}";
+                currentInfoMessageType = MessageType.Info;
+                ShowNotification(new GUIContent(currentInfoMessage)); // Also show notification for quick feedback
+                Debug.Log($"Transform Capture: Text exported to {path}");
+            }
+            catch (System.Exception ex)
+            {
+                currentInfoMessage = $"Export failed: {ex.Message}";
+                currentInfoMessageType = MessageType.Error;
+                ShowNotification(new GUIContent("Export failed. See console.")); // Keep notification for consistency
+                Debug.LogError($"Transform Capture: Error exporting text to {path}. Exception: {ex.Message}");
+                EditorUtility.DisplayDialog("Export Error", $"Failed to export text: {ex.Message}", "OK");
+            }
+        }
+    }
+
+    private void ShowPreviousCapture()
+    {
+        if (s_currentHistoryIndex > 0)
+        {
+            s_currentHistoryIndex--;
+            generatedCode = s_captureHistory[s_currentHistoryIndex];
+            scrollPosition = Vector2.zero; // Reset scroll to see the new content
+            Repaint(); // Update the window view
+        }
+    }
+
+    private void ShowNextCapture()
+    {
+        if (s_currentHistoryIndex < s_captureHistory.Count - 1)
+        {
+            s_currentHistoryIndex++;
+            generatedCode = s_captureHistory[s_currentHistoryIndex];
+            scrollPosition = Vector2.zero; // Reset scroll
+            Repaint(); // Update the window view
+        }
+    }
+
+    [MenuItem("House Tools/Quick Capture Selected &House_Capture #&t")]
+    public static void QuickCaptureSelected()
+    {
+        TransformCaptureWindow window = EditorWindow.GetWindow<TransformCaptureWindow>("Transform Capturer");
+        if (Selection.gameObjects == null || Selection.gameObjects.Length == 0)
+        {
+            Debug.LogWarning("Quick Capture: No objects selected.");
+            window.ShowNotification(new GUIContent("No objects selected for Quick Capture."));
+            return;
+        }
+        window.captureMode = CaptureMode.SelectedObjects; // Set mode on the instance
+        window.CaptureTransforms(); // Call instance method
+        if (!string.IsNullOrEmpty(window.generatedCode))
+        {
+            EditorGUIUtility.systemCopyBuffer = window.generatedCode;
+            Debug.Log("Quick capture of selected objects copied to clipboard.");
+            window.ShowNotification(new GUIContent("Selected objects captured and copied!"));
+        }
+        else
+        {
+            Debug.LogWarning("Quick Capture: Generated code was empty.");
+            window.ShowNotification(new GUIContent("Capture resulted in empty output."));
+        }
+    }
+
+    private void InternalCopyGeneratedCodeToClipboard()
+    {
+        if (string.IsNullOrEmpty(generatedCode))
+        {
+            ShowNotification(new GUIContent("Nothing to copy."));
+            return;
+        }
+        EditorGUIUtility.systemCopyBuffer = generatedCode;
+        ShowNotification(new GUIContent("Output copied to clipboard!"));
+        Debug.Log("Generated code copied to clipboard.");
+    }
+
+    [MenuItem("House Tools/Copy Output to Clipboard #&c")]
+    public static void CopyOutputToClipboard()
+    {
+        TransformCaptureWindow window = EditorWindow.GetWindow<TransformCaptureWindow>(false); // Don't create if not open
+        if (window != null)
+        {
+            window.InternalCopyGeneratedCodeToClipboard();
+        }
+        else
+        {
+            Debug.LogWarning("Copy Output: Transform Capturer window is not open. Cannot copy.");
+        }
+    }
+
+    private void InitializeCaches()
+    {
+        s_roomContextCache = new Dictionary<int, GameObject>();
+        s_componentTypeCache = new Dictionary<int, HouseComponentType>();
     }
 
     private void CaptureTransforms()
     {
+        InitializeCaches();
+        currentInfoMessage = null; // Clear previous messages
         successfullyCapturedLastRun.Clear();
         objectsWithCaptureErrorsLastRun.Clear();
         StringBuilder sb = new StringBuilder();
@@ -153,16 +375,27 @@ public class TransformCaptureWindow : EditorWindow
 
         if (objectsToProcess.Count == 0)
         {
-            sb.AppendLine("// No objects found or selected for capture.");
-            generatedCode = sb.ToString();
-            Repaint(); // Repaint to show update
-            return;
+            string specificMessage = "No objects found for the current Capture Mode.";
+            if (captureMode == CaptureMode.SelectedObjects)
+            {
+                specificMessage = "No objects are currently selected for capture.";
+            }
+
+            generatedCode = $"// {specificMessage}";
+            currentInfoMessage = specificMessage;
+            currentInfoMessageType = MessageType.Warning;
+            Repaint(); // Repaint to show update and help box
+            return; // Exit early
         }
 
         // 2. Output Logic
-        if (useContextualFormatting && groupByRoom)
+        try
         {
-            Dictionary<GameObject, List<GameObject>> roomMap = new Dictionary<GameObject, List<GameObject>>();
+            EditorUtility.DisplayProgressBar("Capturing Transforms", "Preparing...", 0f);
+
+            if (useContextualFormatting && groupByRoom)
+            {
+                Dictionary<GameObject, List<GameObject>> roomMap = new Dictionary<GameObject, List<GameObject>>();
             List<GameObject> unassignedComponents = new List<GameObject>();
             List<GameObject> allRooms = new List<GameObject>(); // To maintain order and process rooms first
 
@@ -215,8 +448,14 @@ public class TransformCaptureWindow : EditorWindow
                                                captureMode == CaptureMode.ActiveScene_RoomsOnly ||
                                                (captureMode == CaptureMode.SelectedObjects && objectsToProcess.Any(o => DetectComponentType(o) == HouseComponentType.Room));
 
+            int totalStepsWhenGrouping = allRooms.Count + unassignedComponents.Count;
+            int currentStepWhenGrouping = 0;
+
             foreach (GameObject roomObj in allRooms)
             {
+                currentStepWhenGrouping++;
+                EditorUtility.DisplayProgressBar("Capturing Transforms", $"Processing Room: {roomObj.name}", (float)currentStepWhenGrouping / totalStepsWhenGrouping);
+
                 bool roomHasRelevantChildren = roomMap.ContainsKey(roomObj) && roomMap[roomObj].Count > 0;
                 bool roomIsTargetOfCapture = objectsToProcess.Contains(roomObj);
 
@@ -264,6 +503,9 @@ public class TransformCaptureWindow : EditorWindow
 
                 foreach (GameObject obj in sortedUnassigned)
                 {
+                    currentStepWhenGrouping++;
+                    EditorUtility.DisplayProgressBar("Capturing Transforms", $"Processing: {obj.name}", (float)currentStepWhenGrouping / totalStepsWhenGrouping);
+
                     HouseComponentType componentType = DetectComponentType(obj);
                     switch (componentType)
                     {
@@ -287,14 +529,18 @@ public class TransformCaptureWindow : EditorWindow
                 }
             }
         }
-        else
+        else // Not grouped by room
         {
             var sortedObjectsToProcess = objectsToProcess.Distinct()
                 .OrderBy(obj => useContextualFormatting ? DetectComponentType(obj).ToString() : "")
-                .ThenBy(obj => obj.name);
+                .ThenBy(obj => obj.name)
+                .ToList(); // ToList to get a count for progress
 
-            foreach (GameObject obj in sortedObjectsToProcess)
+            for (int i = 0; i < sortedObjectsToProcess.Count; i++)
             {
+                GameObject obj = sortedObjectsToProcess[i];
+                EditorUtility.DisplayProgressBar("Capturing Transforms", $"Processing: {obj.name}", (float)(i + 1) / sortedObjectsToProcess.Count);
+
                 if (useContextualFormatting)
                 {
                     HouseComponentType componentType = DetectComponentType(obj);
@@ -326,12 +572,51 @@ public class TransformCaptureWindow : EditorWindow
         }
 
         generatedCode = sb.ToString();
+
+        if (!string.IsNullOrEmpty(generatedCode) && !generatedCode.StartsWith("// No objects found")) // Avoid adding trivial/empty captures
+        {
+            // Remove future history if we went back and made a new capture
+            if (s_currentHistoryIndex < s_captureHistory.Count - 1)
+            {
+                s_captureHistory.RemoveRange(s_currentHistoryIndex + 1, s_captureHistory.Count - (s_currentHistoryIndex + 1));
+            }
+
+            // Limit history size
+            if (s_captureHistory.Count >= 10) // Max 10 items
+            {
+                s_captureHistory.RemoveAt(0); // Remove oldest
+            }
+            s_captureHistory.Add(generatedCode);
+            s_currentHistoryIndex = s_captureHistory.Count - 1;
+        }
         Repaint();
+        }
+        finally
+        {
+            EditorUtility.ClearProgressBar();
+        }
+
+        // Set summary message after processing
+        if (objectsToProcess.Count > 0) // Only show summary if we attempted processing
+        {
+            if (objectsWithCaptureErrorsLastRun.Count > 0)
+            {
+                currentInfoMessage = $"{objectsWithCaptureErrorsLastRun.Count} object(s) encountered issues during capture. See console/gizmos for details.";
+                currentInfoMessageType = MessageType.Warning;
+            }
+            else
+            {
+                currentInfoMessage = "Capture successful.";
+                currentInfoMessageType = MessageType.Info;
+            }
+            // Repaint is called at the end of the method, which will show this message.
+        }
     }
 
     private string FormatGenericTransformData(GameObject obj)
     {
         StringBuilder sb = new StringBuilder();
+        string formatString = "F" + TransformCapturePreferences.FloatPrecisionForOutputSetting;
 
         Vector3 worldPosition = obj.transform.position;
         Vector3 positionToOutput = worldPosition;
@@ -364,11 +649,11 @@ public class TransformCaptureWindow : EditorWindow
         }
 
         sb.AppendLine($"// Transform data for \"{obj.name}\" (InstanceID: {obj.GetInstanceID()})");
-        sb.AppendLine($"Vector3 position = new Vector3({positionToOutput.x.ToString("f3", CultureInfo.InvariantCulture)}f, {positionToOutput.y.ToString("f3", CultureInfo.InvariantCulture)}f, {positionToOutput.z.ToString("f3", CultureInfo.InvariantCulture)}f);{positionComment}");
+        sb.AppendLine($"Vector3 position = new Vector3({positionToOutput.x.ToString(formatString, CultureInfo.InvariantCulture)}f, {positionToOutput.y.ToString(formatString, CultureInfo.InvariantCulture)}f, {positionToOutput.z.ToString(formatString, CultureInfo.InvariantCulture)}f);{positionComment}");
         Vector3 eulerAngles = obj.transform.eulerAngles;
-        sb.AppendLine($"Quaternion rotation = Quaternion.Euler({eulerAngles.x.ToString("f1", CultureInfo.InvariantCulture)}f, {eulerAngles.y.ToString("f1", CultureInfo.InvariantCulture)}f, {eulerAngles.z.ToString("f1", CultureInfo.InvariantCulture)}f); // World rotation");
+        sb.AppendLine($"Quaternion rotation = Quaternion.Euler({eulerAngles.x.ToString(formatString, CultureInfo.InvariantCulture)}f, {eulerAngles.y.ToString(formatString, CultureInfo.InvariantCulture)}f, {eulerAngles.z.ToString(formatString, CultureInfo.InvariantCulture)}f); // World rotation");
         Vector3 scale = obj.transform.localScale;
-        sb.AppendLine($"Vector3 scale = new Vector3({scale.x.ToString("f3", CultureInfo.InvariantCulture)}f, {scale.y.ToString("f3", CultureInfo.InvariantCulture)}f, {scale.z.ToString("f3", CultureInfo.InvariantCulture)}f); // Local scale");
+        sb.AppendLine($"Vector3 scale = new Vector3({scale.x.ToString(formatString, CultureInfo.InvariantCulture)}f, {scale.y.ToString(formatString, CultureInfo.InvariantCulture)}f, {scale.z.ToString(formatString, CultureInfo.InvariantCulture)}f); // Local scale");
         sb.AppendLine();
         return sb.ToString();
     }
@@ -433,7 +718,7 @@ public class TransformCaptureWindow : EditorWindow
     /// </summary>
     /// <param name="obj">The GameObject to analyze.</param>
     /// <returns>The detected HouseComponentType.</returns>
-    public static HouseComponentType DetectComponentType(GameObject obj)
+    private static HouseComponentType CalculateComponentType(GameObject obj)
     {
         if (obj.name == "ProceduralHouse_Generated") return HouseComponentType.ProceduralHouseRoot;
         if (obj.name == "Foundation") return HouseComponentType.Foundation;
@@ -448,12 +733,32 @@ public class TransformCaptureWindow : EditorWindow
         return HouseComponentType.Unknown;
     }
 
-    private GameObject GetRoomContext(GameObject obj)
+    public static HouseComponentType DetectComponentType(GameObject obj)
+    {
+        if (obj == null) return HouseComponentType.Unknown;
+        // Ensure cache is initialized before use, or handle null cache gracefully.
+        if (s_componentTypeCache == null) {
+            // This case should ideally not be hit if InitializeCaches() is called correctly.
+            // Alternatively, could throw an error or initialize lazily.
+            // For now, proceed to calculate if cache isn't ready, though this bypasses caching.
+            return CalculateComponentType(obj);
+        }
+        int instanceID = obj.GetInstanceID();
+        if (s_componentTypeCache.TryGetValue(instanceID, out HouseComponentType cachedType))
+        {
+            return cachedType;
+        }
+        HouseComponentType type = CalculateComponentType(obj); // Call the original logic
+        s_componentTypeCache[instanceID] = type; // Add to cache
+        return type;
+    }
+
+    private GameObject CalculateRoomContext(GameObject obj)
     {
         if (obj == null) return null;
 
         // Check if the object itself is a room
-        if (DetectComponentType(obj) == HouseComponentType.Room)
+        if (DetectComponentType(obj) == HouseComponentType.Room) // This now calls the caching version
         {
             return obj;
         }
@@ -462,7 +767,7 @@ public class TransformCaptureWindow : EditorWindow
         Transform currentParent = obj.transform.parent;
         while (currentParent != null)
         {
-            if (DetectComponentType(currentParent.gameObject) == HouseComponentType.Room)
+            if (DetectComponentType(currentParent.gameObject) == HouseComponentType.Room) // This now calls the caching version
             {
                 return currentParent.gameObject;
             }
@@ -470,6 +775,24 @@ public class TransformCaptureWindow : EditorWindow
         }
 
         return null; // No room context found
+    }
+
+    private GameObject GetRoomContext(GameObject obj)
+    {
+        if (obj == null) return null;
+        // Ensure cache is initialized
+        if (s_roomContextCache == null) {
+            // Similar to DetectComponentType, ideally not hit.
+            return CalculateRoomContext(obj);
+        }
+        int instanceID = obj.GetInstanceID();
+        if (s_roomContextCache.TryGetValue(instanceID, out GameObject cachedRoom))
+        {
+            return cachedRoom; // Can be null if that was the cached result
+        }
+        GameObject room = CalculateRoomContext(obj); // Call the original logic
+        s_roomContextCache[instanceID] = room; // Add to cache
+        return room;
     }
 
     private Vector3 GetRoomOrigin(GameObject objInRoom)
@@ -621,6 +944,7 @@ public class TransformCaptureWindow : EditorWindow
     public string FormatAsRoomData(GameObject roomObject) // Changed parameter name for clarity
     {
         StringBuilder sb = new StringBuilder();
+        string formatString = "F" + TransformCapturePreferences.FloatPrecisionForOutputSetting;
 
         // Derive roomId and roomLabel from roomObject.name
         string roomId = roomObject.name; // Assuming name is unique and suitable for ID
@@ -636,7 +960,7 @@ public class TransformCaptureWindow : EditorWindow
         else
         {
             dimensions = new Vector2(3f, 3f); // Placeholder dimensions
-            Debug.LogWarning($"Room '{roomObject.name}': MeshRenderer not found or bounds are zero. Using placeholder dimensions ({dimensions.x.ToString("f3", CultureInfo.InvariantCulture)}f, {dimensions.y.ToString("f3", CultureInfo.InvariantCulture)}f).");
+            Debug.LogWarning($"Room '{roomObject.name}': MeshRenderer not found or bounds are zero. Using placeholder dimensions ({dimensions.x.ToString(formatString, CultureInfo.InvariantCulture)}f, {dimensions.y.ToString(formatString, CultureInfo.InvariantCulture)}f).");
         }
 
         // Use roomObject.transform.position for position
@@ -649,12 +973,12 @@ public class TransformCaptureWindow : EditorWindow
         sb.AppendLine("{");
         sb.AppendLine($"    roomId = \"{roomId}\",");
         sb.AppendLine($"    roomLabel = \"{roomLabel}\",");
-        sb.AppendLine($"    dimensions = new Vector2({dimensions.x.ToString("f3", CultureInfo.InvariantCulture)}f, {dimensions.y.ToString("f3", CultureInfo.InvariantCulture)}f),");
-        sb.AppendLine($"    position = new Vector3({position.x.ToString("f3", CultureInfo.InvariantCulture)}f, {position.y.ToString("f3", CultureInfo.InvariantCulture)}f, {position.z.ToString("f3", CultureInfo.InvariantCulture)}f), // World Position");
+        sb.AppendLine($"    dimensions = new Vector2({dimensions.x.ToString(formatString, CultureInfo.InvariantCulture)}f, {dimensions.y.ToString(formatString, CultureInfo.InvariantCulture)}f),");
+        sb.AppendLine($"    position = new Vector3({position.x.ToString(formatString, CultureInfo.InvariantCulture)}f, {position.y.ToString(formatString, CultureInfo.InvariantCulture)}f, {position.z.ToString(formatString, CultureInfo.InvariantCulture)}f), // World Position");
         sb.AppendLine("    walls = new List<WallSegment>(), // Placeholder for actual wall data");
         sb.AppendLine("    connectedRoomIds = new List<string>(), // Placeholder for actual connected room IDs");
         sb.AppendLine("    notes = \"\",");
-        sb.AppendLine($"    atticHatchLocalPosition = new Vector3({Vector3.zero.x.ToString("f3", CultureInfo.InvariantCulture)}f, {Vector3.zero.y.ToString("f3", CultureInfo.InvariantCulture)}f, {Vector3.zero.z.ToString("f3", CultureInfo.InvariantCulture)}f)");
+        sb.AppendLine($"    atticHatchLocalPosition = new Vector3({Vector3.zero.x.ToString(formatString, CultureInfo.InvariantCulture)}f, {Vector3.zero.y.ToString(formatString, CultureInfo.InvariantCulture)}f, {Vector3.zero.z.ToString(formatString, CultureInfo.InvariantCulture)}f)");
         sb.AppendLine("};");
         sb.AppendLine();
 
@@ -673,6 +997,7 @@ public class TransformCaptureWindow : EditorWindow
     public string FormatAsWallSegment(GameObject wallRootObject, float roomFloorY, float storyHeight, float wallThickness)
     {
         StringBuilder sb = new StringBuilder();
+        string formatString = "F" + TransformCapturePreferences.FloatPrecisionForOutputSetting;
 
         // Call WallSegmentAnalyzer.AnalyzeWallGeometry
         // Ensure WallSegmentAnalyzer and AnalyzedWallData are defined and accessible
@@ -700,9 +1025,9 @@ public class TransformCaptureWindow : EditorWindow
         sb.AppendLine($"// WallSegment for \"{wallRootObject.name}\" (InstanceID: {wallRootObject.GetInstanceID()})");
         sb.AppendLine("new WallSegment");
         sb.AppendLine("{");
-        sb.AppendLine($"    startPoint = new Vector3({startPoint.x.ToString("f3", CultureInfo.InvariantCulture)}f, {startPoint.y.ToString("f3", CultureInfo.InvariantCulture)}f, {startPoint.z.ToString("f3", CultureInfo.InvariantCulture)}f), // World Space");
-        sb.AppendLine($"    endPoint = new Vector3({endPoint.x.ToString("f3", CultureInfo.InvariantCulture)}f, {endPoint.y.ToString("f3", CultureInfo.InvariantCulture)}f, {endPoint.z.ToString("f3", CultureInfo.InvariantCulture)}f), // World Space");
-        sb.AppendLine($"    thickness = {currentThickness.ToString("f3", CultureInfo.InvariantCulture)}f,");
+        sb.AppendLine($"    startPoint = new Vector3({startPoint.x.ToString(formatString, CultureInfo.InvariantCulture)}f, {startPoint.y.ToString(formatString, CultureInfo.InvariantCulture)}f, {startPoint.z.ToString(formatString, CultureInfo.InvariantCulture)}f), // World Space");
+        sb.AppendLine($"    endPoint = new Vector3({endPoint.x.ToString(formatString, CultureInfo.InvariantCulture)}f, {endPoint.y.ToString(formatString, CultureInfo.InvariantCulture)}f, {endPoint.z.ToString(formatString, CultureInfo.InvariantCulture)}f), // World Space");
+        sb.AppendLine($"    thickness = {currentThickness.ToString(formatString, CultureInfo.InvariantCulture)}f,");
         sb.AppendLine($"    isExterior = {isExterior.ToString().ToLowerInvariant()},"); // Format bool as lowercase true/false
         sb.AppendLine("    doorIdsOnWall = new List<string>(), // Placeholder for actual door IDs");
         sb.AppendLine("    windowIdsOnWall = new List<string>(), // Placeholder for actual window IDs");
@@ -722,6 +1047,7 @@ public class TransformCaptureWindow : EditorWindow
     public string FormatAsDoorSpec(GameObject doorObject) // Changed param name
     {
         StringBuilder sb = new StringBuilder();
+        string formatString = "F" + TransformCapturePreferences.FloatPrecisionForOutputSetting;
 
         string doorId = doorObject.name;
 
@@ -743,7 +1069,7 @@ public class TransformCaptureWindow : EditorWindow
         }
         else
         {
-            Debug.LogWarning($"Door '{doorObject.name}': Renderer not found or bounds are zero. Using placeholder dimensions (Width: {width.ToString("f3", CultureInfo.InvariantCulture)}f, Height: {height.ToString("f3", CultureInfo.InvariantCulture)}f).");
+            Debug.LogWarning($"Door '{doorObject.name}': Renderer not found or bounds are zero. Using placeholder dimensions (Width: {width.ToString(formatString, CultureInfo.InvariantCulture)}f, Height: {height.ToString(formatString, CultureInfo.InvariantCulture)}f).");
         }
 
         // Position - Replicating GetProcessedPositionString logic for correct formatting here
@@ -790,7 +1116,7 @@ public class TransformCaptureWindow : EditorWindow
                 // positionToOutput is already worldPos; positionComment is already set
                 break;
         }
-        string formattedPosition = $"new Vector3({positionToOutput.x.ToString("f3", CultureInfo.InvariantCulture)}f, {positionToOutput.y.ToString("f3", CultureInfo.InvariantCulture)}f, {positionToOutput.z.ToString("f3", CultureInfo.InvariantCulture)}f)";
+        string formattedPosition = $"new Vector3({positionToOutput.x.ToString(formatString, CultureInfo.InvariantCulture)}f, {positionToOutput.y.ToString(formatString, CultureInfo.InvariantCulture)}f, {positionToOutput.z.ToString(formatString, CultureInfo.InvariantCulture)}f)";
 
         // Wall ID
         string wallId = "UNKNOWN_WALL_ID";
@@ -825,8 +1151,8 @@ public class TransformCaptureWindow : EditorWindow
         sb.AppendLine("{");
         sb.AppendLine($"    doorId = \"{doorId}\",");
         sb.AppendLine($"    type = DoorType.{type.ToString()},"); // Assumes DoorType enum
-        sb.AppendLine($"    width = {width.ToString("f3", CultureInfo.InvariantCulture)}f,");
-        sb.AppendLine($"    height = {height.ToString("f3", CultureInfo.InvariantCulture)}f,");
+        sb.AppendLine($"    width = {width.ToString(formatString, CultureInfo.InvariantCulture)}f,");
+        sb.AppendLine($"    height = {height.ToString(formatString, CultureInfo.InvariantCulture)}f,");
         sb.AppendLine($"    position = {formattedPosition},{positionComment}");
         sb.AppendLine($"    wallId = \"{wallId}\", {wallIdComment}"); // NEW LINE
         sb.AppendLine($"    swingDirection = SwingDirection.{swingDirection.ToString()},"); // Assumes SwingDirection enum
@@ -853,6 +1179,7 @@ public class TransformCaptureWindow : EditorWindow
     public string FormatAsWindowSpec(GameObject windowObject, float roomFloorY) // Added roomFloorY, changed param name
     {
         StringBuilder sb = new StringBuilder();
+        string formatString = "F" + TransformCapturePreferences.FloatPrecisionForOutputSetting;
 
         string windowId = windowObject.name;
 
@@ -886,7 +1213,7 @@ public class TransformCaptureWindow : EditorWindow
         }
         else
         {
-            Debug.LogWarning($"Window '{windowObject.name}': Renderer not found or bounds are zero. Using placeholder dimensions (Width: {width.ToString("f3", CultureInfo.InvariantCulture)}f, Height: {height.ToString("f3", CultureInfo.InvariantCulture)}f).");
+            Debug.LogWarning($"Window '{windowObject.name}': Renderer not found or bounds are zero. Using placeholder dimensions (Width: {width.ToString(formatString, CultureInfo.InvariantCulture)}f, Height: {height.ToString(formatString, CultureInfo.InvariantCulture)}f).");
         }
 
         // Position - Adapting GetProcessedPositionString logic
@@ -932,7 +1259,7 @@ public class TransformCaptureWindow : EditorWindow
                 // positionToOutput is already worldPos; positionComment is already set
                 break;
         }
-        string formattedPosition = $"new Vector3({positionToOutput.x.ToString("f3", CultureInfo.InvariantCulture)}f, {positionToOutput.y.ToString("f3", CultureInfo.InvariantCulture)}f, {positionToOutput.z.ToString("f3", CultureInfo.InvariantCulture)}f)";
+        string formattedPosition = $"new Vector3({positionToOutput.x.ToString(formatString, CultureInfo.InvariantCulture)}f, {positionToOutput.y.ToString(formatString, CultureInfo.InvariantCulture)}f, {positionToOutput.z.ToString(formatString, CultureInfo.InvariantCulture)}f)";
 
         // Sill Height
         float sillHeight = windowObject.transform.position.y - roomFloorY;
@@ -968,14 +1295,14 @@ public class TransformCaptureWindow : EditorWindow
         sb.AppendLine("{");
         sb.AppendLine($"    windowId = \"{windowId}\",");
         sb.AppendLine($"    type = global::WindowType.{type.ToString()},"); // Assumes WindowType enum from HousePlanSO
-        sb.AppendLine($"    width = {width.ToString("f3", CultureInfo.InvariantCulture)}f,");
-        sb.AppendLine($"    height = {height.ToString("f3", CultureInfo.InvariantCulture)}f,");
+        sb.AppendLine($"    width = {width.ToString(formatString, CultureInfo.InvariantCulture)}f,");
+        sb.AppendLine($"    height = {height.ToString(formatString, CultureInfo.InvariantCulture)}f,");
         sb.AppendLine($"    position = {formattedPosition},{positionComment}");
-        sb.AppendLine($"    sillHeight = {sillHeight.ToString("f3", CultureInfo.InvariantCulture)}f,");
+        sb.AppendLine($"    sillHeight = {sillHeight.ToString(formatString, CultureInfo.InvariantCulture)}f,");
         sb.AppendLine($"    wallId = \"{wallId}\", {wallIdComment}"); // NEW LINE
         sb.AppendLine($"    isOperable = {isOperable.ToString().ToLowerInvariant()},");
         sb.AppendLine($"    bayPanes = {bayPanes.ToString(CultureInfo.InvariantCulture)},"); // int, no "f"
-        sb.AppendLine($"    bayProjectionDepth = {bayProjectionDepth.ToString("f3", CultureInfo.InvariantCulture)}f");
+        sb.AppendLine($"    bayProjectionDepth = {bayProjectionDepth.ToString(formatString, CultureInfo.InvariantCulture)}f");
         sb.AppendLine("};");
         sb.AppendLine();
 
@@ -1026,6 +1353,7 @@ public class TransformCaptureWindow : EditorWindow
 
     private (List<RoomData> rooms, List<DoorSpec> doors, List<WindowSpec> windows, List<OpeningSpec> openings) CaptureSceneDataAsStructs(HousePlanSO existingPlanForContext)
     {
+        InitializeCaches();
         generatedCode += "\nStarting scene data capture...\n";
         List<RoomData> capturedRooms = new List<RoomData>();
         List<DoorSpec> capturedDoors = new List<DoorSpec>();
@@ -1746,6 +2074,51 @@ public class TransformCaptureWindow : EditorWindow
     }
 }
 
+class TransformCaptureToolSettingsProvider
+{
+    [SettingsProvider]
+    public static SettingsProvider CreateTransformCaptureToolSettingsProvider()
+    {
+        var provider = new SettingsProvider("Preferences/Transform Capture Tool", SettingsScope.User)
+        {
+            label = "Transform Capture Tool",
+            guiHandler = (searchContext) =>
+            {
+                TransformCapturePreferences.LoadPreferences(); // Ensure we have the latest from EditorPrefs
+
+                EditorGUI.BeginChangeCheck();
+
+                TransformCaptureWindow.CoordinateSpaceSetting newCoordSpace =
+                    (TransformCaptureWindow.CoordinateSpaceSetting)EditorGUILayout.EnumPopup(
+                        "Default Coordinate Space", TransformCapturePreferences.DefaultCoordinateSpaceSetting);
+
+                bool newUseContextual = EditorGUILayout.Toggle(
+                    "Default Use Contextual Formatting", TransformCapturePreferences.DefaultUseContextualFormattingSetting);
+
+                bool newGroupByRoom = EditorGUILayout.Toggle(
+                    "Default Group by Room", TransformCapturePreferences.DefaultGroupByRoomSetting);
+
+                int newFloatPrecision = EditorGUILayout.IntSlider(
+                    "Float Precision (decimals)", TransformCapturePreferences.FloatPrecisionForOutputSetting, 1, 7); // Min 1, Max 7 decimal places
+
+                if (EditorGUI.EndChangeCheck())
+                {
+                    TransformCapturePreferences.DefaultCoordinateSpaceSetting = newCoordSpace;
+                    TransformCapturePreferences.DefaultUseContextualFormattingSetting = newUseContextual;
+                    TransformCapturePreferences.DefaultGroupByRoomSetting = newGroupByRoom;
+                    TransformCapturePreferences.FloatPrecisionForOutputSetting = newFloatPrecision;
+
+                    TransformCapturePreferences.SavePreferences();
+                }
+            },
+
+            keywords = new HashSet<string>(new[] { "Transform", "Capture", "House", "Tool", "Coordinate", "Formatting", "Precision" })
+        };
+
+        return provider;
+    }
+}
+
 // --- Placeholder Classes ---
 // Define these outside the TransformCaptureWindow class if they are intended for broader use,
 // or inside if they are strictly private helper types. For this subtask, placing them here is fine.
@@ -1812,3 +2185,41 @@ public class DiffResultSet
 // public class DiffEntry<T> { public string id; public ChangeType change; public T existingData; public T capturedData; public List<string> differences; }
 // public enum ChangeType { Unchanged, Added, Removed, Modified }
 // End of placeholder classes for context
+
+public static class TransformCapturePreferences
+{
+    private const string k_DefaultCoordinateSpace = "TransformCaptureTool.DefaultCoordinateSpace";
+    private const string k_DefaultUseContextualFormatting = "TransformCaptureTool.DefaultUseContextualFormatting";
+    private const string k_DefaultGroupByRoom = "TransformCaptureTool.DefaultGroupByRoom";
+    private const string k_FloatPrecision = "TransformCaptureTool.FloatPrecision";
+
+    // Default values for preferences
+    public static TransformCaptureWindow.CoordinateSpaceSetting DefaultCoordinateSpaceSetting { get; set; } = TransformCaptureWindow.CoordinateSpaceSetting.World;
+    public static bool DefaultUseContextualFormattingSetting { get; set; } = false;
+    public static bool DefaultGroupByRoomSetting { get; set; } = false;
+    public static int FloatPrecisionForOutputSetting { get; set; } = 3; // Default to 3 decimal places
+
+    // Static constructor to load preferences once when class is accessed
+    static TransformCapturePreferences()
+    {
+        LoadPreferences();
+    }
+
+    public static void LoadPreferences()
+    {
+        DefaultCoordinateSpaceSetting = (TransformCaptureWindow.CoordinateSpaceSetting)EditorPrefs.GetInt(k_DefaultCoordinateSpace, (int)TransformCaptureWindow.CoordinateSpaceSetting.World);
+        DefaultUseContextualFormattingSetting = EditorPrefs.GetBool(k_DefaultUseContextualFormatting, false);
+        DefaultGroupByRoomSetting = EditorPrefs.GetBool(k_DefaultGroupByRoom, false);
+        FloatPrecisionForOutputSetting = EditorPrefs.GetInt(k_FloatPrecision, 3);
+        // Ensure precision is within a sane range, e.g., 1-7, as slider will enforce but direct EditorPrefs edit might not.
+        FloatPrecisionForOutputSetting = Mathf.Clamp(FloatPrecisionForOutputSetting, 1, 7);
+    }
+
+    public static void SavePreferences()
+    {
+        EditorPrefs.SetInt(k_DefaultCoordinateSpace, (int)DefaultCoordinateSpaceSetting);
+        EditorPrefs.SetBool(k_DefaultUseContextualFormatting, DefaultUseContextualFormattingSetting);
+        EditorPrefs.SetBool(k_DefaultGroupByRoom, DefaultGroupByRoomSetting);
+        EditorPrefs.SetInt(k_FloatPrecision, FloatPrecisionForOutputSetting);
+    }
+}
