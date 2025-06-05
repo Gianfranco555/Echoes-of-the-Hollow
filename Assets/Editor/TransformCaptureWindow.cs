@@ -1,18 +1,35 @@
+// Placeholder Enums (to be defined properly if they exist elsewhere or requirements are clarified)
+public enum DoorType { Hinged, Sliding, Pocket, Other }
+public enum SwingDirection { InwardNorth, InwardSouth, InwardEast, InwardWest, OutwardNorth, OutwardSouth, OutwardEast, OutwardWest, None }
+public enum SlideDirection { SlidesLeft, SlidesRight, SlidesUp, SlidesDown, None }
+public enum WindowType { SingleHung, DoubleHung, Casement, Sliding, Picture, Bay, Bow, Other }
+
 using UnityEditor;
 using UnityEngine;
 using System.Text;
 using System.Globalization; // Add this line
-using System.Collections.Generic; // Added for List<T>
+using System.Collections.Generic; // For List<T>
+using System.Linq; // For Linq operations
 
 public class TransformCaptureWindow : EditorWindow
 {
     public enum HouseComponentType { Unknown, Room, Wall, Door, Window, Foundation, Roof, ProceduralHouseRoot }
     public enum CoordinateSpaceSetting { World, RoomRelative, WallRelative }
+    public enum CaptureMode
+    {
+        SelectedObjects,
+        ActiveScene_AllHouseComponents,
+        ActiveScene_RoomsOnly,
+        ActiveScene_WallsOnly,
+        ActiveScene_DoorsAndWindowsOnly
+    }
+    private CaptureMode captureMode = CaptureMode.SelectedObjects;
 
     private string generatedCode = "";
     private Vector2 scrollPosition;
     private CoordinateSpaceSetting selectedCoordinateSpace = CoordinateSpaceSetting.World;
     private bool useContextualFormatting = false; // Added field
+    private bool groupByRoom = false;
 
     [MenuItem("House Tools/Transform Data Capturer")]
     public static void ShowWindow()
@@ -25,6 +42,10 @@ public class TransformCaptureWindow : EditorWindow
         selectedCoordinateSpace = (CoordinateSpaceSetting)EditorGUILayout.EnumPopup("Coordinate Space:", selectedCoordinateSpace);
         // Add this before the capture button
         useContextualFormatting = EditorGUILayout.Toggle("Use Contextual House Formatting", useContextualFormatting);
+        captureMode = (CaptureMode)EditorGUILayout.EnumPopup("Capture Mode:", captureMode);
+        EditorGUI.BeginDisabledGroup(!useContextualFormatting);
+        groupByRoom = EditorGUILayout.Toggle("Group by Room", groupByRoom);
+        EditorGUI.EndDisabledGroup();
 
         if (GUILayout.Button("Capture Selected Transforms"))
         {
@@ -44,174 +65,304 @@ public class TransformCaptureWindow : EditorWindow
     private void CaptureTransforms()
     {
         StringBuilder sb = new StringBuilder();
-        GameObject[] selectedObjects = Selection.gameObjects;
+        List<GameObject> objectsToProcess = new List<GameObject>();
 
-        if (selectedObjects.Length == 0)
+        // 1. Get GameObjects based on captureMode
+        switch (captureMode)
         {
-            sb.AppendLine("// No objects selected.");
+            case CaptureMode.SelectedObjects:
+                objectsToProcess.AddRange(Selection.gameObjects);
+                break;
+            case CaptureMode.ActiveScene_AllHouseComponents:
+                objectsToProcess.AddRange(FindAllHouseComponents());
+                break;
+            case CaptureMode.ActiveScene_RoomsOnly:
+                objectsToProcess.AddRange(FindAllHouseComponents(HouseComponentType.Room));
+                break;
+            case CaptureMode.ActiveScene_WallsOnly:
+                objectsToProcess.AddRange(FindAllHouseComponents(HouseComponentType.Wall));
+                break;
+            case CaptureMode.ActiveScene_DoorsAndWindowsOnly:
+                objectsToProcess.AddRange(FindAllHouseComponents(HouseComponentType.Door));
+                objectsToProcess.AddRange(FindAllHouseComponents(HouseComponentType.Window));
+                break;
+        }
+
+        if (objectsToProcess.Count == 0)
+        {
+            sb.AppendLine("// No objects found or selected for capture.");
             generatedCode = sb.ToString();
+            Repaint(); // Repaint to show update
             return;
         }
 
-        foreach (GameObject obj in selectedObjects)
+        // 2. Output Logic
+        if (useContextualFormatting && groupByRoom)
         {
-            if (useContextualFormatting)
+            Dictionary<GameObject, List<GameObject>> roomMap = new Dictionary<GameObject, List<GameObject>>();
+            List<GameObject> unassignedComponents = new List<GameObject>();
+            List<GameObject> allRooms = new List<GameObject>(); // To maintain order and process rooms first
+
+            List<GameObject> roomsToConsiderForMap = new List<GameObject>();
+            if (captureMode == CaptureMode.ActiveScene_AllHouseComponents || captureMode == CaptureMode.ActiveScene_RoomsOnly)
             {
-                HouseComponentType componentType = DetectComponentType(obj);
-                switch (componentType)
-                {
-                    case HouseComponentType.Room:
-                        sb.AppendLine(FormatAsRoomData(obj));
-                        break;
-                    case HouseComponentType.Wall:
-                        float defaultRoomFloorY = 0.0f;
-                        float defaultStoryHeight = 2.7f;
-                        float defaultWallThickness = 0.1f;
-                        sb.AppendLine(FormatAsWallSegment(obj, defaultRoomFloorY, defaultStoryHeight, defaultWallThickness));
-                        break;
-                    case HouseComponentType.Door:
-                        sb.AppendLine(FormatAsDoorSpec(obj));
-                        break;
-                    case HouseComponentType.Window:
-                        float defaultRoomFloorYForWindow = 0.0f;
-                        sb.AppendLine(FormatAsWindowSpec(obj, defaultRoomFloorYForWindow));
-                        break;
-                    case HouseComponentType.Foundation:
-                    case HouseComponentType.Roof:
-                    case HouseComponentType.ProceduralHouseRoot:
-                    case HouseComponentType.Unknown:
-                    default:
-                        sb.AppendLine($"// Detected {componentType} \"{obj.name}\" - Using generic transform output.");
-                        // Generic transform output (existing code)
-                        sb.AppendLine($"// Transform data for \"{obj.name}\" (InstanceID: {obj.GetInstanceID()})");
-                        // --- Start of new position logic for generic path ---
-                        Vector3 worldPosition = obj.transform.position;
-                        Vector3 positionToOutput = worldPosition;
-                        string positionComment = " // Position (World Space)";
-
-                        switch (selectedCoordinateSpace)
-                        {
-                            case CoordinateSpaceSetting.RoomRelative:
-                                GameObject roomObject = GetRoomContext(obj);
-                                if (roomObject != null)
-                                {
-                                    Vector3 roomOrigin = GetRoomOrigin(obj); // GetRoomOrigin itself handles warning if roomObject is null via GetRoomContext
-                                    positionToOutput = ConvertToRoomRelative(worldPosition, roomOrigin);
-                                    positionComment = $" // Position (Room Relative to '{roomObject.name}')";
-                                }
-                                else if (obj.transform.parent != null)
-                                {
-                                    // Fallback to parent if no room context
-                                    Vector3 parentOrigin = obj.transform.parent.position;
-                                    positionToOutput = ConvertToRoomRelative(worldPosition, parentOrigin);
-                                    positionComment = $" // Position (Relative to parent '{obj.transform.parent.name}')";
-                                    Debug.LogWarning($"'{obj.name}' (Generic): RoomRelative selected, no room context. Outputting relative to parent '{obj.transform.parent.name}'.");
-                                }
-                                else
-                                {
-                                    // No room, no parent
-                                    positionComment = " // Position (World Space - RoomRelative selected, but no Room Context or parent found)";
-                                    Debug.LogWarning($"'{obj.name}' (Generic): RoomRelative selected, but no Room Context or parent found. Defaulting to World Space.");
-                                }
-                                break;
-
-                            case CoordinateSpaceSetting.WallRelative:
-                                if (obj.transform.parent != null)
-                                {
-                                    // Use parent as the wall/reference transform
-                                    positionToOutput = ConvertToWallRelative(worldPosition, obj.transform.parent);
-                                    positionComment = $" // Position (Relative to parent '{obj.transform.parent.name}' as wall context)";
-                                    // No specific warning here as this is the defined fallback for generic WallRelative
-                                }
-                                else
-                                {
-                                    // No parent to use as reference
-                                    positionComment = " // Position (World Space - WallRelative selected, but no parent found for relative conversion)";
-                                    Debug.LogWarning($"'{obj.name}' (Generic): WallRelative selected, but no parent found. Defaulting to World Space.");
-                                }
-                                break;
-
-                            case CoordinateSpaceSetting.World:
-                            default:
-                                // Position is already worldPosition, comment is already set
-                                break;
-                        }
-                        sb.AppendLine($"Vector3 position = new Vector3({positionToOutput.x.ToString("f3", CultureInfo.InvariantCulture)}f, {positionToOutput.y.ToString("f3", CultureInfo.InvariantCulture)}f, {positionToOutput.z.ToString("f3", CultureInfo.InvariantCulture)}f);{positionComment}");
-                        // --- End of new position logic for generic path ---
-                        Vector3 eulerAngles = obj.transform.eulerAngles;
-                        sb.AppendLine($"Quaternion rotation = Quaternion.Euler({eulerAngles.x.ToString("f1", CultureInfo.InvariantCulture)}f, {eulerAngles.y.ToString("f1", CultureInfo.InvariantCulture)}f, {eulerAngles.z.ToString("f1", CultureInfo.InvariantCulture)}f); // World rotation");
-                        Vector3 scale = obj.transform.localScale;
-                        sb.AppendLine($"Vector3 scale = new Vector3({scale.x.ToString("f3", CultureInfo.InvariantCulture)}f, {scale.y.ToString("f3", CultureInfo.InvariantCulture)}f, {scale.z.ToString("f3", CultureInfo.InvariantCulture)}f); // Local scale");
-                        sb.AppendLine();
-                        break;
-                }
+                roomsToConsiderForMap.AddRange(objectsToProcess.Where(obj => DetectComponentType(obj) == HouseComponentType.Room));
             }
             else
             {
-                // Original generic transform output
-                sb.AppendLine($"// Transform data for \"{obj.name}\" (InstanceID: {obj.GetInstanceID()})");
-                // --- Start of new position logic for generic path ---
-                Vector3 worldPosition = obj.transform.position;
-                Vector3 positionToOutput = worldPosition;
-                string positionComment = " // Position (World Space)";
+                roomsToConsiderForMap.AddRange(FindAllHouseComponents(HouseComponentType.Room));
+            }
 
-                switch (selectedCoordinateSpace)
+            foreach(GameObject roomObj in roomsToConsiderForMap.Distinct())
+            {
+                if (!roomMap.ContainsKey(roomObj))
                 {
-                    case CoordinateSpaceSetting.RoomRelative:
-                        GameObject roomObject = GetRoomContext(obj);
-                        if (roomObject != null)
-                        {
-                            Vector3 roomOrigin = GetRoomOrigin(obj); // GetRoomOrigin itself handles warning if roomObject is null via GetRoomContext
-                            positionToOutput = ConvertToRoomRelative(worldPosition, roomOrigin);
-                            positionComment = $" // Position (Room Relative to '{roomObject.name}')";
-                        }
-                        else if (obj.transform.parent != null)
-                        {
-                            // Fallback to parent if no room context
-                            Vector3 parentOrigin = obj.transform.parent.position;
-                            positionToOutput = ConvertToRoomRelative(worldPosition, parentOrigin);
-                            positionComment = $" // Position (Relative to parent '{obj.transform.parent.name}')";
-                            Debug.LogWarning($"'{obj.name}' (Generic): RoomRelative selected, no room context. Outputting relative to parent '{obj.transform.parent.name}'.");
-                        }
-                        else
-                        {
-                            // No room, no parent
-                            positionComment = " // Position (World Space - RoomRelative selected, but no Room Context or parent found)";
-                            Debug.LogWarning($"'{obj.name}' (Generic): RoomRelative selected, but no Room Context or parent found. Defaulting to World Space.");
-                        }
-                        break;
-
-                    case CoordinateSpaceSetting.WallRelative:
-                        if (obj.transform.parent != null)
-                        {
-                            // Use parent as the wall/reference transform
-                            positionToOutput = ConvertToWallRelative(worldPosition, obj.transform.parent);
-                            positionComment = $" // Position (Relative to parent '{obj.transform.parent.name}' as wall context)";
-                            // No specific warning here as this is the defined fallback for generic WallRelative
-                        }
-                        else
-                        {
-                            // No parent to use as reference
-                            positionComment = " // Position (World Space - WallRelative selected, but no parent found for relative conversion)";
-                            Debug.LogWarning($"'{obj.name}' (Generic): WallRelative selected, but no parent found. Defaulting to World Space.");
-                        }
-                        break;
-
-                    case CoordinateSpaceSetting.World:
-                    default:
-                        // Position is already worldPosition, comment is already set
-                        break;
+                    allRooms.Add(roomObj);
+                    roomMap[roomObj] = new List<GameObject>();
                 }
-                sb.AppendLine($"Vector3 position = new Vector3({positionToOutput.x.ToString("f3", CultureInfo.InvariantCulture)}f, {positionToOutput.y.ToString("f3", CultureInfo.InvariantCulture)}f, {positionToOutput.z.ToString("f3", CultureInfo.InvariantCulture)}f);{positionComment}");
-                // --- End of new position logic for generic path ---
-                Vector3 eulerAngles = obj.transform.eulerAngles;
-                sb.AppendLine($"Quaternion rotation = Quaternion.Euler({eulerAngles.x.ToString("f1", CultureInfo.InvariantCulture)}f, {eulerAngles.y.ToString("f1", CultureInfo.InvariantCulture)}f, {eulerAngles.z.ToString("f1", CultureInfo.InvariantCulture)}f); // World rotation");
-                Vector3 scale = obj.transform.localScale;
-                sb.AppendLine($"Vector3 scale = new Vector3({scale.x.ToString("f3", CultureInfo.InvariantCulture)}f, {scale.y.ToString("f3", CultureInfo.InvariantCulture)}f, {scale.z.ToString("f3", CultureInfo.InvariantCulture)}f); // Local scale");
+            }
+            allRooms = allRooms.OrderBy(r => r.name).ToList();
+
+            foreach (GameObject obj in objectsToProcess.Distinct())
+            {
+                HouseComponentType currentObjType = DetectComponentType(obj);
+                if (currentObjType == HouseComponentType.Room)
+                {
+                    if (!roomMap.ContainsKey(obj)) {
+                        allRooms.Add(obj);
+                        allRooms = allRooms.OrderBy(r => r.name).ToList();
+                        roomMap[obj] = new List<GameObject>();
+                    }
+                    // Room data itself is formatted when iterating through allRooms.
+                    continue;
+                }
+
+                GameObject roomContext = GetRoomContext(obj);
+                if (roomContext != null && roomMap.ContainsKey(roomContext))
+                {
+                    roomMap[roomContext].Add(obj);
+                }
+                else
+                {
+                    unassignedComponents.Add(obj);
+                }
+            }
+
+            bool shouldCaptureRoomDataItself = captureMode == CaptureMode.ActiveScene_AllHouseComponents ||
+                                               captureMode == CaptureMode.ActiveScene_RoomsOnly ||
+                                               (captureMode == CaptureMode.SelectedObjects && objectsToProcess.Any(o => DetectComponentType(o) == HouseComponentType.Room));
+
+            foreach (GameObject roomObj in allRooms)
+            {
+                bool roomHasRelevantChildren = roomMap.ContainsKey(roomObj) && roomMap[roomObj].Count > 0;
+                bool roomIsTargetOfCapture = objectsToProcess.Contains(roomObj);
+
+                if (!roomIsTargetOfCapture && !roomHasRelevantChildren) continue;
+
+                sb.AppendLine($"// --- Room: {roomObj.name} (World Position: {roomObj.transform.position.ToString("F2", CultureInfo.InvariantCulture)}) ---");
+
+                if (shouldCaptureRoomDataItself && roomIsTargetOfCapture)
+                {
+                     sb.AppendLine(FormatAsRoomData(roomObj));
+                }
+
+                if (roomMap.ContainsKey(roomObj))
+                {
+                    var wallsInRoom = roomMap[roomObj].Where(o => DetectComponentType(o) == HouseComponentType.Wall).OrderBy(w => w.name).ToList();
+                    if (wallsInRoom.Count > 0)
+                    {
+                        sb.AppendLine($"// Walls in {roomObj.name}:");
+                        foreach (GameObject wall in wallsInRoom) { sb.AppendLine(FormatAsWallSegment(wall, GetRoomFloorY(wall), 2.7f, 0.1f)); }
+                    }
+
+                    var doorsInRoom = roomMap[roomObj].Where(o => DetectComponentType(o) == HouseComponentType.Door).OrderBy(d => d.name).ToList();
+                    if (doorsInRoom.Count > 0)
+                    {
+                        sb.AppendLine($"// Doors in {roomObj.name}:");
+                        foreach (GameObject door in doorsInRoom) { sb.AppendLine(FormatAsDoorSpec(door)); }
+                    }
+
+                    var windowsInRoom = roomMap[roomObj].Where(o => DetectComponentType(o) == HouseComponentType.Window).OrderBy(w => w.name).ToList();
+                    if (windowsInRoom.Count > 0)
+                    {
+                        sb.AppendLine($"// Windows in {roomObj.name}:");
+                        foreach (GameObject window in windowsInRoom) { sb.AppendLine(FormatAsWindowSpec(window, GetRoomFloorY(window))); }
+                    }
+                }
                 sb.AppendLine();
             }
+
+            if (unassignedComponents.Count > 0)
+            {
+                sb.AppendLine("// --- Unassigned Components ---");
+                var sortedUnassigned = unassignedComponents
+                    .OrderBy(obj => DetectComponentType(obj).ToString())
+                    .ThenBy(obj => obj.name);
+
+                foreach (GameObject obj in sortedUnassigned)
+                {
+                    HouseComponentType componentType = DetectComponentType(obj);
+                    switch (componentType)
+                    {
+                        case HouseComponentType.Room:
+                            sb.AppendLine(FormatAsRoomData(obj));
+                            break;
+                        case HouseComponentType.Wall:
+                            sb.AppendLine(FormatAsWallSegment(obj, GetRoomFloorY(obj), 2.7f, 0.1f));
+                            break;
+                        case HouseComponentType.Door:
+                            sb.AppendLine(FormatAsDoorSpec(obj));
+                            break;
+                        case HouseComponentType.Window:
+                            sb.AppendLine(FormatAsWindowSpec(obj, GetRoomFloorY(obj)));
+                            break;
+                        default:
+                            sb.AppendLine($"// Detected {componentType} \"{obj.name}\" - Using generic transform output.");
+                            sb.AppendLine(FormatGenericTransformData(obj));
+                            break;
+                    }
+                }
+            }
         }
+        else
+        {
+            var sortedObjectsToProcess = objectsToProcess.Distinct()
+                .OrderBy(obj => useContextualFormatting ? DetectComponentType(obj).ToString() : "")
+                .ThenBy(obj => obj.name);
+
+            foreach (GameObject obj in sortedObjectsToProcess)
+            {
+                if (useContextualFormatting)
+                {
+                    HouseComponentType componentType = DetectComponentType(obj);
+                    switch (componentType)
+                    {
+                        case HouseComponentType.Room:
+                            sb.AppendLine(FormatAsRoomData(obj));
+                            break;
+                        case HouseComponentType.Wall:
+                            sb.AppendLine(FormatAsWallSegment(obj, GetRoomFloorY(obj), 2.7f, 0.1f));
+                            break;
+                        case HouseComponentType.Door:
+                            sb.AppendLine(FormatAsDoorSpec(obj));
+                            break;
+                        case HouseComponentType.Window:
+                            sb.AppendLine(FormatAsWindowSpec(obj, GetRoomFloorY(obj)));
+                            break;
+                        default:
+                            sb.AppendLine($"// Detected {componentType} \"{obj.name}\" - Using generic transform output.");
+                            sb.AppendLine(FormatGenericTransformData(obj));
+                            break;
+                    }
+                }
+                else
+                {
+                    sb.AppendLine(FormatGenericTransformData(obj));
+                }
+            }
+        }
+
         generatedCode = sb.ToString();
+        Repaint();
+    }
+
+    private string FormatGenericTransformData(GameObject obj)
+    {
+        StringBuilder sb = new StringBuilder();
+
+        Vector3 worldPosition = obj.transform.position;
+        Vector3 positionToOutput = worldPosition;
+        string positionComment = " // Position (World Space)";
+
+        switch (selectedCoordinateSpace)
+        {
+            case CoordinateSpaceSetting.RoomRelative:
+                GameObject roomObject = GetRoomContext(obj);
+                if (roomObject != null)
+                {
+                    Vector3 roomOrigin = GetRoomOrigin(obj);
+                    positionToOutput = ConvertToRoomRelative(worldPosition, roomOrigin);
+                    positionComment = $" // Position (Room Relative to '{roomObject.name}')";
+                }
+                else if (obj.transform.parent != null)
+                {
+                    positionToOutput = ConvertToRoomRelative(worldPosition, obj.transform.parent.position);
+                    positionComment = $" // Position (Relative to parent '{obj.transform.parent.name}')";
+                }
+                break;
+
+            case CoordinateSpaceSetting.WallRelative:
+                if (obj.transform.parent != null)
+                {
+                    positionToOutput = ConvertToWallRelative(worldPosition, obj.transform.parent);
+                    positionComment = $" // Position (Relative to parent '{obj.transform.parent.name}' as wall context)";
+                }
+                break;
+        }
+
+        sb.AppendLine($"// Transform data for \"{obj.name}\" (InstanceID: {obj.GetInstanceID()})");
+        sb.AppendLine($"Vector3 position = new Vector3({positionToOutput.x.ToString("f3", CultureInfo.InvariantCulture)}f, {positionToOutput.y.ToString("f3", CultureInfo.InvariantCulture)}f, {positionToOutput.z.ToString("f3", CultureInfo.InvariantCulture)}f);{positionComment}");
+        Vector3 eulerAngles = obj.transform.eulerAngles;
+        sb.AppendLine($"Quaternion rotation = Quaternion.Euler({eulerAngles.x.ToString("f1", CultureInfo.InvariantCulture)}f, {eulerAngles.y.ToString("f1", CultureInfo.InvariantCulture)}f, {eulerAngles.z.ToString("f1", CultureInfo.InvariantCulture)}f); // World rotation");
+        Vector3 scale = obj.transform.localScale;
+        sb.AppendLine($"Vector3 scale = new Vector3({scale.x.ToString("f3", CultureInfo.InvariantCulture)}f, {scale.y.ToString("f3", CultureInfo.InvariantCulture)}f, {scale.z.ToString("f3", CultureInfo.InvariantCulture)}f); // Local scale");
+        sb.AppendLine();
+        return sb.ToString();
+    }
+
+    private List<GameObject> FindAllHouseComponents(HouseComponentType? typeFilter = null)
+    {
+        List<GameObject> foundComponents = new List<GameObject>();
+        GameObject houseRoot = GameObject.Find("ProceduralHouse_Generated");
+
+        List<GameObject> objectsToSearch = new List<GameObject>();
+
+        if (houseRoot != null)
+        {
+            // Search only under ProceduralHouse_Generated
+            CollectChildrenRecursive(houseRoot.transform, objectsToSearch);
+        }
+        else
+        {
+            // Search all root GameObjects and their children
+            foreach (GameObject rootObj in UnityEngine.SceneManagement.SceneManager.GetActiveScene().GetRootGameObjects())
+            {
+                CollectChildrenRecursive(rootObj.transform, objectsToSearch);
+            }
+        }
+
+        foreach (GameObject obj in objectsToSearch)
+        {
+            HouseComponentType componentType = DetectComponentType(obj);
+            if (typeFilter == null) // No filter, add all detected house components (excluding Unknown unless specified)
+            {
+                if (componentType != HouseComponentType.Unknown) // Typically, we don't want 'Unknown' unless specifically asked for.
+                {
+                    foundComponents.Add(obj);
+                }
+            }
+            // Handle single type filter
+            else if (componentType == typeFilter.Value)
+            {
+                foundComponents.Add(obj);
+            }
+            // Special case for DoorsAndWindowsOnly where typeFilter might not directly support multiple values.
+            // This will be handled in the calling logic in CaptureTransforms() for now,
+            // or this method could be extended to take a List<HouseComponentType>.
+            // For now, a single typeFilter is assumed as per the plan step's direct implementation.
+        }
+
+        return foundComponents;
+    }
+
+    // Helper method to recursively collect all children
+    private void CollectChildrenRecursive(Transform parent, List<GameObject> list)
+    {
+        list.Add(parent.gameObject); // Add parent itself
+        foreach (Transform child in parent)
+        {
+            CollectChildrenRecursive(child, list);
+        }
     }
 
     private HouseComponentType DetectComponentType(GameObject obj)
@@ -543,15 +694,18 @@ public class TransformCaptureWindow : EditorWindow
 
         // Wall ID
         string wallId = "UNKNOWN_WALL_ID";
+        string wallIdComment = "// Parent Wall ID: None";
         if (doorObject.transform.parent != null)
         {
             if (DetectComponentType(doorObject.transform.parent.gameObject) == HouseComponentType.Wall)
             {
                 wallId = doorObject.transform.parent.name;
+                wallIdComment = $"// Parent Wall ID: {wallId}";
             }
             else
             {
                  Debug.LogWarning($"Door '{doorObject.name}': Parent '{doorObject.transform.parent.name}' is not detected as a Wall. Using placeholder wallId.");
+                 wallIdComment = $"// Parent Wall ID: {doorObject.transform.parent.name} (Not a Wall)";
             }
         }
         else
@@ -574,7 +728,7 @@ public class TransformCaptureWindow : EditorWindow
         sb.AppendLine($"    width = {width.ToString("f3", CultureInfo.InvariantCulture)}f,");
         sb.AppendLine($"    height = {height.ToString("f3", CultureInfo.InvariantCulture)}f,");
         sb.AppendLine($"    position = {formattedPosition},{positionComment}");
-        sb.AppendLine($"    wallId = \"{wallId}\",");
+        sb.AppendLine($"    wallId = \"{wallId}\", {wallIdComment}"); // NEW LINE
         sb.AppendLine($"    swingDirection = SwingDirection.{swingDirection.ToString()},"); // Assumes SwingDirection enum
         if (type == DoorType.Sliding)
         {
@@ -678,15 +832,18 @@ public class TransformCaptureWindow : EditorWindow
 
         // Wall ID
         string wallId = "UNKNOWN_WALL_ID";
+        string wallIdComment = "// Parent Wall ID: None";
         if (windowObject.transform.parent != null)
         {
             if (DetectComponentType(windowObject.transform.parent.gameObject) == HouseComponentType.Wall)
             {
                 wallId = windowObject.transform.parent.name;
+                wallIdComment = $"// Parent Wall ID: {wallId}";
             }
             else
             {
                  Debug.LogWarning($"Window '{windowObject.name}': Parent '{windowObject.transform.parent.name}' is not detected as a Wall. Using placeholder wallId.");
+                 wallIdComment = $"// Parent Wall ID: {windowObject.transform.parent.name} (Not a Wall)";
             }
         }
         else
@@ -708,7 +865,7 @@ public class TransformCaptureWindow : EditorWindow
         sb.AppendLine($"    height = {height.ToString("f3", CultureInfo.InvariantCulture)}f,");
         sb.AppendLine($"    position = {formattedPosition},{positionComment}");
         sb.AppendLine($"    sillHeight = {sillHeight.ToString("f3", CultureInfo.InvariantCulture)}f,");
-        sb.AppendLine($"    wallId = \"{wallId}\",");
+        sb.AppendLine($"    wallId = \"{wallId}\", {wallIdComment}"); // NEW LINE
         sb.AppendLine($"    isOperable = {isOperable.ToString().ToLowerInvariant()},");
         sb.AppendLine($"    bayPanes = {bayPanes.ToString(CultureInfo.InvariantCulture)},"); // int, no "f"
         sb.AppendLine($"    bayProjectionDepth = {bayProjectionDepth.ToString("f3", CultureInfo.InvariantCulture)}f");
