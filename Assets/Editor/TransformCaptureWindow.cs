@@ -6,6 +6,7 @@ using System.Text;
 using System.Globalization; // Add this line
 using System.Collections.Generic; // For List<T>
 using System.Linq; // For Linq operations
+using System.IO; // Added for Path and Directory operations
 
 public class TransformCaptureWindow : EditorWindow
 {
@@ -20,6 +21,9 @@ public class TransformCaptureWindow : EditorWindow
         ActiveScene_DoorsAndWindowsOnly
     }
     private CaptureMode captureMode = CaptureMode.SelectedObjects;
+
+    public enum UpdateAction { GenerateCodeOnly, PreviewAssetChanges, ApplyChangesToAsset }
+    private UpdateAction updateAction = UpdateAction.GenerateCodeOnly;
 
     private string generatedCode = "";
     private Vector2 scrollPosition;
@@ -44,6 +48,8 @@ public class TransformCaptureWindow : EditorWindow
         groupByRoom = EditorGUILayout.Toggle("Group by Room", groupByRoom);
         EditorGUI.EndDisabledGroup();
 
+        updateAction = (UpdateAction)EditorGUILayout.EnumPopup("Update Action:", updateAction);
+
         if (GUILayout.Button("Capture Selected Transforms"))
         {
             CaptureTransforms();
@@ -51,6 +57,15 @@ public class TransformCaptureWindow : EditorWindow
 
         EditorGUILayout.Space(); // Added for layout
         housePlanAssetPath = EditorGUILayout.TextField("House Plan Asset Path", housePlanAssetPath);
+
+        bool originalGuiEnabledState = GUI.enabled; // Store original GUI.enabled state
+        GUI.enabled = (updateAction == UpdateAction.ApplyChangesToAsset);
+        if (GUILayout.Button("Execute Update on Asset"))
+        {
+            ExecuteUpdateOnAsset();
+        }
+        GUI.enabled = originalGuiEnabledState; // Restore original GUI.enabled state
+
         if (GUILayout.Button("Compare Captured with Current Plan"))
         {
             CompareWithPlan();
@@ -1281,4 +1296,343 @@ public class TransformCaptureWindow : EditorWindow
                 break;
         }
     }
+
+    private static string CreateOrUpdateBackup(UnityEngine.Object planToBackup, string originalAssetPath)
+    {
+        if (planToBackup == null || string.IsNullOrEmpty(originalAssetPath))
+        {
+            Debug.LogError("CreateOrUpdateBackup: Plan to backup or original asset path is null or empty.");
+            return string.Empty;
+        }
+
+        try
+        {
+            string assetName = Path.GetFileNameWithoutExtension(originalAssetPath);
+            string backupDirectory = "Assets/BlueprintData/Backups";
+
+            // Create the backup directory if it doesn't exist
+            if (!Directory.Exists(backupDirectory))
+            {
+                Directory.CreateDirectory(backupDirectory);
+            }
+
+            string timestamp = System.DateTime.Now.ToString("yyyyMMdd_HHmmss");
+            string backupFileName = $"{assetName}_{timestamp}.asset";
+            string backupAssetPath = Path.Combine(backupDirectory, backupFileName);
+
+            // Ensure the asset to backup exists at the original path before copying
+            if (!File.Exists(originalAssetPath)) // Or AssetDatabase.LoadAssetAtPath<UnityEngine.Object>(originalAssetPath) != null
+            {
+                Debug.LogError($"CreateOrUpdateBackup: Original asset not found at path: {originalAssetPath}");
+                return string.Empty;
+            }
+
+            // Copy the asset to the backup path
+            if (AssetDatabase.CopyAsset(originalAssetPath, backupAssetPath))
+            {
+                Debug.Log($"Backup created successfully: {backupAssetPath}");
+                return backupAssetPath;
+            }
+            else
+            {
+                Debug.LogError($"CreateOrUpdateBackup: Failed to copy asset from '{originalAssetPath}' to '{backupAssetPath}'.");
+                return string.Empty;
+            }
+        }
+        catch (IOException ex)
+        {
+            Debug.LogError($"CreateOrUpdateBackup: An IO Exception occurred. Path: {originalAssetPath}. Error: {ex.Message}");
+            return string.Empty;
+        }
+        catch (System.Exception ex)
+        {
+            Debug.LogError($"CreateOrUpdateBackup: An unexpected error occurred. Path: {originalAssetPath}. Error: {ex.Message}");
+            return string.Empty;
+        }
+    }
+
+    private void ExecuteUpdateOnAsset()
+    {
+        Debug.Log("Initiating asset update process...");
+        string targetAssetPath = "Assets/BlueprintData/NewHousePlan.asset"; // Hardcoded for now
+        string assetNameForDialog = Path.GetFileName(targetAssetPath); // Use actual asset name for dialogs
+
+        // --- Placeholder for Diffing ---
+        Debug.Log("Performing comparison with current plan..."); // Placeholder for actual diff source
+        DiffResultSet diffResult = new DiffResultSet(
+            new List<object>() { "New Room 1", "New Room 2" }, // Dummy Added
+            new List<object>() { "Existing Door A - Modified" },   // Dummy Modified
+            new List<object>() { "Old Window X - Removed" }    // Dummy Removed
+        );
+        // diffResult = new DiffResultSet(new List<object>(), new List<object>(), new List<object>()); // Test no changes
+
+        int additions = diffResult.AddedItems.Count;
+        int modifications = diffResult.ModifiedItems.Count;
+        int removals = diffResult.RemovedItems.Count;
+
+        Debug.Log($"Diffing complete. Found {additions} additions, {modifications} modifications, {removals} removals for '{assetNameForDialog}'.");
+
+        if (additions == 0 && modifications == 0 && removals == 0)
+        {
+            EditorUtility.DisplayDialog("No Changes", $"No changes detected between the scene and '{assetNameForDialog}'.", "OK");
+            return;
+        }
+
+        // --- Confirmation Dialog ---
+        bool userConfirmed = EditorUtility.DisplayDialog(
+            "Confirm Asset Update",
+            $"Apply {additions} additions, {modifications} modifications, {removals} removals to '{assetNameForDialog}'?",
+            "Apply",
+            "Cancel"
+        );
+
+        if (!userConfirmed)
+        {
+            Debug.Log("Asset update cancelled by user.");
+            EditorUtility.DisplayDialog("Cancelled", "Asset update cancelled by user.", "OK");
+            return;
+        }
+
+        // Main operation wrapped in try-finally to ensure progress bar is cleared
+        try
+        {
+            // --- Backup ---
+            string backupPath = string.Empty;
+            bool backupAttempted = false; // Renamed from backupSucceeded to reflect attempt
+            UnityEngine.Object planToBackupForBackupMethod = null; // Defined here for wider scope if needed
+
+            try
+            {
+                planToBackupForBackupMethod = AssetDatabase.LoadAssetAtPath<UnityEngine.Object>(targetAssetPath);
+                bool assetExists = planToBackupForBackupMethod != null;
+
+                if (assetExists)
+                {
+                    Debug.Log($"Backup in progress for '{assetNameForDialog}'...");
+                    backupAttempted = true;
+                    backupPath = CreateOrUpdateBackup(planToBackupForBackupMethod, targetAssetPath);
+                    if (string.IsNullOrEmpty(backupPath))
+                    {
+                        EditorUtility.DisplayDialog("Backup Failed", $"Failed to create backup for '{assetNameForDialog}'. Check console for errors. Aborting update.", "OK");
+                        Debug.Log("Asset update aborted due to backup error.");
+                        return;
+                    }
+                    Debug.Log("Asset backup successful: " + backupPath);
+                }
+                else
+                {
+                    Debug.Log($"Asset '{assetNameForDialog}' does not exist. No backup will be created (assuming new asset creation).");
+                }
+            }
+            catch (System.Exception ex)
+            {
+                Debug.LogError($"ExecuteUpdateOnAsset: Exception during backup phase for '{assetNameForDialog}'. Error: {ex.Message}\nStackTrace: {ex.StackTrace}");
+                EditorUtility.DisplayDialog("Backup Error", $"An unexpected error occurred during the backup process for '{assetNameForDialog}'. Check console for details. Aborting update.", "OK");
+                Debug.Log("Asset update aborted due to backup error.");
+                return;
+            }
+
+            // --- Load Asset (Placeholder) ---
+            HousePlanSO loadedPlan = null;
+            bool isNewAsset = false;
+            try
+            {
+                Debug.Log($"Loading asset '{assetNameForDialog}'...");
+                loadedPlan = AssetDatabase.LoadAssetAtPath<HousePlanSO>(targetAssetPath);
+
+                if (loadedPlan == null)
+                {
+                    Debug.Log($"Asset '{assetNameForDialog}' not found. Assuming creation of a new asset.");
+                    loadedPlan = ScriptableObject.CreateInstance<HousePlanSO>();
+                    isNewAsset = true;
+                }
+            }
+            catch (System.Exception ex)
+            {
+                Debug.LogError($"ExecuteUpdateOnAsset: Exception during asset loading phase for '{assetNameForDialog}'. Error: {ex.Message}\nStackTrace: {ex.StackTrace}");
+                EditorUtility.DisplayDialog("Asset Load Error", $"An unexpected error occurred while loading '{assetNameForDialog}'. Check console for details. Aborting update.", "OK");
+                Debug.Log("Asset update aborted due to loading error.");
+                return;
+            }
+
+            if (loadedPlan == null)
+            {
+                Debug.LogError($"ExecuteUpdateOnAsset: Failed to load or create asset '{assetNameForDialog}' (loadedPlan is null after attempts).");
+                EditorUtility.DisplayDialog("Load Failed", $"Critical error: Failed to load or create asset '{assetNameForDialog}'. Aborting update.", "OK");
+                Debug.Log("Asset update aborted due to critical loading error.");
+                return;
+            }
+
+            // --- Record Undo ---
+            try
+            {
+                if (!isNewAsset)
+                {
+                    // UnityEditor.Undo.RecordObject(loadedPlan, "Update House Plan from Capture Tool");
+                    Debug.Log($"Undo recorded for '{assetNameForDialog}' (placeholder).");
+                }
+                else
+                {
+                    Debug.Log($"Skipping Undo for new asset '{assetNameForDialog}'.");
+                }
+            }
+            catch (System.Exception ex)
+            {
+                Debug.LogError($"ExecuteUpdateOnAsset: Exception during Undo recording for '{assetNameForDialog}'. Error: {ex.Message}\nStackTrace: {ex.StackTrace}");
+            }
+
+            // --- Apply Changes (Placeholder Logic) ---
+            try
+            {
+                Debug.Log($"Applying {additions} additions, {modifications} modifications, {removals} removals to '{assetNameForDialog}'...");
+                EditorUtility.DisplayProgressBar("Applying Changes", "Processing items...", 0f);
+                // Simulating some work for each type of change
+                float currentProgress = 0f;
+                float totalChanges = additions + modifications + removals;
+                if (totalChanges == 0) totalChanges = 1; // Avoid division by zero if somehow counts are zero here
+
+                foreach (var item in diffResult.AddedItems)
+                {
+                    Debug.Log($"Adding item: {item.ToString()}");
+                    loadedPlan.rooms.Add(item);
+                    currentProgress++;
+                    EditorUtility.DisplayProgressBar("Applying Changes", $"Adding {item.ToString()}...", currentProgress / totalChanges);
+                }
+                foreach (var item in diffResult.ModifiedItems)
+                {
+                    Debug.Log($"Modifying item: {item.ToString()} (Actual modification logic is complex and not implemented here)");
+                    currentProgress++;
+                    EditorUtility.DisplayProgressBar("Applying Changes", $"Modifying {item.ToString()}...", currentProgress / totalChanges);
+                }
+                foreach (var item in diffResult.RemovedItems)
+                {
+                    Debug.Log($"Removing item: {item.ToString()}");
+                    currentProgress++;
+                    EditorUtility.DisplayProgressBar("Applying Changes", $"Removing {item.ToString()}...", currentProgress / totalChanges);
+                }
+                Debug.Log($"Simulated changes applied to '{assetNameForDialog}'. Rooms count: {loadedPlan.rooms.Count}");
+            }
+            catch (System.Exception ex)
+            {
+                Debug.LogError($"ExecuteUpdateOnAsset: Exception during 'Apply Changes' phase for '{assetNameForDialog}'. Error: {ex.Message}\nStackTrace: {ex.StackTrace}");
+                string backupMessage = backupAttempted && !string.IsNullOrEmpty(backupPath) ? $"Consider reverting to backup: {backupPath}" : "No backup was created or it failed.";
+                EditorUtility.DisplayDialog("Error Applying Changes", $"An error occurred while applying changes to '{assetNameForDialog}'. Check console for details. {backupMessage}", "OK");
+                Debug.Log("Asset update aborted due to error during change application.");
+                return;
+            }
+            finally
+            {
+                EditorUtility.ClearProgressBar();
+            }
+
+            // --- Save Asset (Placeholder) ---
+            try
+            {
+                Debug.Log($"Saving changes to '{assetNameForDialog}'...");
+                EditorUtility.DisplayProgressBar("Saving Asset", "Persisting changes...", 0.9f);
+                if (isNewAsset)
+                {
+                    // UnityEditor.AssetDatabase.CreateAsset(loadedPlan, targetAssetPath);
+                    Debug.Log($"New asset '{assetNameForDialog}' created at '{targetAssetPath}' (placeholder).");
+                }
+                else
+                {
+                    // UnityEditor.EditorUtility.SetDirty(loadedPlan);
+                    Debug.Log($"Asset '{assetNameForDialog}' marked dirty (placeholder).");
+                }
+                // UnityEditor.AssetDatabase.SaveAssets();
+                // UnityEditor.AssetDatabase.Refresh();
+                Debug.Log($"Asset '{assetNameForDialog}' saved and refreshed (placeholder).");
+            }
+            catch (System.Exception ex)
+            {
+                Debug.LogError($"ExecuteUpdateOnAsset: Exception during 'Save Asset' phase for '{assetNameForDialog}'. Error: {ex.Message}\nStackTrace: {ex.StackTrace}");
+                string backupMessage = backupAttempted && !string.IsNullOrEmpty(backupPath) ? $"Consider reverting to backup: {backupPath}" : "No backup was created or it failed.";
+                EditorUtility.DisplayDialog("Error Saving Asset", $"An error occurred while saving '{assetNameForDialog}'. Changes might not be fully saved. Check console for details. {backupMessage}", "OK");
+                Debug.Log("Asset update aborted due to error during save.");
+                return;
+            }
+            finally
+            {
+                EditorUtility.ClearProgressBar();
+            }
+
+            // --- Completion Message ---
+            EditorUtility.DisplayDialog("Success", $"Asset '{assetNameForDialog}' {(isNewAsset ? "created" : "updated")} successfully (placeholder operations).", "OK");
+            Debug.Log($"Asset update complete for '{assetNameForDialog}'.");
+
+        } // End of main try block
+        finally
+        {
+            EditorUtility.ClearProgressBar(); // Ensure progress bar is cleared in all cases
+            Debug.Log("ExecuteUpdateOnAsset finished."); // General finish log
+        }
+    }
 }
+
+// --- Placeholder Classes ---
+// Define these outside the TransformCaptureWindow class if they are intended for broader use,
+// or inside if they are strictly private helper types. For this subtask, placing them here is fine.
+
+public class HousePlanSO : ScriptableObject
+{
+    public List<object> rooms = new List<object>();
+    public List<object> doors = new List<object>();
+    public List<object> windows = new List<object>();
+    // Add other fields as needed by the actual HousePlanSO structure
+    public float storyHeight = 2.7f; // Example field
+    public float exteriorWallThickness = 0.15f; // Example field
+}
+
+public class DiffResultSet
+{
+    public List<object> AddedItems { get; private set; }
+    public List<object> ModifiedItems { get; private set; }
+    public List<object> RemovedItems { get; private set; }
+
+    // Example fields that might be in the actual DiffResultSet
+    public List<DiffEntry<RoomData>> roomDiffs { get; set; }
+    public List<DiffEntry<WallSegment>> wallDiffs { get; set; }
+    public List<DiffEntry<DoorSpec>> doorDiffs { get; set; }
+    public List<DiffEntry<WindowSpec>> windowDiffs { get; set; }
+    public List<DiffEntry<OpeningSpec>> openingDiffs { get; set; }
+
+
+    public DiffResultSet(List<object> added, List<object> modified, List<object> removed)
+    {
+        AddedItems = added ?? new List<object>();
+        ModifiedItems = modified ?? new List<object>();
+        RemovedItems = removed ?? new List<object>();
+
+        // Initialize placeholder diff lists
+        roomDiffs = new List<DiffEntry<RoomData>>();
+        wallDiffs = new List<DiffEntry<WallSegment>>();
+        doorDiffs = new List<DiffEntry<DoorSpec>>();
+        windowDiffs = new List<DiffEntry<WindowSpec>>();
+        openingDiffs = new List<DiffEntry<OpeningSpec>>();
+    }
+}
+
+// Minimal placeholder for DiffEntry, RoomData, WallSegment etc. if needed by DiffResultSet constructor for dummy data
+// Not strictly required by the prompt if DiffResultSet's constructor just takes List<object>
+// However, the DisplayDiffResults method uses these, so they are already in the file.
+// For the purpose of ExecuteUpdateOnAsset, the List<object> fields are sufficient.
+
+// Minimal stubs for types used in DiffResultSet if not already fully defined elsewhere in the actual project context.
+// These might already exist in the project. If not, they'd be needed for DiffResultSet to be fully type-correct.
+// For this subtask, assuming they are defined elsewhere or their details are not critical for the placeholder logic.
+// public class RoomData { public string roomId; public string roomLabel; public Vector2 dimensions; public Vector3 position; public List<WallSegment> walls; public List<string> connectedRoomIds; public string notes; public Vector3 atticHatchLocalPosition; }
+// public class WallSegment { public Vector3 startPoint; public Vector3 endPoint; public float thickness; public bool isExterior; public WallSide side; public List<string> doorIdsOnWall; public List<string> windowIdsOnWall; public List<string> openingIdsOnWall; }
+// public enum WallSide { North, South, East, West, Unknown } // Example
+// public class DoorSpec { public string doorId; public DoorType type; public float width; public float height; public Vector3 position; public string wallId; public SwingDirection swingDirection; public SlideDirection slideDirection; public bool isExterior; public string connectsRoomA_Id; public string connectsRoomB_Id; }
+// public enum DoorType { Hinged, Sliding, Pocket, BiFold, Overhead } // Example
+// public enum SwingDirection { InwardNorth, InwardSouth, InwardEast, InwardWest, OutwardNorth, OutwardSouth, OutwardEast, OutwardWest, None } // Example
+// public enum SlideDirection { SlidesLeft, SlidesRight, SlidesUp, SlidesDown, None } // Example
+// public class WindowSpec { public string windowId; public global::WindowType type; public float width; public float height; public Vector3 position; public float sillHeight; public string wallId; public bool isOperable; public int bayPanes; public float bayProjectionDepth; }
+// public enum WindowType { SingleHung, DoubleHung, Casement, Awning, Sliding, Fixed, Bay, Bow, SkylightQuad, SkylightTube } // Example global::WindowType
+// public class OpeningSpec { public string openingId; public OpeningType type; public float width; public float height; public Vector3 position; public string wallId; public string connectsRoomA_Id; public string connectsRoomB_Id; }
+// public enum OpeningType { CasedOpening, PassthroughCounter, DoorRoughOpening, WindowRoughOpening } // Example
+
+// public class DiffEntry<T> { public string id; public ChangeType change; public T existingData; public T capturedData; public List<string> differences; }
+// public enum ChangeType { Unchanged, Added, Removed, Modified }
+// End of placeholder classes for context
