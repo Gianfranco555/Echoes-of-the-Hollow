@@ -4,7 +4,6 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 using System.IO; // Added for Directory.Exists
 using System.Linq; // For FirstOrDefault
-using Unity.AI.Navigation;
 
 // Assuming your builder scripts (FoundationBuilder, WallBuilder, RoomBuilder, RoofBuilder, WindowPlacer)
 // are in the global namespace or you have a 'using' directive for them.

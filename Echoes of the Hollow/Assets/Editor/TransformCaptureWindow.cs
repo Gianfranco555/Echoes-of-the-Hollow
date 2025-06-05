@@ -9,43 +9,6 @@ using System.Linq; // For Linq operations
 using System.IO; // Added for Path and Directory operations
 
 /// <summary>
-/// Represents the specific type of a captured component, used in TransformCaptureWindow.
-/// This is distinct from HouseComponentType and used for categorizing during scene data capture.
-/// </summary>
-public enum ComponentType
-{
-    Unknown,
-    Door,
-    Window,
-    Opening
-    // Add other types if CaptureSceneDataAsStructs implies more categories.
-}
-
-/// <summary>
-/// Represents a simple set of differences, used by TransformCaptureWindow's ExecuteUpdateOnAsset.
-/// This is distinct from the DiffResultSet in HousePlanDiffer.cs.
-/// </summary>
-public class DiffResultSet
-{
-    public List<object> AddedItems { get; set; }
-    public List<object> ModifiedItems { get; set; }
-    public List<object> RemovedItems { get; set; }
-
-    /// <summary>
-    /// Initializes a new instance of the DiffResultSet class.
-    /// </summary>
-    /// <param name="added">List of added items.</param>
-    /// <param name="modified">List of modified items.</param>
-    /// <param name="removed">List of removed items.</param>
-    public DiffResultSet(List<object> added, List<object> modified, List<object> removed)
-    {
-        AddedItems = added ?? new List<object>();
-        ModifiedItems = modified ?? new List<object>();
-        RemovedItems = removed ?? new List<object>();
-    }
-}
-
-/// <summary>
 /// Editor window for capturing transform data of GameObjects related to house components.
 /// Provides functionality to generate C# code snippets for selected or scene-wide objects,
 /// format data in various coordinate spaces, and compare with/update a HousePlanSO ScriptableObject.
