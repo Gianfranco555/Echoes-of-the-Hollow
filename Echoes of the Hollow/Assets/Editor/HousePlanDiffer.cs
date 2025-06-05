@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine; // For Vector3, etc. if used in data structures, though HousePlanSO types should be primary
 using UnityEditor; // For AssetDatabase if used for loading
 // It's good practice to include HousePlanSO related types if they are directly used or referenced.

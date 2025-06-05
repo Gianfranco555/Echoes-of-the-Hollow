@@ -9,6 +9,43 @@ using System.Linq; // For Linq operations
 using System.IO; // Added for Path and Directory operations
 
 /// <summary>
+/// Represents the specific type of a captured component, used in TransformCaptureWindow.
+/// This is distinct from HouseComponentType and used for categorizing during scene data capture.
+/// </summary>
+public enum ComponentType
+{
+    Unknown,
+    Door,
+    Window,
+    Opening
+    // Add other types if CaptureSceneDataAsStructs implies more categories.
+}
+
+/// <summary>
+/// Represents a simple set of differences, used by TransformCaptureWindow's ExecuteUpdateOnAsset.
+/// This is distinct from the DiffResultSet in HousePlanDiffer.cs.
+/// </summary>
+public class DiffResultSet
+{
+    public List<object> AddedItems { get; set; }
+    public List<object> ModifiedItems { get; set; }
+    public List<object> RemovedItems { get; set; }
+
+    /// <summary>
+    /// Initializes a new instance of the DiffResultSet class.
+    /// </summary>
+    /// <param name="added">List of added items.</param>
+    /// <param name="modified">List of modified items.</param>
+    /// <param name="removed">List of removed items.</param>
+    public DiffResultSet(List<object> added, List<object> modified, List<object> removed)
+    {
+        AddedItems = added ?? new List<object>();
+        ModifiedItems = modified ?? new List<object>();
+        RemovedItems = removed ?? new List<object>();
+    }
+}
+
+/// <summary>
 /// Editor window for capturing transform data of GameObjects related to house components.
 /// Provides functionality to generate C# code snippets for selected or scene-wide objects,
 /// format data in various coordinate spaces, and compare with/update a HousePlanSO ScriptableObject.
@@ -1453,12 +1490,21 @@ public class TransformCaptureWindow : EditorWindow
                                     OpeningSpec os = new OpeningSpec();
                                     os.openingId = $"{wallGO.name}_AnalyzedOpening_{openingIdx++}"; // Generate unique ID
 
-                                    // Map WallSegmentAnalyzer.OpeningTypeEnum to global::OpeningType
-                                    switch(openingData.type) {
-                                        case WallSegmentAnalyzer.OpeningTypeEnum.Doorway: os.type = global::OpeningType.CasedOpening; break; // Example mapping
-                                        case WallSegmentAnalyzer.OpeningTypeEnum.Window: os.type = global::OpeningType.CasedOpening; break; // Or handle as window?
-                                        case WallSegmentAnalyzer.OpeningTypeEnum.Passthrough: os.type = global::OpeningType.PassthroughCounter; break;
-                                        default: os.type = global::OpeningType.CasedOpening; break;
+                                    // Determine OpeningType based on isDoorLike and isWindowLike
+                                    if (openingData.isDoorLike)
+                                    {
+                                        os.type = global::OpeningType.CasedOpening; // Or a more specific door-related opening type if available
+                                    }
+                                    else if (openingData.isWindowLike)
+                                    {
+                                        os.type = global::OpeningType.CasedOpening; // Windows are often cased openings
+                                    }
+                                    else
+                                    {
+                                        // Default for openings that are neither clearly door-like nor window-like
+                                        // This could also be a specific "UnclassifiedOpening" if such a type exists in OpeningType
+                                        os.type = global::OpeningType.CasedOpening;
+                                        UnityEngine.Debug.LogWarning($"Opening {os.openingId} on wall {wallGO.name} was not classified as door-like or window-like by WallSegmentAnalyzer. Defaulting to CasedOpening.");
                                     }
                                     os.width = openingData.size.x;
                                     os.height = openingData.size.y;
@@ -2118,47 +2164,6 @@ class TransformCaptureToolSettingsProvider
         return provider;
     }
 }
-
-// --- Placeholder Classes ---
-// Define these outside the TransformCaptureWindow class if they are intended for broader use,
-// or inside if they are strictly private helper types. For this subtask, placing them here is fine.
-
-public class HousePlanSO : ScriptableObject
-{
-    public List<RoomData> rooms = new List<RoomData>();
-    public List<DoorSpec> doors = new List<DoorSpec>();
-    public List<WindowSpec> windows = new List<WindowSpec>();
-    public List<OpeningSpec> openings = new List<OpeningSpec>();
-    // Add other fields as needed by the actual HousePlanSO structure
-    public float storyHeight = 2.7f; // Example field
-    public float exteriorWallThickness = 0.15f; // Example field
-}
-
-
-
-// Minimal placeholder for DiffEntry, RoomData, WallSegment etc. if needed by DiffResultSet constructor for dummy data
-// Not strictly required by the prompt if DiffResultSet's constructor just takes List<object>
-// However, the DisplayDiffResults method uses these, so they are already in the file.
-// For the purpose of ExecuteUpdateOnAsset, the List<object> fields are sufficient.
-
-// Minimal stubs for types used in DiffResultSet if not already fully defined elsewhere in the actual project context.
-// These might already exist in the project. If not, they'd be needed for DiffResultSet to be fully type-correct.
-// For this subtask, assuming they are defined elsewhere or their details are not critical for the placeholder logic.
-public class RoomData { public string roomId; public string roomLabel; public Vector2 dimensions; public Vector3 position; public List<WallSegment> walls; public List<string> connectedRoomIds; public string notes; public Vector3 atticHatchLocalPosition; }
-public class WallSegment { public Vector3 startPoint; public Vector3 endPoint; public float thickness; public bool isExterior; public WallSide side; public List<string> doorIdsOnWall; public List<string> windowIdsOnWall; public List<string> openingIdsOnWall; }
-public enum WallSide { North, South, East, West, Unknown } // Example
-public class DoorSpec { public string doorId; public DoorType type; public float width; public float height; public Vector3 position; public string wallId; public SwingDirection swingDirection; public SlideDirection slideDirection; public bool isExterior; public string connectsRoomA_Id; public string connectsRoomB_Id; }
-public enum DoorType { Hinged, Sliding, Pocket, BiFold, Overhead } // Example
-public enum SwingDirection { InwardNorth, InwardSouth, InwardEast, InwardWest, OutwardNorth, OutwardSouth, OutwardEast, OutwardWest, None } // Example
-public enum SlideDirection { SlidesLeft, SlidesRight, SlidesUp, SlidesDown, None } // Example
-public class WindowSpec { public string windowId; public global::WindowType type; public float width; public float height; public Vector3 position; public float sillHeight; public string wallId; public bool isOperable; public int bayPanes; public float bayProjectionDepth; }
-public enum WindowType { SingleHung, DoubleHung, Casement, Awning, Sliding, Fixed, Bay, Bow, SkylightQuad, SkylightTube } // Example global::WindowType
-public class OpeningSpec { public string openingId; public OpeningType type; public float width; public float height; public Vector3 position; public string wallId; public string connectsRoomA_Id; public string connectsRoomB_Id; }
-public enum OpeningType { CasedOpening, PassthroughCounter, DoorRoughOpening, WindowRoughOpening } // Example
-
-// public class DiffEntry<T> { public string id; public ChangeType change; public T existingData; public T capturedData; public List<string> differences; }
-// public enum ChangeType { Unchanged, Added, Removed, Modified }
-// End of placeholder classes for context
 
 public static class TransformCapturePreferences
 {
