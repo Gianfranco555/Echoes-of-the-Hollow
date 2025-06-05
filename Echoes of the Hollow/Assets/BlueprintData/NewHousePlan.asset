@@ -54,7 +54,7 @@ MonoBehaviour:
       windowIdsOnWall: []
       openingIdsOnWall: []
     - startPoint: {x: 0, y: 0, z: 0}
-      endPoint: {x: 1, y: 0, z: 0}
+      endPoint: {x: 1.4159, y: 0, z: 0}
       thickness: 0
       side: 0
       isExterior: 1
@@ -727,8 +727,24 @@ MonoBehaviour:
       doorIdsOnWall: []
       windowIdsOnWall: []
       openingIdsOnWall: []
+    - startPoint: {x: 10, y: 0, z: 0}
+      endPoint: {x: 10, y: 0, z: 2.667}
+      thickness: 0
+      side: 0
+      isExterior: 1
+      doorIdsOnWall: []
+      windowIdsOnWall: []
+      openingIdsOnWall: []
     - startPoint: {x: 10, y: 0, z: 2.667}
       endPoint: {x: 10, y: 0, z: 7}
+      thickness: 0
+      side: 0
+      isExterior: 1
+      doorIdsOnWall: []
+      windowIdsOnWall: []
+      openingIdsOnWall: []
+    - startPoint: {x: 10, y: 0, z: 7}
+      endPoint: {x: 10, y: 0, z: 9}
       thickness: 0
       side: 0
       isExterior: 1
