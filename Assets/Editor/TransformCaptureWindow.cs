@@ -32,6 +32,11 @@ public class TransformCaptureWindow : EditorWindow
     private bool useContextualFormatting = false; // Added field
     private bool groupByRoom = false;
 
+    public static List<GameObject> recentlySelectedForCapture = new List<GameObject>();
+    public static List<GameObject> successfullyCapturedLastRun = new List<GameObject>();
+    public static List<GameObject> objectsWithCaptureErrorsLastRun = new List<GameObject>();
+    private static bool showCaptureGizmos = false;
+
     [MenuItem("House Tools/Transform Data Capturer")]
     public static void ShowWindow()
     {
@@ -41,6 +46,14 @@ public class TransformCaptureWindow : EditorWindow
     void OnGUI()
     {
         selectedCoordinateSpace = (CoordinateSpaceSetting)EditorGUILayout.EnumPopup("Coordinate Space:", selectedCoordinateSpace);
+
+        EditorGUI.BeginChangeCheck();
+        showCaptureGizmos = EditorGUILayout.Toggle("Show Capture Gizmos", showCaptureGizmos);
+        if (EditorGUI.EndChangeCheck())
+        {
+            SceneView.RepaintAll();
+        }
+
         // Add this before the capture button
         useContextualFormatting = EditorGUILayout.Toggle("Use Contextual House Formatting", useContextualFormatting);
         captureMode = (CaptureMode)EditorGUILayout.EnumPopup("Capture Mode:", captureMode);
@@ -84,6 +97,8 @@ public class TransformCaptureWindow : EditorWindow
 
     private void CaptureTransforms()
     {
+        successfullyCapturedLastRun.Clear();
+        objectsWithCaptureErrorsLastRun.Clear();
         StringBuilder sb = new StringBuilder();
         List<GameObject> objectsToProcess = new List<GameObject>();
 
@@ -107,6 +122,11 @@ public class TransformCaptureWindow : EditorWindow
                 objectsToProcess.AddRange(FindAllHouseComponents(HouseComponentType.Window));
                 break;
         }
+
+        // For now, assume all processed objects are successful. Error handling can be added later.
+        successfullyCapturedLastRun.AddRange(objectsToProcess.Distinct());
+        // Ensure SceneView repaints if gizmos are on
+        if (showCaptureGizmos) SceneView.RepaintAll();
 
         if (objectsToProcess.Count == 0)
         {
@@ -1567,6 +1587,114 @@ public class TransformCaptureWindow : EditorWindow
             EditorUtility.ClearProgressBar(); // Ensure progress bar is cleared in all cases
             Debug.Log("ExecuteUpdateOnAsset finished."); // General finish log
         }
+    }
+
+    void OnFocus()
+    {
+        UpdateRecentlySelected();
+        // Repaint scene if gizmos are active to reflect selection changes
+        if (showCaptureGizmos) SceneView.RepaintAll();
+    }
+
+    void OnLostFocus()
+    {
+        recentlySelectedForCapture.Clear();
+        // Repaint scene if gizmos are active to clear selection highlights
+        if (showCaptureGizmos) SceneView.RepaintAll();
+    }
+
+    private void UpdateRecentlySelected()
+    {
+        recentlySelectedForCapture.Clear();
+        if (Selection.gameObjects != null && Selection.gameObjects.Length > 0)
+        {
+            recentlySelectedForCapture.AddRange(Selection.gameObjects);
+        }
+    }
+
+    void OnSelectionChange()
+    {
+        if (EditorWindow.focusedWindow == this)
+        {
+            UpdateRecentlySelected();
+            if (showCaptureGizmos) SceneView.RepaintAll();
+        }
+    }
+
+    [DrawGizmo(GizmoType.Selected | GizmoType.NonSelected)]
+    static void DrawCaptureGizmos(Transform transform, GizmoType gizmoType)
+    {
+        if (!showCaptureGizmos)
+        {
+            return;
+        }
+
+        GameObject gameObject = transform.gameObject;
+        string statusLabel = string.Empty;
+        Color gizmoColor = Color.clear; // Default to clear if not in any list
+
+        bool isFocused = EditorWindow.focusedWindow is TransformCaptureWindow;
+
+        if (objectsWithCaptureErrorsLastRun.Contains(gameObject))
+        {
+            gizmoColor = Color.red;
+            statusLabel = "Status: Error";
+        }
+        else if (successfullyCapturedLastRun.Contains(gameObject))
+        {
+            gizmoColor = Color.green;
+            statusLabel = "Status: Captured";
+        }
+        else if (isFocused && recentlySelectedForCapture.Contains(gameObject))
+        {
+            gizmoColor = Color.yellow;
+            statusLabel = "Status: Pending Selection";
+        }
+
+        if (gizmoColor != Color.clear)
+        {
+            Handles.color = gizmoColor;
+            Vector3 size = Vector3.one * 0.5f; // Default size
+            Renderer renderer = gameObject.GetComponent<Renderer>();
+            if (renderer != null)
+            {
+                size = renderer.bounds.size;
+                // Ensure size is not zero, which can happen for some renderers or uninitialized objects
+                if (size.x == 0) size.x = 0.5f;
+                if (size.y == 0) size.y = 0.5f;
+                if (size.z == 0) size.z = 0.5f;
+            }
+
+            // Draw the wire cube at the object's pivot point (transform.position)
+            Handles.DrawWireCube(transform.position, size);
+
+            HouseComponentType compType = DetectStaticComponentType(gameObject); // Assuming we create this
+            string finalLabel = $"Type: {compType}\n{statusLabel}";
+
+            Handles.Label(transform.position + Vector3.up * (size.y * 0.5f + 0.2f), finalLabel);
+        }
+    }
+
+    // Add a static version of DetectComponentType or a simplified one for Gizmos
+    // This is a simplified version. The original DetectComponentType might have dependencies
+    // on instance members or be more complex.
+    static HouseComponentType DetectStaticComponentType(GameObject obj)
+    {
+        if (obj == null) return HouseComponentType.Unknown;
+        if (obj.name == "ProceduralHouse_Generated") return HouseComponentType.ProceduralHouseRoot;
+        if (obj.name == "Foundation") return HouseComponentType.Foundation;
+        if (obj.name.StartsWith("Roof_")) return HouseComponentType.Roof;
+        if (obj.name.StartsWith("Wall_")) return HouseComponentType.Wall;
+        if (obj.name.StartsWith("Door_")) return HouseComponentType.Door;
+        if (obj.name.StartsWith("Window_")) return HouseComponentType.Window;
+
+        // In Unity, GetComponent<T>() can be called on a GameObject.
+        // RoomIdentifier might be a component.
+        if (obj.GetComponent<RoomIdentifier>() != null) return HouseComponentType.Room;
+        // Fallback for name-based detection if RoomIdentifier isn't present or not the primary way
+        if (obj.name.Contains("Room")) return HouseComponentType.Room;
+
+        return HouseComponentType.Unknown;
     }
 }
 
