@@ -2,6 +2,7 @@ using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using UnityEngine.AI;
 using System.IO; // Added for Directory.Exists
 using System.Linq; // For FirstOrDefault
 
