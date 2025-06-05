@@ -1362,7 +1362,17 @@ public class TransformCaptureWindow : EditorWindow
 
         // Use existing FindAllHouseComponents to get all relevant GameObjects.
         // This method might need refinement if it doesn't find all desired objects or finds too many.
-        List<GameObject> allGameObjects = FindAllHouseComponents();
+        List<GameObject> allGameObjects = new List<GameObject>();
+            if (captureMode == CaptureMode.SelectedObjects)
+        {
+            allGameObjects.AddRange(Selection.gameObjects);
+            Debug.Log($"Capturing {allGameObjects.Count} selected objects.");
+        }
+            else
+        {
+            // Fallback to the original full-scene scan logic
+            allGameObjects = FindAllHouseComponents();
+        }
 
         // Default values from existing plan context if available
         float storyHeight = existingPlanForContext?.storyHeight ?? 2.7f;

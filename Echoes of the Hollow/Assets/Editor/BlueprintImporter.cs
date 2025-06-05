@@ -409,54 +409,51 @@ public static class BlueprintImporter
         // plan.doors.Add(new DoorSpec { doorId = "ExampleFoyerToGarage", ... }); // Removed
         // plan.openings.Add(new OpeningSpec { openingId = "ExampleFoyerToLiving", ... }); // Removed
 
-        // Locate or Create "FrontDoor"
-        DoorSpec frontDoor = plan.doors.Find(d => d.doorId == "FrontDoor");
-        if (frontDoor == null)
+        // --- Start of Foyer Door/Opening modifications ---
+        
+        // Create and set properties for FrontDoor
+        DoorSpec frontDoor = new DoorSpec
         {
-            frontDoor = new DoorSpec();
-            plan.doors.Add(frontDoor);
-        }
-        frontDoor.doorId = "FrontDoor";
-        frontDoor.type = DoorType.Hinged;
-        frontDoor.width = 0.9144f; // Approximately 3 feet
-        frontDoor.height = (6f + 8f/12f) * FEET_TO_METERS; // 6'8" standard height
-        frontDoor.position = new Vector3(foyerPos.x + foyerWidth / 2f, foyerPos.y, foyerPos.z); // Centered on Foyer's south wall
-        frontDoor.wallId = "Wall_Foyer_S";
-        frontDoor.swingDirection = SwingDirection.InwardSouth;
-        frontDoor.connectsRoomA_Id = "Foyer";
-        frontDoor.connectsRoomB_Id = "CoveredEntry";
+            doorId = "FrontDoor",
+            type = DoorType.Hinged,
+            width = 0.9144f, // Approximately 3 feet
+            height = (6f + 8f / 12f) * FEET_TO_METERS, // 6'8" standard height
+            position = new Vector3(foyerPos.x + foyerWidth / 2f, foyerPos.y, foyerPos.z), // Centered on Foyer's south wall
+            wallId = "Wall_Foyer_S",
+            swingDirection = SwingDirection.InwardSouth,
+            connectsRoomA_Id = "Foyer",
+            connectsRoomB_Id = "CoveredEntry"
+        };
+        plan.doors.Add(frontDoor);
 
-        // Locate or Create Foyer to Garage Door & Set Properties
-        DoorSpec foyerToGarageDoor = plan.doors.Find(d => d.doorId == "FoyerToGarageDoor");
-        if (foyerToGarageDoor == null)
+        // Create and set properties for Foyer to Garage Door
+        DoorSpec foyerToGarageDoor = new DoorSpec
         {
-            foyerToGarageDoor = new DoorSpec();
-            plan.doors.Add(foyerToGarageDoor);
-        }
-        foyerToGarageDoor.doorId = "FoyerToGarageDoor";
-        foyerToGarageDoor.type = DoorType.Hinged;
-        foyerToGarageDoor.width = (2f + 8f/12f) * FEET_TO_METERS; // 2'8"
-        foyerToGarageDoor.height = (6f + 8f/12f) * FEET_TO_METERS; // 6'8"
-        foyerToGarageDoor.position = new Vector3(foyerPos.x, foyerPos.y, foyerPos.z + foyerDepth / 2f); // Centered on Foyer's west wall
-        foyerToGarageDoor.wallId = "Wall_Foyer_W";
-        foyerToGarageDoor.connectsRoomA_Id = "Foyer";
-        foyerToGarageDoor.connectsRoomB_Id = "Garage";
+            doorId = "FoyerToGarageDoor",
+            type = DoorType.Hinged,
+            width = (2f + 8f / 12f) * FEET_TO_METERS, // 2'8"
+            height = (6f + 8f / 12f) * FEET_TO_METERS, // 6'8"
+            position = new Vector3(foyerPos.x, foyerPos.y, foyerPos.z + foyerDepth / 2f), // Centered on Foyer's west wall
+            wallId = "Wall_Foyer_W",
+            connectsRoomA_Id = "Foyer",
+            connectsRoomB_Id = "Garage"
+        };
+        plan.doors.Add(foyerToGarageDoor);
 
-        // Locate or Create Foyer to Living Room Opening & Set Properties
-        OpeningSpec foyerToLivingRoomOpening = plan.openings.Find(o => o.openingId == "FoyerToLivingRoomOpening");
-        if (foyerToLivingRoomOpening == null)
+        // Create and set properties for Foyer to Living Room Opening
+        OpeningSpec foyerToLivingRoomOpening = new OpeningSpec
         {
-            foyerToLivingRoomOpening = new OpeningSpec();
-            plan.openings.Add(foyerToLivingRoomOpening);
-        }
-        foyerToLivingRoomOpening.openingId = "FoyerToLivingRoomOpening";
-        foyerToLivingRoomOpening.type = OpeningType.CasedOpening;
-        foyerToLivingRoomOpening.width = 5f * FEET_TO_METERS; // 5ft wide opening
-        foyerToLivingRoomOpening.height = (6f + 8f/12f) * FEET_TO_METERS; // 6'8"
-        foyerToLivingRoomOpening.position = new Vector3(foyerPos.x + foyerWidth, foyerPos.y, foyerPos.z + foyerDepth / 2f); // Centered on Foyer's east wall
-        foyerToLivingRoomOpening.wallId = "Wall_Foyer_E";
-        foyerToLivingRoomOpening.connectsRoomA_Id = "Foyer";
-        foyerToLivingRoomOpening.connectsRoomB_Id = "LivingRoom";
+            openingId = "FoyerToLivingRoomOpening",
+            type = OpeningType.CasedOpening,
+            width = 5f * FEET_TO_METERS, // 5ft wide opening
+            height = (6f + 8f / 12f) * FEET_TO_METERS, // 6'8"
+            position = new Vector3(foyerPos.x + foyerWidth, foyerPos.y, foyerPos.z + foyerDepth / 2f), // Centered on Foyer's east wall
+            wallId = "Wall_Foyer_E",
+            connectsRoomA_Id = "Foyer",
+            connectsRoomB_Id = "LivingRoom"
+        };
+        plan.openings.Add(foyerToLivingRoomOpening);
+        
         // --- End of Foyer Door/Opening modifications ---
     }
 
