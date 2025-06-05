@@ -17,28 +17,32 @@ public struct OpeningData {
     public bool isWindowLike; // True if the opening is elevated from the floor and does not reach the ceiling.
 }
 
-/// <summary>
-/// Holds the analyzed data for a wall segment, including its dimensions and openings.
-/// </summary>
-public struct AnalyzedWallData {
-    /// <summary>
-    /// The conceptual start point of the wall in its local space (always Vector3.zero).
-    /// </summary>
-    public Vector3 localStartPoint;
-    /// <summary>
-    /// The conceptual end point of the wall in its local space (wallLength, 0, 0).
-    /// </summary>
-    public Vector3 localEndPoint;
-    public float wallLength;
-    public List<OpeningData> openings;
-    public bool isLikelyExterior; // Placeholder for future development.
-    public float determinedThickness; // Placeholder, defaults to expectedWallThickness.
-}
 
 /// <summary>
 /// A static class responsible for analyzing wall GameObjects to derive structured WallSegment data.
 /// </summary>
 public static class WallSegmentAnalyzer {
+
+    /// <summary>
+    /// Holds the analyzed data for a wall segment, including its dimensions and openings.
+    /// </summary>
+    public struct AnalyzedWallData
+    {
+        /// <summary>
+        /// The conceptual start point of the wall in its local space (always Vector3.zero).
+        /// </summary>
+        public Vector3 localStartPoint;
+
+        /// <summary>
+        /// The conceptual end point of the wall in its local space (wallLength, 0, 0).
+        /// </summary>
+        public Vector3 localEndPoint;
+
+        public float wallLength;
+        public List<OpeningData> openings;
+        public bool isLikelyExterior; // Placeholder for future development.
+        public float determinedThickness; // Placeholder, defaults to expectedWallThickness.
+    }
 
     /// <summary>
     /// Helper class to store information about individual wall slices, including their bounds

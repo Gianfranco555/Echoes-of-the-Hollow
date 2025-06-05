@@ -79,6 +79,7 @@ public enum DoorType
 {
     Hinged,
     Sliding,
+    Pocket,
     BiFold,
     Overhead
 }
