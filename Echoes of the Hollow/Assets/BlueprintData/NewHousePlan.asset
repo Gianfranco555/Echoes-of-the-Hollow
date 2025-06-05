@@ -18,7 +18,7 @@ MonoBehaviour:
   rooms:
   - roomId: OverallFootprint
     roomLabel: Overall Footprint
-    dimensions: {x: 30, y: 51}
+    dimensions: {x: 9.144, y: 15.5448}
     position: {x: 0, y: 0, z: 0}
     walls: []
     connectedRoomIds: []
@@ -26,59 +26,66 @@ MonoBehaviour:
     atticHatchLocalPosition: {x: 0, y: 0, z: 0}
   - roomId: Garage
     roomLabel: Garage
-    dimensions: {x: 11.333333, y: 20}
+    dimensions: {x: 3.4544, y: 6.096}
     position: {x: 0, y: 0, z: 0}
     walls:
-    - startPoint: {x: 0, y: 0, z: 20}
-      endPoint: {x: 11.333333, y: 0, z: 20}
+    - wallId: 
+      startPoint: {x: 0, y: 0, z: 6.096}
+      endPoint: {x: 3.4544, y: 0, z: 6.096}
       thickness: 0
       side: 0
       isExterior: 0
       doorIdsOnWall: []
       windowIdsOnWall: []
       openingIdsOnWall: []
-    - startPoint: {x: 0, y: 0, z: 0}
-      endPoint: {x: 0, y: 0, z: 6}
+    - wallId: 
+      startPoint: {x: 0, y: 0, z: 0}
+      endPoint: {x: 0, y: 0, z: 1.8288}
       thickness: 0
       side: 0
       isExterior: 1
       doorIdsOnWall: []
       windowIdsOnWall: []
       openingIdsOnWall: []
-    - startPoint: {x: 0, y: 0, z: 14}
-      endPoint: {x: 0, y: 0, z: 20}
+    - wallId: 
+      startPoint: {x: 0, y: 0, z: 4.2672}
+      endPoint: {x: 0, y: 0, z: 6.096}
       thickness: 0
       side: 0
       isExterior: 1
       doorIdsOnWall: []
       windowIdsOnWall: []
       openingIdsOnWall: []
-    - startPoint: {x: 0, y: 0, z: 0}
-      endPoint: {x: 1, y: 0, z: 0}
+    - wallId: 
+      startPoint: {x: 0, y: 0, z: 0}
+      endPoint: {x: 0.3048, y: 0, z: 0}
       thickness: 0
       side: 0
       isExterior: 1
       doorIdsOnWall: []
       windowIdsOnWall: []
       openingIdsOnWall: []
-    - startPoint: {x: 3.667, y: 0, z: 0}
-      endPoint: {x: 11.333333, y: 0, z: 0}
+    - wallId: 
+      startPoint: {x: 1.1177016, y: 0, z: 0}
+      endPoint: {x: 3.4544, y: 0, z: 0}
       thickness: 0
       side: 0
       isExterior: 1
       doorIdsOnWall: []
       windowIdsOnWall: []
       openingIdsOnWall: []
-    - startPoint: {x: 11.333333, y: 0, z: 0}
-      endPoint: {x: 11.333333, y: 0, z: 8.6665}
+    - wallId: 
+      startPoint: {x: 3.4544, y: 0, z: 0}
+      endPoint: {x: 3.4544, y: 0, z: 2.6415493}
       thickness: 0
       side: 0
       isExterior: 0
       doorIdsOnWall: []
       windowIdsOnWall: []
       openingIdsOnWall: []
-    - startPoint: {x: 11.333333, y: 0, z: 11.3335}
-      endPoint: {x: 11.333333, y: 0, z: 20}
+    - wallId: 
+      startPoint: {x: 3.4544, y: 0, z: 3.4544508}
+      endPoint: {x: 3.4544, y: 0, z: 6.096}
       thickness: 0
       side: 0
       isExterior: 0
@@ -92,27 +99,30 @@ MonoBehaviour:
     atticHatchLocalPosition: {x: 0, y: 0, z: 0}
   - roomId: CoveredEntry
     roomLabel: Covered Entry
-    dimensions: {x: 6, y: 3}
-    position: {x: 11.333333, y: 0, z: -3}
+    dimensions: {x: 1.8288, y: 0.9144}
+    position: {x: 3.4544, y: 0, z: -0.9144}
     walls:
-    - startPoint: {x: 0, y: 0, z: 3}
-      endPoint: {x: 6, y: 0, z: 3}
+    - wallId: 
+      startPoint: {x: 0, y: 0, z: 0.9144}
+      endPoint: {x: 1.8288, y: 0, z: 0.9144}
       thickness: 0
       side: 0
       isExterior: 1
       doorIdsOnWall: []
       windowIdsOnWall: []
       openingIdsOnWall: []
-    - startPoint: {x: 0, y: 0, z: 0}
-      endPoint: {x: 0, y: 0, z: 3}
+    - wallId: 
+      startPoint: {x: 0, y: 0, z: 0}
+      endPoint: {x: 0, y: 0, z: 0.9144}
       thickness: 0
       side: 0
       isExterior: 1
       doorIdsOnWall: []
       windowIdsOnWall: []
       openingIdsOnWall: []
-    - startPoint: {x: 6, y: 0, z: 0}
-      endPoint: {x: 6, y: 0, z: 3}
+    - wallId: 
+      startPoint: {x: 1.8288, y: 0, z: 0}
+      endPoint: {x: 1.8288, y: 0, z: 0.9144}
       thickness: 0
       side: 0
       isExterior: 1
@@ -125,67 +135,75 @@ MonoBehaviour:
     atticHatchLocalPosition: {x: 0, y: 0, z: 0}
   - roomId: Foyer
     roomLabel: Foyer
-    dimensions: {x: 6, y: 6}
-    position: {x: 11.333333, y: 0, z: 0}
+    dimensions: {x: 1.8288, y: 1.8288}
+    position: {x: 3.4544, y: 0, z: 0}
     walls:
-    - startPoint: {x: 0, y: 0, z: 0}
-      endPoint: {x: 1.5, y: 0, z: 0}
+    - wallId: 
+      startPoint: {x: 0, y: 0, z: 0}
+      endPoint: {x: 0.4572, y: 0, z: 0}
       thickness: 0
       side: 0
       isExterior: 1
       doorIdsOnWall: []
       windowIdsOnWall: []
       openingIdsOnWall: []
-    - startPoint: {x: 4.5, y: 0, z: 0}
-      endPoint: {x: 6, y: 0, z: 0}
+    - wallId: 
+      startPoint: {x: 1.3716, y: 0, z: 0}
+      endPoint: {x: 1.8288, y: 0, z: 0}
       thickness: 0
       side: 0
       isExterior: 1
       doorIdsOnWall: []
       windowIdsOnWall: []
       openingIdsOnWall: []
-    - startPoint: {x: 0, y: 0, z: 0}
-      endPoint: {x: 0, y: 0, z: 1.6665}
+    - wallId: 
+      startPoint: {x: 0, y: 0, z: 0}
+      endPoint: {x: 0, y: 0, z: 0.5079492}
       thickness: 0
       side: 0
       isExterior: 0
       doorIdsOnWall: []
       windowIdsOnWall: []
       openingIdsOnWall: []
-    - startPoint: {x: 0, y: 0, z: 4.3335}
-      endPoint: {x: 0, y: 0, z: 6}
+    - wallId: 
+      startPoint: {x: 0, y: 0, z: 1.3208507}
+      endPoint: {x: 0, y: 0, z: 1.8288}
       thickness: 0
       side: 0
       isExterior: 0
       doorIdsOnWall: []
       windowIdsOnWall: []
       openingIdsOnWall: []
-    - startPoint: {x: 6, y: 0, z: 0}
-      endPoint: {x: 6, y: 0, z: 0.5}
+    - wallId: 
+      startPoint: {x: 1.8288, y: 0, z: 0}
+      endPoint: {x: 1.8288, y: 0, z: 0.1524}
       thickness: 0
       side: 0
       isExterior: 0
       doorIdsOnWall: []
       windowIdsOnWall: []
       openingIdsOnWall: []
-    - startPoint: {x: 6, y: 0, z: 5.5}
-      endPoint: {x: 6, y: 0, z: 6}
+    - wallId: 
+      startPoint: {x: 1.8288, y: 0, z: 1.6764001}
+      endPoint: {x: 1.8288, y: 0, z: 1.8288}
       thickness: 0
       side: 0
       isExterior: 0
       doorIdsOnWall: []
       windowIdsOnWall: []
       openingIdsOnWall: []
-    - startPoint: {x: 0, y: 0, z: 6}
-      endPoint: {x: 1, y: 0, z: 6}
+    - wallId: 
+      startPoint: {x: 0, y: 0, z: 1.8288}
+      endPoint: {x: 0.3048, y: 0, z: 1.8288}
       thickness: 0
       side: 0
       isExterior: 0
       doorIdsOnWall: []
       windowIdsOnWall: []
       openingIdsOnWall: []
-    - startPoint: {x: 5, y: 0, z: 6}
-      endPoint: {x: 6, y: 0, z: 6}
+    - wallId: 
+      startPoint: {x: 1.5239999, y: 0, z: 1.8288}
+      endPoint: {x: 1.8288, y: 0, z: 1.8288}
       thickness: 0
       side: 0
       isExterior: 0
@@ -201,43 +219,48 @@ MonoBehaviour:
     atticHatchLocalPosition: {x: 0, y: 0, z: 0}
   - roomId: Office
     roomLabel: Office
-    dimensions: {x: 9.166667, y: 10}
-    position: {x: 0, y: 0, z: 20}
+    dimensions: {x: 2.7940001, y: 3.048}
+    position: {x: 0, y: 0, z: 6.096}
     walls:
-    - startPoint: {x: 0, y: 0, z: 10}
-      endPoint: {x: 9.166667, y: 0, z: 10}
+    - wallId: 
+      startPoint: {x: 0, y: 0, z: 3.048}
+      endPoint: {x: 2.7940001, y: 0, z: 3.048}
       thickness: 0
       side: 0
       isExterior: 0
       doorIdsOnWall: []
       windowIdsOnWall: []
       openingIdsOnWall: []
-    - startPoint: {x: 0, y: 0, z: 0}
-      endPoint: {x: 0, y: 0, z: 3.5}
+    - wallId: 
+      startPoint: {x: 0, y: 0, z: 0}
+      endPoint: {x: 0, y: 0, z: 1.0668}
       thickness: 0
       side: 0
       isExterior: 1
       doorIdsOnWall: []
       windowIdsOnWall: []
       openingIdsOnWall: []
-    - startPoint: {x: 0, y: 0, z: 6.5}
-      endPoint: {x: 0, y: 0, z: 10}
+    - wallId: 
+      startPoint: {x: 0, y: 0, z: 1.9812}
+      endPoint: {x: 0, y: 0, z: 3.048}
       thickness: 0
       side: 0
       isExterior: 1
       doorIdsOnWall: []
       windowIdsOnWall: []
       openingIdsOnWall: []
-    - startPoint: {x: 0, y: 0, z: 0}
-      endPoint: {x: 9.166667, y: 0, z: 0}
+    - wallId: 
+      startPoint: {x: 0, y: 0, z: 0}
+      endPoint: {x: 2.7940001, y: 0, z: 0}
       thickness: 0
       side: 0
       isExterior: 0
       doorIdsOnWall: []
       windowIdsOnWall: []
       openingIdsOnWall: []
-    - startPoint: {x: 9.166667, y: 0, z: 8.667}
-      endPoint: {x: 9.166667, y: 0, z: 10}
+    - wallId: 
+      startPoint: {x: 2.7940001, y: 0, z: 2.6417015}
+      endPoint: {x: 2.7940001, y: 0, z: 3.048}
       thickness: 0
       side: 0
       isExterior: 0
@@ -252,35 +275,39 @@ MonoBehaviour:
     atticHatchLocalPosition: {x: 0, y: 0, z: 0}
   - roomId: HallBath
     roomLabel: Hall Bath
-    dimensions: {x: 5, y: 9}
-    position: {x: 0, y: 0, z: 30}
+    dimensions: {x: 1.524, y: 2.7432}
+    position: {x: 0, y: 0, z: 9.144}
     walls:
-    - startPoint: {x: 0, y: 0, z: 9}
-      endPoint: {x: 5, y: 0, z: 9}
+    - wallId: 
+      startPoint: {x: 0, y: 0, z: 2.7432}
+      endPoint: {x: 1.524, y: 0, z: 2.7432}
       thickness: 0
       side: 0
       isExterior: 0
       doorIdsOnWall: []
       windowIdsOnWall: []
       openingIdsOnWall: []
-    - startPoint: {x: 0, y: 0, z: 0}
-      endPoint: {x: 0, y: 0, z: 9}
+    - wallId: 
+      startPoint: {x: 0, y: 0, z: 0}
+      endPoint: {x: 0, y: 0, z: 2.7432}
       thickness: 0
       side: 0
       isExterior: 1
       doorIdsOnWall: []
       windowIdsOnWall: []
       openingIdsOnWall: []
-    - startPoint: {x: 5, y: 0, z: 2.667}
-      endPoint: {x: 5, y: 0, z: 9}
+    - wallId: 
+      startPoint: {x: 1.524, y: 0, z: 0.8129016}
+      endPoint: {x: 1.524, y: 0, z: 2.7432}
       thickness: 0
       side: 0
       isExterior: 0
       doorIdsOnWall: []
       windowIdsOnWall: []
       openingIdsOnWall: []
-    - startPoint: {x: 0, y: 0, z: 0}
-      endPoint: {x: 5, y: 0, z: 0}
+    - wallId: 
+      startPoint: {x: 0, y: 0, z: 0}
+      endPoint: {x: 1.524, y: 0, z: 0}
       thickness: 0
       side: 0
       isExterior: 0
@@ -295,59 +322,66 @@ MonoBehaviour:
     atticHatchLocalPosition: {x: 0, y: 0, z: 0}
   - roomId: MasterBedroom
     roomLabel: Master Bedroom
-    dimensions: {x: 11, y: 12}
-    position: {x: 0, y: 0, z: 39}
+    dimensions: {x: 3.3528001, y: 3.6576}
+    position: {x: 0, y: 0, z: 11.8872}
     walls:
-    - startPoint: {x: 0, y: 0, z: 12}
-      endPoint: {x: 1.667, y: 0, z: 12}
+    - wallId: 
+      startPoint: {x: 0, y: 0, z: 3.6576}
+      endPoint: {x: 0.50810164, y: 0, z: 3.6576}
       thickness: 0
       side: 0
       isExterior: 1
       doorIdsOnWall: []
       windowIdsOnWall: []
       openingIdsOnWall: []
-    - startPoint: {x: 4.667, y: 0, z: 12}
-      endPoint: {x: 6.334, y: 0, z: 12}
+    - wallId: 
+      startPoint: {x: 1.4225016, y: 0, z: 3.6576}
+      endPoint: {x: 1.9306033, y: 0, z: 3.6576}
       thickness: 0
       side: 0
       isExterior: 1
       doorIdsOnWall: []
       windowIdsOnWall: []
       openingIdsOnWall: []
-    - startPoint: {x: 9.334, y: 0, z: 12}
-      endPoint: {x: 11, y: 0, z: 12}
+    - wallId: 
+      startPoint: {x: 2.8450031, y: 0, z: 3.6576}
+      endPoint: {x: 3.3528001, y: 0, z: 3.6576}
       thickness: 0
       side: 0
       isExterior: 1
       doorIdsOnWall: []
       windowIdsOnWall: []
       openingIdsOnWall: []
-    - startPoint: {x: 0, y: 0, z: 0}
-      endPoint: {x: 0, y: 0, z: 12}
+    - wallId: 
+      startPoint: {x: 0, y: 0, z: 0}
+      endPoint: {x: 0, y: 0, z: 3.6576}
       thickness: 0
       side: 0
       isExterior: 1
       doorIdsOnWall: []
       windowIdsOnWall: []
       openingIdsOnWall: []
-    - startPoint: {x: 11, y: 0, z: 0}
-      endPoint: {x: 11, y: 0, z: 3}
+    - wallId: 
+      startPoint: {x: 3.3528001, y: 0, z: 0}
+      endPoint: {x: 3.3528001, y: 0, z: 0.9144}
       thickness: 0
       side: 0
       isExterior: 0
       doorIdsOnWall: []
       windowIdsOnWall: []
       openingIdsOnWall: []
-    - startPoint: {x: 11, y: 0, z: 9}
-      endPoint: {x: 11, y: 0, z: 12}
+    - wallId: 
+      startPoint: {x: 3.3528001, y: 0, z: 2.7432}
+      endPoint: {x: 3.3528001, y: 0, z: 3.6576}
       thickness: 0
       side: 0
       isExterior: 0
       doorIdsOnWall: []
       windowIdsOnWall: []
       openingIdsOnWall: []
-    - startPoint: {x: 0, y: 0, z: 0}
-      endPoint: {x: 8.333, y: 0, z: 0}
+    - wallId: 
+      startPoint: {x: 0, y: 0, z: 0}
+      endPoint: {x: 2.5398984, y: 0, z: 0}
       thickness: 0
       side: 0
       isExterior: 0
@@ -361,27 +395,30 @@ MonoBehaviour:
     atticHatchLocalPosition: {x: 0, y: 0, z: 0}
   - roomId: MasterCloset
     roomLabel: Master Closet
-    dimensions: {x: 2, y: 6}
-    position: {x: 11, y: 0, z: 42}
+    dimensions: {x: 0.6096, y: 1.8288}
+    position: {x: 3.3528001, y: 0, z: 12.8016}
     walls:
-    - startPoint: {x: 0, y: 0, z: 6}
-      endPoint: {x: 2, y: 0, z: 6}
+    - wallId: 
+      startPoint: {x: 0, y: 0, z: 1.8288}
+      endPoint: {x: 0.6096, y: 0, z: 1.8288}
       thickness: 0
       side: 0
       isExterior: 0
       doorIdsOnWall: []
       windowIdsOnWall: []
       openingIdsOnWall: []
-    - startPoint: {x: 2, y: 0, z: 0}
-      endPoint: {x: 2, y: 0, z: 6}
+    - wallId: 
+      startPoint: {x: 0.6096, y: 0, z: 0}
+      endPoint: {x: 0.6096, y: 0, z: 1.8288}
       thickness: 0
       side: 0
       isExterior: 0
       doorIdsOnWall: []
       windowIdsOnWall: []
       openingIdsOnWall: []
-    - startPoint: {x: 0, y: 0, z: 0}
-      endPoint: {x: 2, y: 0, z: 0}
+    - wallId: 
+      startPoint: {x: 0, y: 0, z: 0}
+      endPoint: {x: 0.6096, y: 0, z: 0}
       thickness: 0
       side: 0
       isExterior: 0
@@ -391,62 +428,69 @@ MonoBehaviour:
     connectedRoomIds:
     - MasterBedroom
     notes: Shallow closet room, assumed open on its West side to Master Bedroom.
-    atticHatchLocalPosition: {x: 1, y: 2.7, z: 3}
+    atticHatchLocalPosition: {x: 0.3048, y: 2.7, z: 0.9144}
   - roomId: MasterVestibule
     roomLabel: Master Vestibule
-    dimensions: {x: 4, y: 3}
-    position: {x: 7, y: 0, z: 36}
+    dimensions: {x: 1.2192, y: 0.9144}
+    position: {x: 2.1336002, y: 0, z: 10.9728}
     walls:
-    - startPoint: {x: 0, y: 0, z: 3}
-      endPoint: {x: 0.6665, y: 0, z: 3}
+    - wallId: 
+      startPoint: {x: 0, y: 0, z: 0.9144}
+      endPoint: {x: 0.2031492, y: 0, z: 0.9144}
       thickness: 0
       side: 0
       isExterior: 0
       doorIdsOnWall: []
       windowIdsOnWall: []
       openingIdsOnWall: []
-    - startPoint: {x: 3.3335, y: 0, z: 3}
-      endPoint: {x: 4, y: 0, z: 3}
+    - wallId: 
+      startPoint: {x: 1.0160508, y: 0, z: 0.9144}
+      endPoint: {x: 1.2192, y: 0, z: 0.9144}
       thickness: 0
       side: 0
       isExterior: 0
       doorIdsOnWall: []
       windowIdsOnWall: []
       openingIdsOnWall: []
-    - startPoint: {x: 0, y: 0, z: 0}
-      endPoint: {x: 0, y: 0, z: 3}
+    - wallId: 
+      startPoint: {x: 0, y: 0, z: 0}
+      endPoint: {x: 0, y: 0, z: 0.9144}
       thickness: 0
       side: 0
       isExterior: 0
       doorIdsOnWall: []
       windowIdsOnWall: []
       openingIdsOnWall: []
-    - startPoint: {x: 4, y: 0, z: 0}
-      endPoint: {x: 4, y: 0, z: 0.5}
+    - wallId: 
+      startPoint: {x: 1.2192, y: 0, z: 0}
+      endPoint: {x: 1.2192, y: 0, z: 0.1524}
       thickness: 0
       side: 0
       isExterior: 0
       doorIdsOnWall: []
       windowIdsOnWall: []
       openingIdsOnWall: []
-    - startPoint: {x: 4, y: 0, z: 2.5}
-      endPoint: {x: 4, y: 0, z: 3}
+    - wallId: 
+      startPoint: {x: 1.2192, y: 0, z: 0.762}
+      endPoint: {x: 1.2192, y: 0, z: 0.9144}
       thickness: 0
       side: 0
       isExterior: 0
       doorIdsOnWall: []
       windowIdsOnWall: []
       openingIdsOnWall: []
-    - startPoint: {x: 0, y: 0, z: 0}
-      endPoint: {x: 0.6665, y: 0, z: 0}
+    - wallId: 
+      startPoint: {x: 0, y: 0, z: 0}
+      endPoint: {x: 0.2031492, y: 0, z: 0}
       thickness: 0
       side: 0
       isExterior: 0
       doorIdsOnWall: []
       windowIdsOnWall: []
       openingIdsOnWall: []
-    - startPoint: {x: 3.3335, y: 0, z: 0}
-      endPoint: {x: 4, y: 0, z: 0}
+    - wallId: 
+      startPoint: {x: 1.0160508, y: 0, z: 0}
+      endPoint: {x: 1.2192, y: 0, z: 0}
       thickness: 0
       side: 0
       isExterior: 0
@@ -462,51 +506,57 @@ MonoBehaviour:
     atticHatchLocalPosition: {x: 0, y: 0, z: 0}
   - roomId: MasterBath
     roomLabel: Master Bath
-    dimensions: {x: 6, y: 8.5}
-    position: {x: 5, y: 0, z: 27.5}
+    dimensions: {x: 1.8288, y: 2.5908}
+    position: {x: 1.5240003, y: 0, z: 8.382}
     walls:
-    - startPoint: {x: 0, y: 0, z: 8.5}
-      endPoint: {x: 1.6665, y: 0, z: 8.5}
+    - wallId: 
+      startPoint: {x: 0, y: 0, z: 2.5908}
+      endPoint: {x: 0.5079492, y: 0, z: 2.5908}
       thickness: 0
       side: 0
       isExterior: 0
       doorIdsOnWall: []
       windowIdsOnWall: []
       openingIdsOnWall: []
-    - startPoint: {x: 4.3335, y: 0, z: 8.5}
-      endPoint: {x: 6, y: 0, z: 8.5}
+    - wallId: 
+      startPoint: {x: 1.3208507, y: 0, z: 2.5908}
+      endPoint: {x: 1.8288, y: 0, z: 2.5908}
       thickness: 0
       side: 0
       isExterior: 0
       doorIdsOnWall: []
       windowIdsOnWall: []
       openingIdsOnWall: []
-    - startPoint: {x: 0, y: 0, z: 0}
-      endPoint: {x: 0, y: 0, z: 3.25}
+    - wallId: 
+      startPoint: {x: 0, y: 0, z: 0}
+      endPoint: {x: 0, y: 0, z: 0.9906}
       thickness: 0
       side: 0
       isExterior: 1
       doorIdsOnWall: []
       windowIdsOnWall: []
       openingIdsOnWall: []
-    - startPoint: {x: 0, y: 0, z: 5.25}
-      endPoint: {x: 0, y: 0, z: 8.5}
+    - wallId: 
+      startPoint: {x: 0, y: 0, z: 1.6002}
+      endPoint: {x: 0, y: 0, z: 2.5908}
       thickness: 0
       side: 0
       isExterior: 1
       doorIdsOnWall: []
       windowIdsOnWall: []
       openingIdsOnWall: []
-    - startPoint: {x: 6, y: 0, z: 0}
-      endPoint: {x: 6, y: 0, z: 8.5}
+    - wallId: 
+      startPoint: {x: 1.8288, y: 0, z: 0}
+      endPoint: {x: 1.8288, y: 0, z: 2.5908}
       thickness: 0
       side: 0
       isExterior: 0
       doorIdsOnWall: []
       windowIdsOnWall: []
       openingIdsOnWall: []
-    - startPoint: {x: 0, y: 0, z: 0}
-      endPoint: {x: 6, y: 0, z: 0}
+    - wallId: 
+      startPoint: {x: 0, y: 0, z: 0}
+      endPoint: {x: 1.8288, y: 0, z: 0}
       thickness: 0
       side: 0
       isExterior: 1
@@ -519,50 +569,56 @@ MonoBehaviour:
     atticHatchLocalPosition: {x: 0, y: 0, z: 0}
   - roomId: LivingRoom
     roomLabel: Living Room
-    dimensions: {x: 12.666667, y: 15}
-    position: {x: 17.333332, y: 0, z: 0}
+    dimensions: {x: 3.8608, y: 4.572}
+    position: {x: 5.2832003, y: 0, z: 0}
     walls:
-    - startPoint: {x: 0, y: 0, z: 0}
-      endPoint: {x: 2.3335, y: 0, z: 0}
+    - wallId: 
+      startPoint: {x: 0, y: 0, z: 0}
+      endPoint: {x: 0.7112508, y: 0, z: 0}
       thickness: 0
       side: 0
       isExterior: 1
       doorIdsOnWall: []
       windowIdsOnWall: []
       openingIdsOnWall: []
-    - startPoint: {x: 10.3335, y: 0, z: 0}
-      endPoint: {x: 12.666667, y: 0, z: 0}
+    - wallId: 
+      startPoint: {x: 3.1496508, y: 0, z: 0}
+      endPoint: {x: 3.8608, y: 0, z: 0}
       thickness: 0
       side: 0
       isExterior: 1
       doorIdsOnWall: []
       windowIdsOnWall: []
       openingIdsOnWall: []
-    - startPoint: {x: 2.3335, y: 0, z: 0}
-      endPoint: {x: 1.3335, y: 0, z: -2}
+    - wallId: 
+      startPoint: {x: 0.7112508, y: 0, z: 0}
+      endPoint: {x: 0.4064508, y: 0, z: -0.6096}
       thickness: 0
       side: 0
       isExterior: 1
       doorIdsOnWall: []
       windowIdsOnWall: []
       openingIdsOnWall: []
-    - startPoint: {x: 1.3335, y: 0, z: -2}
-      endPoint: {x: 11.3335, y: 0, z: -2}
+    - wallId: 
+      startPoint: {x: 0.4064508, y: 0, z: -0.6096}
+      endPoint: {x: 3.4544508, y: 0, z: -0.6096}
       thickness: 0
       side: 0
       isExterior: 1
       doorIdsOnWall: []
       windowIdsOnWall: []
       openingIdsOnWall: []
-    - startPoint: {x: 11.3335, y: 0, z: -2}
-      endPoint: {x: 10.3335, y: 0, z: 0}
+    - wallId: 
+      startPoint: {x: 3.4544508, y: 0, z: -0.6096}
+      endPoint: {x: 3.1496508, y: 0, z: 0}
       thickness: 0
       side: 0
       isExterior: 1
       doorIdsOnWall: []
       windowIdsOnWall: []
       openingIdsOnWall: []
-    - startPoint: {x: 0, y: 0, z: 0.5}
+    - wallId: 
+      startPoint: {x: 0, y: 0, z: 0.1524}
       endPoint: {x: 0, y: 0, z: 0}
       thickness: 0
       side: 0
@@ -570,40 +626,45 @@ MonoBehaviour:
       doorIdsOnWall: []
       windowIdsOnWall: []
       openingIdsOnWall: []
-    - startPoint: {x: 0, y: 0, z: 5.5}
-      endPoint: {x: 0, y: 0, z: 15}
+    - wallId: 
+      startPoint: {x: 0, y: 0, z: 1.6764001}
+      endPoint: {x: 0, y: 0, z: 4.572}
       thickness: 0
       side: 0
       isExterior: 0
       doorIdsOnWall: []
       windowIdsOnWall: []
       openingIdsOnWall: []
-    - startPoint: {x: 12.666667, y: 0, z: 0}
-      endPoint: {x: 12.666667, y: 0, z: 5.5}
+    - wallId: 
+      startPoint: {x: 3.8608, y: 0, z: 0}
+      endPoint: {x: 3.8608, y: 0, z: 1.6764001}
       thickness: 0
       side: 0
       isExterior: 1
       doorIdsOnWall: []
       windowIdsOnWall: []
       openingIdsOnWall: []
-    - startPoint: {x: 12.666667, y: 0, z: 9.5}
-      endPoint: {x: 12.666667, y: 0, z: 15}
+    - wallId: 
+      startPoint: {x: 3.8608, y: 0, z: 2.8956}
+      endPoint: {x: 3.8608, y: 0, z: 4.572}
       thickness: 0
       side: 0
       isExterior: 1
       doorIdsOnWall: []
       windowIdsOnWall: []
       openingIdsOnWall: []
-    - startPoint: {x: 0, y: 0, z: 15}
-      endPoint: {x: 4.8335, y: 0, z: 15}
+    - wallId: 
+      startPoint: {x: 0, y: 0, z: 4.572}
+      endPoint: {x: 1.4732507, y: 0, z: 4.572}
       thickness: 0
       side: 0
       isExterior: 0
       doorIdsOnWall: []
       windowIdsOnWall: []
       openingIdsOnWall: []
-    - startPoint: {x: 7.8335, y: 0, z: 15}
-      endPoint: {x: 12.666667, y: 0, z: 15}
+    - wallId: 
+      startPoint: {x: 2.3876507, y: 0, z: 4.572}
+      endPoint: {x: 3.8608, y: 0, z: 4.572}
       thickness: 0
       side: 0
       isExterior: 0
@@ -617,75 +678,84 @@ MonoBehaviour:
     atticHatchLocalPosition: {x: 0, y: 0, z: 0}
   - roomId: DiningRoom
     roomLabel: Dining Room
-    dimensions: {x: 9.333333, y: 10.333333}
-    position: {x: 17.833332, y: 0, z: 15}
+    dimensions: {x: 2.8448, y: 3.1496}
+    position: {x: 5.4356003, y: 0, z: 4.572}
     walls:
-    - startPoint: {x: 0, y: 0, z: 0}
-      endPoint: {x: 3.1665, y: 0, z: 0}
+    - wallId: 
+      startPoint: {x: 0, y: 0, z: 0}
+      endPoint: {x: 0.9651492, y: 0, z: 0}
       thickness: 0
       side: 0
       isExterior: 0
       doorIdsOnWall: []
       windowIdsOnWall: []
       openingIdsOnWall: []
-    - startPoint: {x: 6.1665, y: 0, z: 0}
-      endPoint: {x: 9.333333, y: 0, z: 0}
+    - wallId: 
+      startPoint: {x: 1.8795493, y: 0, z: 0}
+      endPoint: {x: 2.8448, y: 0, z: 0}
       thickness: 0
       side: 0
       isExterior: 0
       doorIdsOnWall: []
       windowIdsOnWall: []
       openingIdsOnWall: []
-    - startPoint: {x: 0, y: 0, z: 0}
-      endPoint: {x: 0, y: 0, z: 1}
+    - wallId: 
+      startPoint: {x: 0, y: 0, z: 0}
+      endPoint: {x: 0, y: 0, z: 0.3048}
       thickness: 0
       side: 0
       isExterior: 0
       doorIdsOnWall: []
       windowIdsOnWall: []
       openingIdsOnWall: []
-    - startPoint: {x: 0, y: 0, z: 9.333333}
-      endPoint: {x: 0, y: 0, z: 10.333333}
+    - wallId: 
+      startPoint: {x: 0, y: 0, z: 2.8448}
+      endPoint: {x: 0, y: 0, z: 3.1496}
       thickness: 0
       side: 0
       isExterior: 0
       doorIdsOnWall: []
       windowIdsOnWall: []
       openingIdsOnWall: []
-    - startPoint: {x: 9.333333, y: 0, z: 0}
-      endPoint: {x: 9.333333, y: 0, z: 1}
+    - wallId: 
+      startPoint: {x: 2.8448, y: 0, z: 0}
+      endPoint: {x: 2.8448, y: 0, z: 0.3048}
       thickness: 0
       side: 0
       isExterior: 1
       doorIdsOnWall: []
       windowIdsOnWall: []
       openingIdsOnWall: []
-    - startPoint: {x: 9.333333, y: 0, z: 4}
-      endPoint: {x: 9.333333, y: 0, z: 5}
+    - wallId: 
+      startPoint: {x: 2.8448, y: 0, z: 1.2192}
+      endPoint: {x: 2.8448, y: 0, z: 1.524}
       thickness: 0
       side: 0
       isExterior: 1
       doorIdsOnWall: []
       windowIdsOnWall: []
       openingIdsOnWall: []
-    - startPoint: {x: 9.333333, y: 0, z: 8}
-      endPoint: {x: 9.333333, y: 0, z: 10.333333}
+    - wallId: 
+      startPoint: {x: 2.8448, y: 0, z: 2.4384}
+      endPoint: {x: 2.8448, y: 0, z: 3.1496}
       thickness: 0
       side: 0
       isExterior: 1
       doorIdsOnWall: []
       windowIdsOnWall: []
       openingIdsOnWall: []
-    - startPoint: {x: 0, y: 0, z: 10.333333}
-      endPoint: {x: 2.6665, y: 0, z: 10.333333}
+    - wallId: 
+      startPoint: {x: 0, y: 0, z: 3.1496}
+      endPoint: {x: 0.81274927, y: 0, z: 3.1496}
       thickness: 0
       side: 0
       isExterior: 0
       doorIdsOnWall: []
       windowIdsOnWall: []
       openingIdsOnWall: []
-    - startPoint: {x: 6.6665, y: 0, z: 10.333333}
-      endPoint: {x: 9.333333, y: 0, z: 10.333333}
+    - wallId: 
+      startPoint: {x: 2.0319493, y: 0, z: 3.1496}
+      endPoint: {x: 2.8448, y: 0, z: 3.1496}
       thickness: 0
       side: 0
       isExterior: 0
@@ -700,67 +770,75 @@ MonoBehaviour:
     atticHatchLocalPosition: {x: 0, y: 0, z: 0}
   - roomId: Kitchen
     roomLabel: Kitchen
-    dimensions: {x: 10, y: 9}
-    position: {x: 20, y: 0, z: 25.333332}
+    dimensions: {x: 3.048, y: 2.7432}
+    position: {x: 6.0959997, y: 0, z: 7.7216}
     walls:
-    - startPoint: {x: 0, y: 0, z: 9}
-      endPoint: {x: 3.5, y: 0, z: 9}
+    - wallId: 
+      startPoint: {x: 0, y: 0, z: 2.7432}
+      endPoint: {x: 1.0668, y: 0, z: 2.7432}
       thickness: 0
       side: 0
       isExterior: 0
       doorIdsOnWall: []
       windowIdsOnWall: []
       openingIdsOnWall: []
-    - startPoint: {x: 6.5, y: 0, z: 9}
-      endPoint: {x: 10, y: 0, z: 9}
+    - wallId: 
+      startPoint: {x: 1.9812, y: 0, z: 2.7432}
+      endPoint: {x: 3.048, y: 0, z: 2.7432}
       thickness: 0
       side: 0
       isExterior: 0
       doorIdsOnWall: []
       windowIdsOnWall: []
       openingIdsOnWall: []
-    - startPoint: {x: 0, y: 0, z: 3}
-      endPoint: {x: 0, y: 0, z: 9}
+    - wallId: 
+      startPoint: {x: 0, y: 0, z: 0.9144}
+      endPoint: {x: 0, y: 0, z: 2.7432}
       thickness: 0
       side: 0
       isExterior: 0
       doorIdsOnWall: []
       windowIdsOnWall: []
       openingIdsOnWall: []
-    - startPoint: {x: 10, y: 0, z: 0}
-      endPoint: {x: 10, y: 0, z: 2.667}
+    - wallId: 
+      startPoint: {x: 3.048, y: 0, z: 0}
+      endPoint: {x: 3.048, y: 0, z: 0.8129016}
       thickness: 0
       side: 0
       isExterior: 1
       doorIdsOnWall: []
       windowIdsOnWall: []
       openingIdsOnWall: []
-    - startPoint: {x: 10, y: 0, z: 2.667}
-      endPoint: {x: 10, y: 0, z: 7}
+    - wallId: 
+      startPoint: {x: 3.048, y: 0, z: 0.8129016}
+      endPoint: {x: 3.048, y: 0, z: 2.1336}
       thickness: 0
       side: 0
       isExterior: 1
       doorIdsOnWall: []
       windowIdsOnWall: []
       openingIdsOnWall: []
-    - startPoint: {x: 10, y: 0, z: 7}
-      endPoint: {x: 10, y: 0, z: 9}
+    - wallId: 
+      startPoint: {x: 3.048, y: 0, z: 2.1336}
+      endPoint: {x: 3.048, y: 0, z: 2.7432}
       thickness: 0
       side: 0
       isExterior: 1
       doorIdsOnWall: []
       windowIdsOnWall: []
       openingIdsOnWall: []
-    - startPoint: {x: 0, y: 0, z: 0}
-      endPoint: {x: 3, y: 0, z: 0}
+    - wallId: 
+      startPoint: {x: 0, y: 0, z: 0}
+      endPoint: {x: 0.9144, y: 0, z: 0}
       thickness: 0
       side: 0
       isExterior: 0
       doorIdsOnWall: []
       windowIdsOnWall: []
       openingIdsOnWall: []
-    - startPoint: {x: 7, y: 0, z: 0}
-      endPoint: {x: 10, y: 0, z: 0}
+    - wallId: 
+      startPoint: {x: 2.1336, y: 0, z: 0}
+      endPoint: {x: 3.048, y: 0, z: 0}
       thickness: 0
       side: 0
       isExterior: 0
@@ -776,43 +854,48 @@ MonoBehaviour:
     atticHatchLocalPosition: {x: 0, y: 0, z: 0}
   - roomId: Nook
     roomLabel: Nook
-    dimensions: {x: 6, y: 7}
-    position: {x: 24, y: 0, z: 34.333332}
+    dimensions: {x: 1.8288, y: 2.1336}
+    position: {x: 7.3152, y: 0, z: 10.4648}
     walls:
-    - startPoint: {x: 0, y: 0, z: 7}
-      endPoint: {x: 0.5, y: 0, z: 7}
+    - wallId: 
+      startPoint: {x: 0, y: 0, z: 2.1336}
+      endPoint: {x: 0.1524, y: 0, z: 2.1336}
       thickness: 0
       side: 0
       isExterior: 1
       doorIdsOnWall: []
       windowIdsOnWall: []
       openingIdsOnWall: []
-    - startPoint: {x: 5.5, y: 0, z: 7}
-      endPoint: {x: 6, y: 0, z: 7}
+    - wallId: 
+      startPoint: {x: 1.6764001, y: 0, z: 2.1336}
+      endPoint: {x: 1.8288, y: 0, z: 2.1336}
       thickness: 0
       side: 0
       isExterior: 1
       doorIdsOnWall: []
       windowIdsOnWall: []
       openingIdsOnWall: []
-    - startPoint: {x: 6, y: 0, z: 2.667}
-      endPoint: {x: 6, y: 0, z: 7}
+    - wallId: 
+      startPoint: {x: 1.8288, y: 0, z: 0.8129016}
+      endPoint: {x: 1.8288, y: 0, z: 2.1336}
       thickness: 0
       side: 0
       isExterior: 1
       doorIdsOnWall: []
       windowIdsOnWall: []
       openingIdsOnWall: []
-    - startPoint: {x: 0, y: 0, z: 0}
-      endPoint: {x: 1.5, y: 0, z: 0}
+    - wallId: 
+      startPoint: {x: 0, y: 0, z: 0}
+      endPoint: {x: 0.4572, y: 0, z: 0}
       thickness: 0
       side: 0
       isExterior: 0
       doorIdsOnWall: []
       windowIdsOnWall: []
       openingIdsOnWall: []
-    - startPoint: {x: 4.5, y: 0, z: 0}
-      endPoint: {x: 6, y: 0, z: 0}
+    - wallId: 
+      startPoint: {x: 1.3715999, y: 0, z: 0}
+      endPoint: {x: 1.8288, y: 0, z: 0}
       thickness: 0
       side: 0
       isExterior: 0
@@ -827,51 +910,57 @@ MonoBehaviour:
     atticHatchLocalPosition: {x: 0, y: 0, z: 0}
   - roomId: FamilyRoom
     roomLabel: Family Room
-    dimensions: {x: 12.333333, y: 15.5}
-    position: {x: 7.666667, y: 0, z: 25.833332}
+    dimensions: {x: 3.7591999, y: 4.7244}
+    position: {x: 2.3367999, y: 0, z: 7.874}
     walls:
-    - startPoint: {x: 0, y: 0, z: 15.5}
-      endPoint: {x: 2.111, y: 0, z: 15.5}
+    - wallId: 
+      startPoint: {x: 0, y: 0, z: 4.7244}
+      endPoint: {x: 0.64343286, y: 0, z: 4.7244}
       thickness: 0
       side: 0
       isExterior: 1
       doorIdsOnWall: []
       windowIdsOnWall: []
       openingIdsOnWall: []
-    - startPoint: {x: 5.111, y: 0, z: 15.5}
-      endPoint: {x: 7.222, y: 0, z: 15.5}
+    - wallId: 
+      startPoint: {x: 1.5578328, y: 0, z: 4.7244}
+      endPoint: {x: 2.2012656, y: 0, z: 4.7244}
       thickness: 0
       side: 0
       isExterior: 1
       doorIdsOnWall: []
       windowIdsOnWall: []
       openingIdsOnWall: []
-    - startPoint: {x: 10.222, y: 0, z: 15.5}
-      endPoint: {x: 12.333333, y: 0, z: 15.5}
+    - wallId: 
+      startPoint: {x: 3.1156657, y: 0, z: 4.7244}
+      endPoint: {x: 3.7591999, y: 0, z: 4.7244}
       thickness: 0
       side: 0
       isExterior: 1
       doorIdsOnWall: []
       windowIdsOnWall: []
       openingIdsOnWall: []
-    - startPoint: {x: 0, y: 0, z: 3}
-      endPoint: {x: 0, y: 0, z: 15.5}
+    - wallId: 
+      startPoint: {x: 0, y: 0, z: 0.9144}
+      endPoint: {x: 0, y: 0, z: 4.7244}
       thickness: 0
       side: 0
       isExterior: 0
       doorIdsOnWall: []
       windowIdsOnWall: []
       openingIdsOnWall: []
-    - startPoint: {x: 12.333333, y: 0, z: 0}
-      endPoint: {x: 12.333333, y: 0, z: 13}
+    - wallId: 
+      startPoint: {x: 3.7591999, y: 0, z: 0}
+      endPoint: {x: 3.7591999, y: 0, z: 3.9624}
       thickness: 0
       side: 0
       isExterior: 0
       doorIdsOnWall: []
       windowIdsOnWall: []
       openingIdsOnWall: []
-    - startPoint: {x: 3, y: 0, z: 0}
-      endPoint: {x: 8.333333, y: 0, z: 0}
+    - wallId: 
+      startPoint: {x: 0.9144, y: 0, z: 0}
+      endPoint: {x: 2.54, y: 0, z: 0}
       thickness: 0
       side: 0
       isExterior: 0
@@ -888,27 +977,30 @@ MonoBehaviour:
     atticHatchLocalPosition: {x: 0, y: 0, z: 0}
   - roomId: CoveredPatio
     roomLabel: Covered Patio
-    dimensions: {x: 6, y: 6}
-    position: {x: 30, y: 0, z: 34.333332}
+    dimensions: {x: 1.8288, y: 1.8288}
+    position: {x: 9.144, y: 0, z: 10.4648}
     walls:
-    - startPoint: {x: 0, y: 0, z: 6}
-      endPoint: {x: 6, y: 0, z: 6}
+    - wallId: 
+      startPoint: {x: 0, y: 0, z: 1.8288}
+      endPoint: {x: 1.8288, y: 0, z: 1.8288}
       thickness: 0
       side: 0
       isExterior: 1
       doorIdsOnWall: []
       windowIdsOnWall: []
       openingIdsOnWall: []
-    - startPoint: {x: 6, y: 0, z: 0}
-      endPoint: {x: 6, y: 0, z: 6}
+    - wallId: 
+      startPoint: {x: 1.8288, y: 0, z: 0}
+      endPoint: {x: 1.8288, y: 0, z: 1.8288}
       thickness: 0
       side: 0
       isExterior: 1
       doorIdsOnWall: []
       windowIdsOnWall: []
       openingIdsOnWall: []
-    - startPoint: {x: 0, y: 0, z: 0}
-      endPoint: {x: 6, y: 0, z: 0}
+    - wallId: 
+      startPoint: {x: 0, y: 0, z: 0}
+      endPoint: {x: 1.8288, y: 0, z: 0}
       thickness: 0
       side: 0
       isExterior: 1
@@ -923,8 +1015,8 @@ MonoBehaviour:
     atticHatchLocalPosition: {x: 0, y: 0, z: 0}
   - roomId: CentralHallway
     roomLabel: Central Hallway
-    dimensions: {x: 3, y: 22}
-    position: {x: 11.333333, y: 0, z: 6}
+    dimensions: {x: 0.9144, y: 6.7056003}
+    position: {x: 3.4544, y: 0, z: 1.8288}
     walls: []
     connectedRoomIds:
     - Foyer
@@ -937,8 +1029,8 @@ MonoBehaviour:
     atticHatchLocalPosition: {x: 0, y: 0, z: 0}
   - roomId: StairwellEnclosure
     roomLabel: Stairwell Enclosure
-    dimensions: {x: 3.5, y: 12}
-    position: {x: 14.333333, y: 0, z: 6}
+    dimensions: {x: 1.0668, y: 3.6576}
+    position: {x: 4.3688, y: 0, z: 1.8288}
     walls: []
     connectedRoomIds:
     - Foyer
@@ -947,12 +1039,23 @@ MonoBehaviour:
     notes: Central staircase.
     atticHatchLocalPosition: {x: 0, y: 0, z: 0}
   doors:
-  - doorId: ExampleFoyerToGarage
+  - doorId: FrontDoor
     type: 0
-    width: 2.667
-    height: 6.667
-    position: {x: 0, y: 0, z: 0}
-    wallId: Wall_Foyer_W_Segment1
+    width: 0.9144
+    height: 2.032
+    position: {x: 4.3688, y: 0, z: 0}
+    wallId: Wall_Foyer_S
+    swingDirection: 1
+    slideDirection: 0
+    isExterior: 0
+    connectsRoomA_Id: Foyer
+    connectsRoomB_Id: CoveredEntry
+  - doorId: FoyerToGarageDoor
+    type: 0
+    width: 0.81280005
+    height: 2.032
+    position: {x: 3.4544, y: 0, z: 0.9144}
+    wallId: Wall_Foyer_W
     swingDirection: 0
     slideDirection: 0
     isExterior: 0
@@ -961,21 +1064,21 @@ MonoBehaviour:
   windows:
   - windowId: LivingRoom_SouthTestWindow
     type: 0
-    width: 3
-    height: 4
-    position: {x: 1, y: 0, z: 0}
-    sillHeight: 3
+    width: 0.9144
+    height: 1.2192
+    position: {x: 0.3048, y: 0, z: 0}
+    sillHeight: 0.9144
     wallId: Wall_LivingRoom_7
     isOperable: 1
     bayPanes: 0
     bayProjectionDepth: 0
   openings:
-  - openingId: ExampleFoyerToLiving
+  - openingId: FoyerToLivingRoomOpening
     type: 0
-    width: 5
-    height: 6.667
-    position: {x: 0, y: 0, z: 0}
-    wallId: Wall_Foyer_E_Segment1
+    width: 1.524
+    height: 2.032
+    position: {x: 5.2832003, y: 0, z: 0.9144}
+    wallId: Wall_Foyer_E
     passthroughLedgeDepth: 0
-    connectsRoomA_Id: 
-    connectsRoomB_Id: 
+    connectsRoomA_Id: Foyer
+    connectsRoomB_Id: LivingRoom
