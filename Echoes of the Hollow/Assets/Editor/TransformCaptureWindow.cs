@@ -720,7 +720,7 @@ public class TransformCaptureWindow : EditorWindow
     /// <returns>The detected HouseComponentType.</returns>
     private static HouseComponentType CalculateComponentType(GameObject obj)
     {
-        if (obj.name == "ProceduralHouse_Generated") return HouseComponentType.ProceduralHouseRoot;
+        if (obj.name.StartsWith("ProceduralHouse_Generated")) return HouseComponentType.ProceduralHouseRoot;
         if (obj.name.StartsWith("Foundation")) return HouseComponentType.Foundation;
         if (obj.name.StartsWith("Roof_")) return HouseComponentType.Roof;
         if (obj.name.StartsWith("Wall_")) return HouseComponentType.Wall;
