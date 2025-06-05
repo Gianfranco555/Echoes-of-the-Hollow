@@ -32,9 +32,9 @@ public class TransformCaptureWindow : EditorWindow
     private bool useContextualFormatting = false; // Added field
     private bool groupByRoom = false;
 
-    public static List<GameObject> recentlySelectedForCapture = new List<GameObject>();
-    public static List<GameObject> successfullyCapturedLastRun = new List<GameObject>();
-    public static List<GameObject> objectsWithCaptureErrorsLastRun = new List<GameObject>();
+    private static HashSet<GameObject> recentlySelectedForCapture = new HashSet<GameObject>();
+    private static HashSet<GameObject> successfullyCapturedLastRun = new HashSet<GameObject>();
+    private static HashSet<GameObject> objectsWithCaptureErrorsLastRun = new HashSet<GameObject>();
     private static bool showCaptureGizmos = false;
 
     [MenuItem("House Tools/Transform Data Capturer")]
@@ -124,7 +124,10 @@ public class TransformCaptureWindow : EditorWindow
         }
 
         // For now, assume all processed objects are successful. Error handling can be added later.
-        successfullyCapturedLastRun.AddRange(objectsToProcess.Distinct());
+        foreach (GameObject obj in objectsToProcess.Distinct())
+        {
+            successfullyCapturedLastRun.Add(obj);
+        }
         // Ensure SceneView repaints if gizmos are on
         if (showCaptureGizmos) SceneView.RepaintAll();
 
@@ -405,7 +408,7 @@ public class TransformCaptureWindow : EditorWindow
         }
     }
 
-    private HouseComponentType DetectComponentType(GameObject obj)
+    private static HouseComponentType DetectComponentType(GameObject obj)
     {
         if (obj.name == "ProceduralHouse_Generated") return HouseComponentType.ProceduralHouseRoot;
         if (obj.name == "Foundation") return HouseComponentType.Foundation;
@@ -1608,7 +1611,10 @@ public class TransformCaptureWindow : EditorWindow
         recentlySelectedForCapture.Clear();
         if (Selection.gameObjects != null && Selection.gameObjects.Length > 0)
         {
-            recentlySelectedForCapture.AddRange(Selection.gameObjects);
+            foreach (GameObject go in Selection.gameObjects)
+            {
+                recentlySelectedForCapture.Add(go);
+            }
         }
     }
 
@@ -1668,33 +1674,11 @@ public class TransformCaptureWindow : EditorWindow
             // Draw the wire cube at the object's pivot point (transform.position)
             Handles.DrawWireCube(transform.position, size);
 
-            HouseComponentType compType = DetectStaticComponentType(gameObject); // Assuming we create this
+            HouseComponentType compType = DetectComponentType(gameObject);
             string finalLabel = $"Type: {compType}\n{statusLabel}";
 
             Handles.Label(transform.position + Vector3.up * (size.y * 0.5f + 0.2f), finalLabel);
         }
-    }
-
-    // Add a static version of DetectComponentType or a simplified one for Gizmos
-    // This is a simplified version. The original DetectComponentType might have dependencies
-    // on instance members or be more complex.
-    static HouseComponentType DetectStaticComponentType(GameObject obj)
-    {
-        if (obj == null) return HouseComponentType.Unknown;
-        if (obj.name == "ProceduralHouse_Generated") return HouseComponentType.ProceduralHouseRoot;
-        if (obj.name == "Foundation") return HouseComponentType.Foundation;
-        if (obj.name.StartsWith("Roof_")) return HouseComponentType.Roof;
-        if (obj.name.StartsWith("Wall_")) return HouseComponentType.Wall;
-        if (obj.name.StartsWith("Door_")) return HouseComponentType.Door;
-        if (obj.name.StartsWith("Window_")) return HouseComponentType.Window;
-
-        // In Unity, GetComponent<T>() can be called on a GameObject.
-        // RoomIdentifier might be a component.
-        if (obj.GetComponent<RoomIdentifier>() != null) return HouseComponentType.Room;
-        // Fallback for name-based detection if RoomIdentifier isn't present or not the primary way
-        if (obj.name.Contains("Room")) return HouseComponentType.Room;
-
-        return HouseComponentType.Unknown;
     }
 }
 
