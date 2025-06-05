@@ -47,43 +47,46 @@ public static class BlueprintImporter
         plan.windows = new List<WindowSpec>();
         plan.openings = new List<OpeningSpec>();
 
-        // --- Define Room Dimensions (feet) ---
-        float garageWidth = 11f + 4f/12f; // 11.333333f
-        float garageDepth = 20f;
-        float coveredEntryWidth = 6f;
-        float coveredEntryDepth = 3f;
-        float foyerWidth = 6f;
-        float foyerDepth = 6f;
-        float lrWidth = 12f + 8f/12f; // 12.666667f
-        float lrDepth = 15f;
-        float officeWidth = 9f + 2f/12f; // 9.166667f
-        float officeDepth = 10f;
-        float hallWidth = 3f;
-        float hallDepthEstimate = 22f; // Approximate, adjust based on connected rooms
-        float stairWidth = 3.5f;
-        float stairDepthEstimate = 12f;
-        float hallBathWidth = 5f;
-        float hallBathDepth = 9f;
-        float mbWidth = 11f;
-        float mbDepth = 12f;
-        float mcWidth = 2f; // Master Closet depth from wall
-        float mcDepth = 6f; // Master Closet length along wall
-        float mvWidth = 4f;
-        float mvDepth = 3f;
-        float masterBathWidth = 6f;
-        float masterBathDepth = 8.5f;
-        float drWidth = 9f + 4f/12f; // 9.333333f
-        float drDepth = 10f + 4f/12f; // 10.333333f
-        float kWidth = 10f;
-        float kDepth = 9f;
-        float nookWidth = 6f;
-        float nookDepth = 7f;
-        float frWidth = 12f + 4f/12f; // 12.333333f
-        float frDepth = 15f + 6f/12f; // 15.5f
-        float cpWidth = 6f; // Covered Patio depth from house (E-W)
-        float cpDepth = 6f; // Covered Patio length along house (N-S)
+        const float FEET_TO_METERS = 0.3048f;
+
+        // --- Define Room Dimensions (converted to meters) ---
+        float garageWidth = (11f + 4f/12f) * FEET_TO_METERS; // 11.333333f ft
+        float garageDepth = 20f * FEET_TO_METERS;
+        float coveredEntryWidth = 6f * FEET_TO_METERS;
+        float coveredEntryDepth = 3f * FEET_TO_METERS;
+        float foyerWidth = 6f * FEET_TO_METERS;
+        float foyerDepth = 6f * FEET_TO_METERS;
+        float lrWidth = (12f + 8f/12f) * FEET_TO_METERS; // 12.666667f ft
+        float lrDepth = 15f * FEET_TO_METERS;
+        float officeWidth = (9f + 2f/12f) * FEET_TO_METERS; // 9.166667f ft
+        float officeDepth = 10f * FEET_TO_METERS;
+        float hallWidth = 3f * FEET_TO_METERS;
+        float hallDepthEstimate = 22f * FEET_TO_METERS; // Approximate, adjust based on connected rooms
+        float stairWidth = 3.5f * FEET_TO_METERS;
+        float stairDepthEstimate = 12f * FEET_TO_METERS;
+        float hallBathWidth = 5f * FEET_TO_METERS;
+        float hallBathDepth = 9f * FEET_TO_METERS;
+        float mbWidth = 11f * FEET_TO_METERS;
+        float mbDepth = 12f * FEET_TO_METERS;
+        float mcWidth = 2f * FEET_TO_METERS; // Master Closet depth from wall
+        float mcDepth = 6f * FEET_TO_METERS; // Master Closet length along wall
+        float mvWidth = 4f * FEET_TO_METERS;
+        float mvDepth = 3f * FEET_TO_METERS;
+        float masterBathWidth = 6f * FEET_TO_METERS;
+        float masterBathDepth = 8.5f * FEET_TO_METERS;
+        float drWidth = (9f + 4f/12f) * FEET_TO_METERS; // 9.333333f ft
+        float drDepth = (10f + 4f/12f) * FEET_TO_METERS; // 10.333333f ft
+        float kWidth = 10f * FEET_TO_METERS;
+        float kDepth = 9f * FEET_TO_METERS;
+        float nookWidth = 6f * FEET_TO_METERS;
+        float nookDepth = 7f * FEET_TO_METERS;
+        float frWidth = (12f + 4f/12f) * FEET_TO_METERS; // 12.333333f ft
+        float frDepth = (15f + 6f/12f) * FEET_TO_METERS; // 15.5f ft
+        float cpWidth = 6f * FEET_TO_METERS; // Covered Patio depth from house (E-W)
+        float cpDepth = 6f * FEET_TO_METERS; // Covered Patio length along house (N-S)
 
         // --- Calculate Global Positions (SW corner of each room) ---
+        // Positions will be in meters as they are derived from meter-based dimensions
         Vector3 garagePos = Vector3.zero;                                                                          // SW Origin
         Vector3 foyerPos = new Vector3(garagePos.x + garageWidth, garagePos.z, 0);                                 // E of Garage
         Vector3 coveredEntryPos = new Vector3(foyerPos.x + (foyerWidth - coveredEntryWidth) / 2f, 0, foyerPos.z - coveredEntryDepth); // S of Foyer
@@ -138,12 +141,12 @@ public static class BlueprintImporter
             position = garagePos,
             walls = new List<WallSegment> {
                 new WallSegment { startPoint = new Vector3(0,0,garageDepth), endPoint = new Vector3(garageWidth,0,garageDepth), isExterior = false }, // N (to Office)
-                new WallSegment { startPoint = new Vector3(0,0,0), endPoint = new Vector3(0,0,6f), isExterior = true }, // W (S of OHD)
-                new WallSegment { startPoint = new Vector3(0,0,14f), endPoint = new Vector3(0,0,garageDepth), isExterior = true }, // W (N of OHD)
-                new WallSegment { startPoint = new Vector3(0,0,0), endPoint = new Vector3(1f,0,0), isExterior = true }, // S (W of Ped Door)
-                new WallSegment { startPoint = new Vector3(3.667f,0,0), endPoint = new Vector3(garageWidth,0,0), isExterior = true }, // S (E of Ped Door)
-                new WallSegment { startPoint = new Vector3(garageWidth,0,0), endPoint = new Vector3(garageWidth,0,8.6665f), isExterior = false }, // E (S of Foyer Door)
-                new WallSegment { startPoint = new Vector3(garageWidth,0,11.3335f), endPoint = new Vector3(garageWidth,0,garageDepth), isExterior = false } // E (N of Foyer Door)
+                new WallSegment { startPoint = new Vector3(0,0,0), endPoint = new Vector3(0,0,6f * FEET_TO_METERS), isExterior = true }, // W (S of OHD)
+                new WallSegment { startPoint = new Vector3(0,0,14f * FEET_TO_METERS), endPoint = new Vector3(0,0,garageDepth), isExterior = true }, // W (N of OHD)
+                new WallSegment { startPoint = new Vector3(0,0,0), endPoint = new Vector3(1f * FEET_TO_METERS,0,0), isExterior = true }, // S (W of Ped Door)
+                new WallSegment { startPoint = new Vector3(3.667f * FEET_TO_METERS,0,0), endPoint = new Vector3(garageWidth,0,0), isExterior = true }, // S (E of Ped Door)
+                new WallSegment { startPoint = new Vector3(garageWidth,0,0), endPoint = new Vector3(garageWidth,0,8.6665f * FEET_TO_METERS), isExterior = false }, // E (S of Foyer Door)
+                new WallSegment { startPoint = new Vector3(garageWidth,0,11.3335f * FEET_TO_METERS), endPoint = new Vector3(garageWidth,0,garageDepth), isExterior = false } // E (N of Foyer Door)
             },
             connectedRoomIds = new List<string> { "Foyer", "Office" }, notes = "South-West corner of the house."
         });
@@ -151,7 +154,7 @@ public static class BlueprintImporter
         plan.rooms.Add(new RoomData { /* Covered Entry */
             roomId = "CoveredEntry", roomLabel = "Covered Entry", dimensions = new Vector2(coveredEntryWidth, coveredEntryDepth),
             position = coveredEntryPos,
-            walls = new List<WallSegment> {
+            walls = new List<WallSegment> { // Assuming these are local coordinates relative to coveredEntryPos
                 new WallSegment { startPoint = new Vector3(0,0,coveredEntryDepth), endPoint = new Vector3(coveredEntryWidth,0,coveredEntryDepth), isExterior = true },
                 new WallSegment { startPoint = new Vector3(0,0,0), endPoint = new Vector3(0,0,coveredEntryDepth), isExterior = true },
                 new WallSegment { startPoint = new Vector3(coveredEntryWidth,0,0), endPoint = new Vector3(coveredEntryWidth,0,coveredEntryDepth), isExterior = true }
@@ -162,15 +165,15 @@ public static class BlueprintImporter
         plan.rooms.Add(new RoomData { /* Foyer */
             roomId = "Foyer", roomLabel = "Foyer", dimensions = new Vector2(foyerWidth, foyerDepth),
             position = foyerPos,
-            walls = new List<WallSegment> {
-                new WallSegment { startPoint = new Vector3(0,0,0), endPoint = new Vector3(1.5f,0,0), isExterior = true }, // S (W of Front Door)
-                new WallSegment { startPoint = new Vector3(4.5f,0,0), endPoint = new Vector3(foyerWidth,0,0), isExterior = true }, // S (E of Front Door)
-                new WallSegment { startPoint = new Vector3(0,0,0), endPoint = new Vector3(0,0,1.6665f), isExterior = false }, // W (S of Garage Door)
-                new WallSegment { startPoint = new Vector3(0,0,4.3335f), endPoint = new Vector3(0,0,foyerDepth), isExterior = false }, // W (N of Garage Door)
-                new WallSegment { startPoint = new Vector3(foyerWidth,0,0), endPoint = new Vector3(foyerWidth,0,0.5f), isExterior = false }, // E (S of LR Opening)
-                new WallSegment { startPoint = new Vector3(foyerWidth,0,5.5f), endPoint = new Vector3(foyerWidth,0,foyerDepth), isExterior = false }, // E (N of LR Opening)
-                new WallSegment { startPoint = new Vector3(0,0,foyerDepth), endPoint = new Vector3(1f,0,foyerDepth), isExterior = false }, // N (W of Hall Opening)
-                new WallSegment { startPoint = new Vector3(foyerWidth-1f,0,foyerDepth), endPoint = new Vector3(foyerWidth,0,foyerDepth), isExterior = false }  // N (E of Hall Opening, assuming hall opening is 4ft centered)
+            walls = new List<WallSegment> { // Local coordinates relative to foyerPos
+                new WallSegment { startPoint = new Vector3(0,0,0), endPoint = new Vector3(1.5f * FEET_TO_METERS,0,0), isExterior = true }, // S (W of Front Door)
+                new WallSegment { startPoint = new Vector3(4.5f * FEET_TO_METERS,0,0), endPoint = new Vector3(foyerWidth,0,0), isExterior = true }, // S (E of Front Door)
+                new WallSegment { startPoint = new Vector3(0,0,0), endPoint = new Vector3(0,0,1.6665f * FEET_TO_METERS), isExterior = false }, // W (S of Garage Door)
+                new WallSegment { startPoint = new Vector3(0,0,4.3335f * FEET_TO_METERS), endPoint = new Vector3(0,0,foyerDepth), isExterior = false }, // W (N of Garage Door)
+                new WallSegment { startPoint = new Vector3(foyerWidth,0,0), endPoint = new Vector3(foyerWidth,0,0.5f * FEET_TO_METERS), isExterior = false }, // E (S of LR Opening)
+                new WallSegment { startPoint = new Vector3(foyerWidth,0,5.5f * FEET_TO_METERS), endPoint = new Vector3(foyerWidth,0,foyerDepth), isExterior = false }, // E (N of LR Opening)
+                new WallSegment { startPoint = new Vector3(0,0,foyerDepth), endPoint = new Vector3(1f * FEET_TO_METERS,0,foyerDepth), isExterior = false }, // N (W of Hall Opening)
+                new WallSegment { startPoint = new Vector3(foyerWidth - (1f * FEET_TO_METERS),0,foyerDepth), endPoint = new Vector3(foyerWidth,0,foyerDepth), isExterior = false }  // N (E of Hall Opening, assuming hall opening is 4ft centered)
             },
             connectedRoomIds = new List<string> { "CoveredEntry", "LivingRoom", "Garage", "CentralHallway" },
             notes = "North of Covered Entry, East of Garage."
@@ -181,10 +184,10 @@ public static class BlueprintImporter
             position = officePos,
             walls = new List<WallSegment> {
                 new WallSegment { startPoint = new Vector3(0,0,officeDepth), endPoint = new Vector3(officeWidth,0,officeDepth), isExterior = false }, // N (to HallBath)
-                new WallSegment { startPoint = new Vector3(0,0,0), endPoint = new Vector3(0,0,3.5f), isExterior = true }, // W (S of Window)
-                new WallSegment { startPoint = new Vector3(0,0,6.5f), endPoint = new Vector3(0,0,officeDepth), isExterior = true }, // W (N of Window)
+                new WallSegment { startPoint = new Vector3(0,0,0), endPoint = new Vector3(0,0,3.5f * FEET_TO_METERS), isExterior = true }, // W (S of Window)
+                new WallSegment { startPoint = new Vector3(0,0,6.5f * FEET_TO_METERS), endPoint = new Vector3(0,0,officeDepth), isExterior = true }, // W (N of Window)
                 new WallSegment { startPoint = new Vector3(0,0,0), endPoint = new Vector3(officeWidth,0,0), isExterior = false }, // S (to Garage)
-                new WallSegment { startPoint = new Vector3(officeWidth,0,8.667f), endPoint = new Vector3(officeWidth,0,officeDepth), isExterior = false } // E (N of Closet/Door opening to Hall)
+                new WallSegment { startPoint = new Vector3(officeWidth,0,8.667f * FEET_TO_METERS), endPoint = new Vector3(officeWidth,0,officeDepth), isExterior = false } // E (N of Closet/Door opening to Hall)
             },
             connectedRoomIds = new List<string> { "CentralHallway", "Garage", "HallBath" },
             notes = "North of Garage, West of Central Hall."
@@ -196,7 +199,7 @@ public static class BlueprintImporter
             walls = new List<WallSegment> {
                 new WallSegment { startPoint = new Vector3(0,0,hallBathDepth), endPoint = new Vector3(hallBathWidth,0,hallBathDepth), isExterior = false }, // N (to Master Suite)
                 new WallSegment { startPoint = new Vector3(0,0,0), endPoint = new Vector3(0,0,hallBathDepth), isExterior = true }, // W (Exterior)
-                new WallSegment { startPoint = new Vector3(hallBathWidth,0,2.667f), endPoint = new Vector3(hallBathWidth,0,hallBathDepth), isExterior = false }, // E (N of Door to Hall)
+                new WallSegment { startPoint = new Vector3(hallBathWidth,0,2.667f * FEET_TO_METERS), endPoint = new Vector3(hallBathWidth,0,hallBathDepth), isExterior = false }, // E (N of Door to Hall)
                 new WallSegment { startPoint = new Vector3(0,0,0), endPoint = new Vector3(hallBathWidth,0,0), isExterior = false } // S (to Office)
             },
             connectedRoomIds = new List<string> { "CentralHallway", "Office", "MasterBedroom" },
@@ -207,13 +210,13 @@ public static class BlueprintImporter
             roomId = "MasterBedroom", roomLabel = "Master Bedroom", dimensions = new Vector2(mbWidth, mbDepth),
             position = mbPos,
             walls = new List<WallSegment> {
-                new WallSegment { startPoint = new Vector3(0,0,mbDepth), endPoint = new Vector3(1.667f,0,mbDepth), isExterior = true },
-                new WallSegment { startPoint = new Vector3(4.667f,0,mbDepth), endPoint = new Vector3(6.334f,0,mbDepth), isExterior = true },
-                new WallSegment { startPoint = new Vector3(9.334f,0,mbDepth), endPoint = new Vector3(mbWidth,0,mbDepth), isExterior = true },
+                new WallSegment { startPoint = new Vector3(0,0,mbDepth), endPoint = new Vector3(1.667f * FEET_TO_METERS,0,mbDepth), isExterior = true },
+                new WallSegment { startPoint = new Vector3(4.667f * FEET_TO_METERS,0,mbDepth), endPoint = new Vector3(6.334f * FEET_TO_METERS,0,mbDepth), isExterior = true },
+                new WallSegment { startPoint = new Vector3(9.334f * FEET_TO_METERS,0,mbDepth), endPoint = new Vector3(mbWidth,0,mbDepth), isExterior = true },
                 new WallSegment { startPoint = new Vector3(0,0,0), endPoint = new Vector3(0,0,mbDepth), isExterior = true }, // W
-                new WallSegment { startPoint = new Vector3(mbWidth,0,0), endPoint = new Vector3(mbWidth,0,3f), isExterior = false }, // E (S of Closet)
-                new WallSegment { startPoint = new Vector3(mbWidth,0,9f), endPoint = new Vector3(mbWidth,0,mbDepth), isExterior = false }, // E (N of Closet)
-                new WallSegment { startPoint = new Vector3(0,0,0), endPoint = new Vector3(mbWidth - 2.667f,0,0), isExterior = false } // S (W of Vestibule Door)
+                new WallSegment { startPoint = new Vector3(mbWidth,0,0), endPoint = new Vector3(mbWidth,0,3f * FEET_TO_METERS), isExterior = false }, // E (S of Closet)
+                new WallSegment { startPoint = new Vector3(mbWidth,0,9f * FEET_TO_METERS), endPoint = new Vector3(mbWidth,0,mbDepth), isExterior = false }, // E (N of Closet)
+                new WallSegment { startPoint = new Vector3(0,0,0), endPoint = new Vector3(mbWidth - (2.667f * FEET_TO_METERS),0,0), isExterior = false } // S (W of Vestibule Door)
             },
             connectedRoomIds = new List<string> { "MasterVestibule", "HallBath" }, notes = "NW corner of house."
         });
@@ -221,7 +224,7 @@ public static class BlueprintImporter
         plan.rooms.Add(new RoomData { /* MasterCloset */
             roomId = "MasterCloset", roomLabel = "Master Closet", dimensions = new Vector2(mcWidth, mcDepth),
             position = mcPos, atticHatchLocalPosition = new Vector3(mcWidth/2f, plan.storyHeight, mcDepth/2f), 
-            walls = new List<WallSegment> {
+            walls = new List<WallSegment> { // Assuming these are local coordinates relative to mcPos
                 new WallSegment { startPoint = new Vector3(0,0,mcDepth), endPoint = new Vector3(mcWidth,0,mcDepth), isExterior = false }, // N
                 new WallSegment { startPoint = new Vector3(mcWidth,0,0), endPoint = new Vector3(mcWidth,0,mcDepth), isExterior = false }, // E
                 new WallSegment { startPoint = new Vector3(0,0,0), endPoint = new Vector3(mcWidth,0,0), isExterior = false }  // S
@@ -233,13 +236,13 @@ public static class BlueprintImporter
             roomId = "MasterVestibule", roomLabel = "Master Vestibule", dimensions = new Vector2(mvWidth, mvDepth),
             position = mvPos,
             walls = new List<WallSegment> {
-                new WallSegment { startPoint = new Vector3(0,0,mvDepth), endPoint = new Vector3(0.6665f,0,mvDepth), isExterior = false }, // N (W of MB Door)
-                new WallSegment { startPoint = new Vector3(3.3335f,0,mvDepth), endPoint = new Vector3(mvWidth,0,mvDepth), isExterior = false }, // N (E of MB Door)
+                new WallSegment { startPoint = new Vector3(0,0,mvDepth), endPoint = new Vector3(0.6665f * FEET_TO_METERS,0,mvDepth), isExterior = false }, // N (W of MB Door)
+                new WallSegment { startPoint = new Vector3(3.3335f * FEET_TO_METERS,0,mvDepth), endPoint = new Vector3(mvWidth,0,mvDepth), isExterior = false }, // N (E of MB Door)
                 new WallSegment { startPoint = new Vector3(0,0,0), endPoint = new Vector3(0,0,mvDepth), isExterior = false }, // W
-                new WallSegment { startPoint = new Vector3(mvWidth,0,0), endPoint = new Vector3(mvWidth,0,0.5f), isExterior = false }, // E (S of Display)
-                new WallSegment { startPoint = new Vector3(mvWidth,0,2.5f), endPoint = new Vector3(mvWidth,0,mvDepth), isExterior = false }, // E (N of Display)
-                new WallSegment { startPoint = new Vector3(0,0,0), endPoint = new Vector3(0.6665f,0,0), isExterior = false }, // S (W of MBath Door)
-                new WallSegment { startPoint = new Vector3(3.3335f,0,0), endPoint = new Vector3(mvWidth,0,0), isExterior = false }  // S (E of MBath Door)
+                new WallSegment { startPoint = new Vector3(mvWidth,0,0), endPoint = new Vector3(mvWidth,0,0.5f * FEET_TO_METERS), isExterior = false }, // E (S of Display)
+                new WallSegment { startPoint = new Vector3(mvWidth,0,2.5f * FEET_TO_METERS), endPoint = new Vector3(mvWidth,0,mvDepth), isExterior = false }, // E (N of Display)
+                new WallSegment { startPoint = new Vector3(0,0,0), endPoint = new Vector3(0.6665f * FEET_TO_METERS,0,0), isExterior = false }, // S (W of MBath Door)
+                new WallSegment { startPoint = new Vector3(3.3335f * FEET_TO_METERS,0,0), endPoint = new Vector3(mvWidth,0,0), isExterior = false }  // S (E of MBath Door)
             },
             connectedRoomIds = new List<string> { "MasterBedroom", "MasterBath", "FamilyRoom", "CentralHallway" },
             notes = "Transition to Master Bath."
@@ -249,10 +252,10 @@ public static class BlueprintImporter
             roomId = "MasterBath", roomLabel = "Master Bath", dimensions = new Vector2(masterBathWidth, masterBathDepth),
             position = masterBathPos,
             walls = new List<WallSegment> {
-                new WallSegment { startPoint = new Vector3(0,0,masterBathDepth), endPoint = new Vector3(1.6665f,0,masterBathDepth), isExterior = false }, // N (W of Vest Door)
-                new WallSegment { startPoint = new Vector3(4.3335f,0,masterBathDepth), endPoint = new Vector3(masterBathWidth,0,masterBathDepth), isExterior = false }, // N (E of Vest Door)
-                new WallSegment { startPoint = new Vector3(0,0,0), endPoint = new Vector3(0,0,3.25f), isExterior = true }, // W (S of Window)
-                new WallSegment { startPoint = new Vector3(0,0,5.25f), endPoint = new Vector3(0,0,masterBathDepth), isExterior = true }, // W (N of Window)
+                new WallSegment { startPoint = new Vector3(0,0,masterBathDepth), endPoint = new Vector3(1.6665f * FEET_TO_METERS,0,masterBathDepth), isExterior = false }, // N (W of Vest Door)
+                new WallSegment { startPoint = new Vector3(4.3335f * FEET_TO_METERS,0,masterBathDepth), endPoint = new Vector3(masterBathWidth,0,masterBathDepth), isExterior = false }, // N (E of Vest Door)
+                new WallSegment { startPoint = new Vector3(0,0,0), endPoint = new Vector3(0,0,3.25f * FEET_TO_METERS), isExterior = true }, // W (S of Window)
+                new WallSegment { startPoint = new Vector3(0,0,5.25f * FEET_TO_METERS), endPoint = new Vector3(0,0,masterBathDepth), isExterior = true }, // W (N of Window)
                 new WallSegment { startPoint = new Vector3(masterBathWidth,0,0), endPoint = new Vector3(masterBathWidth,0,masterBathDepth), isExterior = false }, // E (Interior to Hall or other)
                 new WallSegment { startPoint = new Vector3(0,0,0), endPoint = new Vector3(masterBathWidth,0,0), isExterior = true } // S (Exterior)
             },
@@ -264,17 +267,17 @@ public static class BlueprintImporter
             roomId = "LivingRoom", roomLabel = "Living Room", dimensions = new Vector2(lrWidth, lrDepth),
             position = lrPos,
             walls = new List<WallSegment> {
-                new WallSegment { startPoint = new Vector3(0,0,0), endPoint = new Vector3(2.3335f,0,0), isExterior = true }, // S (W of Bay)
-                new WallSegment { startPoint = new Vector3(10.3335f,0,0), endPoint = new Vector3(lrWidth,0,0), isExterior = true }, // S (E of Bay)
-                new WallSegment { startPoint = new Vector3(2.3335f, 0, 0), endPoint = new Vector3(1.3335f, 0, -2f), isExterior = true }, // Angled W Bay Side
-                new WallSegment { startPoint = new Vector3(1.3335f, 0, -2f), endPoint = new Vector3(11.3335f, 0, -2f), isExterior = true }, // Bay Front
-                new WallSegment { startPoint = new Vector3(11.3335f, 0, -2f), endPoint = new Vector3(10.3335f, 0, 0), isExterior = true }, // Angled E Bay Side
-                new WallSegment { startPoint = new Vector3(0,0,0.5f), endPoint = new Vector3(0,0,0.0f), isExterior = false }, // W (S of Foyer Opening - Adjusted to allow Foyer opening)
-                new WallSegment { startPoint = new Vector3(0,0,5.5f), endPoint = new Vector3(0,0,lrDepth), isExterior = false }, // W (N of Foyer Opening)
-                new WallSegment { startPoint = new Vector3(lrWidth,0,0), endPoint = new Vector3(lrWidth,0,5.5f), isExterior = true }, // E (S of Fireplace)
-                new WallSegment { startPoint = new Vector3(lrWidth,0,9.5f), endPoint = new Vector3(lrWidth,0,lrDepth), isExterior = true }, // E (N of Fireplace)
-                new WallSegment { startPoint = new Vector3(0,0,lrDepth), endPoint = new Vector3(4.8335f,0,lrDepth), isExterior = false }, // N (W of DR Opening)
-                new WallSegment { startPoint = new Vector3(7.8335f,0,lrDepth), endPoint = new Vector3(lrWidth,0,lrDepth), isExterior = false }  // N (E of DR Opening)
+                new WallSegment { startPoint = new Vector3(0,0,0), endPoint = new Vector3(2.3335f * FEET_TO_METERS,0,0), isExterior = true }, // S (W of Bay)
+                new WallSegment { startPoint = new Vector3(10.3335f * FEET_TO_METERS,0,0), endPoint = new Vector3(lrWidth,0,0), isExterior = true }, // S (E of Bay)
+                new WallSegment { startPoint = new Vector3(2.3335f * FEET_TO_METERS, 0, 0), endPoint = new Vector3(1.3335f * FEET_TO_METERS, 0, -2f * FEET_TO_METERS), isExterior = true }, // Angled W Bay Side
+                new WallSegment { startPoint = new Vector3(1.3335f * FEET_TO_METERS, 0, -2f * FEET_TO_METERS), endPoint = new Vector3(11.3335f * FEET_TO_METERS, 0, -2f * FEET_TO_METERS), isExterior = true }, // Bay Front
+                new WallSegment { startPoint = new Vector3(11.3335f * FEET_TO_METERS, 0, -2f * FEET_TO_METERS), endPoint = new Vector3(10.3335f * FEET_TO_METERS, 0, 0), isExterior = true }, // Angled E Bay Side
+                new WallSegment { startPoint = new Vector3(0,0,0.5f * FEET_TO_METERS), endPoint = new Vector3(0,0,0.0f), isExterior = false }, // W (S of Foyer Opening - Adjusted to allow Foyer opening)
+                new WallSegment { startPoint = new Vector3(0,0,5.5f * FEET_TO_METERS), endPoint = new Vector3(0,0,lrDepth), isExterior = false }, // W (N of Foyer Opening)
+                new WallSegment { startPoint = new Vector3(lrWidth,0,0), endPoint = new Vector3(lrWidth,0,5.5f * FEET_TO_METERS), isExterior = true }, // E (S of Fireplace)
+                new WallSegment { startPoint = new Vector3(lrWidth,0,9.5f * FEET_TO_METERS), endPoint = new Vector3(lrWidth,0,lrDepth), isExterior = true }, // E (N of Fireplace)
+                new WallSegment { startPoint = new Vector3(0,0,lrDepth), endPoint = new Vector3(4.8335f * FEET_TO_METERS,0,lrDepth), isExterior = false }, // N (W of DR Opening)
+                new WallSegment { startPoint = new Vector3(7.8335f * FEET_TO_METERS,0,lrDepth), endPoint = new Vector3(lrWidth,0,lrDepth), isExterior = false }  // N (E of DR Opening)
             },
             connectedRoomIds = new List<string> { "Foyer", "DiningRoom" }, notes = "SE Corner."
         });
@@ -283,15 +286,15 @@ public static class BlueprintImporter
             roomId = "DiningRoom", roomLabel = "Dining Room", dimensions = new Vector2(drWidth, drDepth),
             position = drPos,
             walls = new List<WallSegment> {
-                new WallSegment { startPoint = new Vector3(0,0,0), endPoint = new Vector3(3.1665f,0,0), isExterior = false }, // S (W of LR Opening)
-                new WallSegment { startPoint = new Vector3(6.1665f,0,0), endPoint = new Vector3(drWidth,0,0), isExterior = false }, // S (E of LR Opening)
-                new WallSegment { startPoint = new Vector3(0,0,0), endPoint = new Vector3(0,0,1f), isExterior = false }, // Short stub S
-                new WallSegment { startPoint = new Vector3(0,0,drDepth-1f), endPoint = new Vector3(0,0,drDepth), isExterior = false }, // Short stub N
-                new WallSegment { startPoint = new Vector3(drWidth,0,0), endPoint = new Vector3(drWidth,0,1f), isExterior = true }, // E (S of China)
-                new WallSegment { startPoint = new Vector3(drWidth,0,4f), endPoint = new Vector3(drWidth,0,5f), isExterior = true }, // E (Betw China/Win)
-                new WallSegment { startPoint = new Vector3(drWidth,0,8f), endPoint = new Vector3(drWidth,0,drDepth), isExterior = true }, // E (N of Win)
-                new WallSegment { startPoint = new Vector3(0,0,drDepth), endPoint = new Vector3(2.6665f,0,drDepth), isExterior = false }, // N (W of K Passthru)
-                new WallSegment { startPoint = new Vector3(6.6665f,0,drDepth), endPoint = new Vector3(drWidth,0,drDepth), isExterior = false }  // N (E of K Passthru)
+                new WallSegment { startPoint = new Vector3(0,0,0), endPoint = new Vector3(3.1665f * FEET_TO_METERS,0,0), isExterior = false }, // S (W of LR Opening)
+                new WallSegment { startPoint = new Vector3(6.1665f * FEET_TO_METERS,0,0), endPoint = new Vector3(drWidth,0,0), isExterior = false }, // S (E of LR Opening)
+                new WallSegment { startPoint = new Vector3(0,0,0), endPoint = new Vector3(0,0,1f * FEET_TO_METERS), isExterior = false }, // Short stub S
+                new WallSegment { startPoint = new Vector3(0,0,drDepth-(1f * FEET_TO_METERS)), endPoint = new Vector3(0,0,drDepth), isExterior = false }, // Short stub N
+                new WallSegment { startPoint = new Vector3(drWidth,0,0), endPoint = new Vector3(drWidth,0,1f * FEET_TO_METERS), isExterior = true }, // E (S of China)
+                new WallSegment { startPoint = new Vector3(drWidth,0,4f * FEET_TO_METERS), endPoint = new Vector3(drWidth,0,5f * FEET_TO_METERS), isExterior = true }, // E (Betw China/Win)
+                new WallSegment { startPoint = new Vector3(drWidth,0,8f * FEET_TO_METERS), endPoint = new Vector3(drWidth,0,drDepth), isExterior = true }, // E (N of Win)
+                new WallSegment { startPoint = new Vector3(0,0,drDepth), endPoint = new Vector3(2.6665f * FEET_TO_METERS,0,drDepth), isExterior = false }, // N (W of K Passthru)
+                new WallSegment { startPoint = new Vector3(6.6665f * FEET_TO_METERS,0,drDepth), endPoint = new Vector3(drWidth,0,drDepth), isExterior = false }  // N (E of K Passthru)
             },
             connectedRoomIds = new List<string> { "LivingRoom", "Kitchen", "StairwellEnclosure" },
             notes = "North of Living Room."
@@ -301,17 +304,17 @@ public static class BlueprintImporter
             roomId = "Kitchen", roomLabel = "Kitchen", dimensions = new Vector2(kWidth, kDepth),
             position = kPos,
             walls = new List<WallSegment> {
-                new WallSegment { startPoint = new Vector3(0,0,kDepth), endPoint = new Vector3(3.5f,0,kDepth), isExterior = false }, // N (W of Win to Nook)
-                new WallSegment { startPoint = new Vector3(6.5f,0,kDepth), endPoint = new Vector3(kWidth,0,kDepth), isExterior = false }, // N (E of Win to Nook)
-                new WallSegment { startPoint = new Vector3(0,0,kDepth- (kDepth - 3f) ), endPoint = new Vector3(0,0,kDepth), isExterior = false }, // W (N part of Peninsula return)
+                new WallSegment { startPoint = new Vector3(0,0,kDepth), endPoint = new Vector3(3.5f * FEET_TO_METERS,0,kDepth), isExterior = false }, // N (W of Win to Nook)
+                new WallSegment { startPoint = new Vector3(6.5f * FEET_TO_METERS,0,kDepth), endPoint = new Vector3(kWidth,0,kDepth), isExterior = false }, // N (E of Win to Nook)
+                new WallSegment { startPoint = new Vector3(0,0,kDepth- (kDepth - (3f * FEET_TO_METERS)) ), endPoint = new Vector3(0,0,kDepth), isExterior = false }, // W (N part of Peninsula return)
                 
                 // Kitchen East Wall (Exterior) - Modified to fill gaps
-                new WallSegment { startPoint = new Vector3(kWidth,0,0), endPoint = new Vector3(kWidth,0,2.667f), isExterior = true }, // E (South part, filling gap)
-                new WallSegment { startPoint = new Vector3(kWidth,0,2.667f), endPoint = new Vector3(kWidth,0,7f), isExterior = true }, // E (Original segment, Betw CP Door & Win area)
-                new WallSegment { startPoint = new Vector3(kWidth,0,7f), endPoint = new Vector3(kWidth,0,kDepth), isExterior = true }, // E (North part, filling gap)
+                new WallSegment { startPoint = new Vector3(kWidth,0,0), endPoint = new Vector3(kWidth,0,2.667f * FEET_TO_METERS), isExterior = true }, // E (South part, filling gap)
+                new WallSegment { startPoint = new Vector3(kWidth,0,2.667f * FEET_TO_METERS), endPoint = new Vector3(kWidth,0,7f * FEET_TO_METERS), isExterior = true }, // E (Original segment, Betw CP Door & Win area)
+                new WallSegment { startPoint = new Vector3(kWidth,0,7f * FEET_TO_METERS), endPoint = new Vector3(kWidth,0,kDepth), isExterior = true }, // E (North part, filling gap)
                 
-                new WallSegment { startPoint = new Vector3(0,0,0), endPoint = new Vector3(3f,0,0), isExterior = false }, // S (W of DR Passthru)
-                new WallSegment { startPoint = new Vector3(7f,0,0), endPoint = new Vector3(kWidth,0,0), isExterior = false }  // S (E of DR Passthru)
+                new WallSegment { startPoint = new Vector3(0,0,0), endPoint = new Vector3(3f * FEET_TO_METERS,0,0), isExterior = false }, // S (W of DR Passthru)
+                new WallSegment { startPoint = new Vector3(7f * FEET_TO_METERS,0,0), endPoint = new Vector3(kWidth,0,0), isExterior = false }  // S (E of DR Passthru)
             },
             connectedRoomIds = new List<string> { "DiningRoom", "Nook", "FamilyRoom", "CoveredPatio" },
             notes = "North of Dining Room."
@@ -321,11 +324,11 @@ public static class BlueprintImporter
             roomId = "Nook", roomLabel = "Nook", dimensions = new Vector2(nookWidth, nookDepth),
             position = nookPos,
             walls = new List<WallSegment> {
-                new WallSegment { startPoint = new Vector3(0,0,nookDepth), endPoint = new Vector3(0.5f,0,nookDepth), isExterior = true }, // N (W of Slider)
-                new WallSegment { startPoint = new Vector3(5.5f,0,nookDepth), endPoint = new Vector3(nookWidth,0,nookDepth), isExterior = true }, // N (E of Slider)
-                new WallSegment { startPoint = new Vector3(nookWidth,0,2.667f), endPoint = new Vector3(nookWidth,0,nookDepth), isExterior = true }, // E (N of CP Door)
-                new WallSegment { startPoint = new Vector3(0,0,0), endPoint = new Vector3((nookWidth-3f)/2f,0,0), isExterior = false }, // S (W of K Window opening)
-                new WallSegment { startPoint = new Vector3((nookWidth-3f)/2f + 3f,0,0), endPoint = new Vector3(nookWidth,0,0), isExterior = false }  // S (E of K Window opening)
+                new WallSegment { startPoint = new Vector3(0,0,nookDepth), endPoint = new Vector3(0.5f * FEET_TO_METERS,0,nookDepth), isExterior = true }, // N (W of Slider)
+                new WallSegment { startPoint = new Vector3(5.5f * FEET_TO_METERS,0,nookDepth), endPoint = new Vector3(nookWidth,0,nookDepth), isExterior = true }, // N (E of Slider)
+                new WallSegment { startPoint = new Vector3(nookWidth,0,2.667f * FEET_TO_METERS), endPoint = new Vector3(nookWidth,0,nookDepth), isExterior = true }, // E (N of CP Door)
+                new WallSegment { startPoint = new Vector3(0,0,0), endPoint = new Vector3((nookWidth-(3f * FEET_TO_METERS))/2f,0,0), isExterior = false }, // S (W of K Window opening)
+                new WallSegment { startPoint = new Vector3((nookWidth-(3f * FEET_TO_METERS))/2f + (3f * FEET_TO_METERS),0,0), endPoint = new Vector3(nookWidth,0,0), isExterior = false }  // S (E of K Window opening)
             },
             connectedRoomIds = new List<string> { "Kitchen", "FamilyRoom", "CoveredPatio" },
             notes = "North of Kitchen."
@@ -335,12 +338,12 @@ public static class BlueprintImporter
             roomId = "FamilyRoom", roomLabel = "Family Room", dimensions = new Vector2(frWidth, frDepth),
             position = frPos,
             walls = new List<WallSegment> {
-                new WallSegment { startPoint = new Vector3(0,0,frDepth), endPoint = new Vector3(2.111f,0,frDepth), isExterior = true }, // N (W of Win1)
-                new WallSegment { startPoint = new Vector3(5.111f,0,frDepth), endPoint = new Vector3(7.222f,0,frDepth), isExterior = true }, // N (Betw Wins)
-                new WallSegment { startPoint = new Vector3(10.222f,0,frDepth), endPoint = new Vector3(frWidth,0,frDepth), isExterior = true }, // N (E of Win2)
-                new WallSegment { startPoint = new Vector3(0,0,3f), endPoint = new Vector3(0,0,frDepth), isExterior = false }, // W (N of MV Opening)
-                new WallSegment { startPoint = new Vector3(frWidth,0,0), endPoint = new Vector3(frWidth,0, frDepth-2.5f), isExterior = false }, // S of CP Door (interior to Kitchen)
-                new WallSegment { startPoint = new Vector3(3f,0,0), endPoint = new Vector3(frWidth-4f,0,0), isExterior = false } // S (Between MV and Hall openings)
+                new WallSegment { startPoint = new Vector3(0,0,frDepth), endPoint = new Vector3(2.111f * FEET_TO_METERS,0,frDepth), isExterior = true }, // N (W of Win1)
+                new WallSegment { startPoint = new Vector3(5.111f * FEET_TO_METERS,0,frDepth), endPoint = new Vector3(7.222f * FEET_TO_METERS,0,frDepth), isExterior = true }, // N (Betw Wins)
+                new WallSegment { startPoint = new Vector3(10.222f * FEET_TO_METERS,0,frDepth), endPoint = new Vector3(frWidth,0,frDepth), isExterior = true }, // N (E of Win2)
+                new WallSegment { startPoint = new Vector3(0,0,3f * FEET_TO_METERS), endPoint = new Vector3(0,0,frDepth), isExterior = false }, // W (N of MV Opening)
+                new WallSegment { startPoint = new Vector3(frWidth,0,0), endPoint = new Vector3(frWidth,0, frDepth-(2.5f* FEET_TO_METERS)), isExterior = false }, // S of CP Door (interior to Kitchen)
+                new WallSegment { startPoint = new Vector3(3f * FEET_TO_METERS,0,0), endPoint = new Vector3(frWidth-(4f*FEET_TO_METERS),0,0), isExterior = false } // S (Between MV and Hall openings)
             },
             connectedRoomIds = new List<string> { "Nook", "Kitchen", "CentralHallway", "MasterVestibule", "CoveredPatio" },
             notes = "North-Central."
@@ -389,16 +392,64 @@ public static class BlueprintImporter
         {
             windowId = "LivingRoom_SouthTestWindow",
             type = WindowType.SingleHung, 
-            width = 3f,
-            height = 4f,
-            position = new Vector3(1f, 0f, 0f), 
-            sillHeight = 3f, 
+            width = 3f * FEET_TO_METERS,
+            height = 4f * FEET_TO_METERS,
+            // Assuming position is relative to LR's SW corner, which is lrPos (already in meters)
+            // If this 'position' is a local offset, it should be converted.
+            // If it's intended as an absolute world coordinate that was previously in feet, it needs conversion.
+            // For now, treating as a local offset:
+            position = new Vector3(1f * FEET_TO_METERS, 0f, 0f),
+            sillHeight = 3f * FEET_TO_METERS,
             wallId = "Wall_LivingRoom_7", 
             isOperable = true
         });
 
-        plan.doors.Add(new DoorSpec { doorId = "ExampleFoyerToGarage", type = DoorType.Hinged, width = 2.667f, height = 6.667f, wallId = "Wall_Foyer_W_Segment1", connectsRoomA_Id="Foyer", connectsRoomB_Id="Garage" });
-        plan.openings.Add(new OpeningSpec { openingId = "ExampleFoyerToLiving", type = OpeningType.CasedOpening, width = 5f, height = 6.667f, wallId = "Wall_Foyer_E_Segment1" });
+        // --- Start of Foyer Door/Opening modifications ---
+        // Remove existing example data for Foyer
+        // plan.doors.Add(new DoorSpec { doorId = "ExampleFoyerToGarage", ... }); // Removed
+        // plan.openings.Add(new OpeningSpec { openingId = "ExampleFoyerToLiving", ... }); // Removed
+
+        // Create "FrontDoor"
+        plan.doors.Add(new DoorSpec {
+            doorId = "FrontDoor",
+            type = DoorType.Hinged,
+            width = 3f * FEET_TO_METERS, // 3 feet wide
+            height = (6f + 8f/12f) * FEET_TO_METERS, // 6'8" standard height
+            // Foyer's south wall is at foyerPos.z. Door centered on Foyer's width.
+            position = new Vector3(foyerPos.x + foyerWidth / 2f, foyerPos.y, foyerPos.z),
+            wallId = "Wall_Foyer_S",
+            swingDirection = SwingDirection.InwardSouth, // Test expects InwardSouth
+            connectsRoomA_Id = "Foyer",
+            connectsRoomB_Id = "CoveredEntry"
+        });
+
+        // Create Foyer to Garage Door
+        plan.doors.Add(new DoorSpec {
+            doorId = "FoyerToGarageDoor",
+            type = DoorType.Hinged,
+            width = (2f + 8f/12f) * FEET_TO_METERS, // 2'8"
+            height = (6f + 8f/12f) * FEET_TO_METERS, // 6'8"
+            // Position on Foyer's west wall (foyerPos.x), partway along its depth.
+            // Example: centered on the typical 6ft depth of the foyer, but avoiding corners.
+            position = new Vector3(foyerPos.x, foyerPos.y, foyerPos.z + foyerDepth / 2f),
+            wallId = "Wall_Foyer_W",
+            connectsRoomA_Id = "Foyer",
+            connectsRoomB_Id = "Garage"
+        });
+
+        // Create Foyer to Living Room Opening
+        plan.openings.Add(new OpeningSpec {
+            openingId = "FoyerToLivingRoomOpening",
+            type = OpeningType.CasedOpening,
+            width = 5f * FEET_TO_METERS, // 5ft wide opening
+            height = (6f + 8f/12f) * FEET_TO_METERS, // 6'8"
+            // Position on Foyer's east wall (foyerPos.x + foyerWidth), partway along its depth.
+            position = new Vector3(foyerPos.x + foyerWidth, foyerPos.y, foyerPos.z + foyerDepth / 2f),
+            wallId = "Wall_Foyer_E",
+            connectsRoomA_Id = "Foyer",
+            connectsRoomB_Id = "LivingRoom"
+        });
+        // --- End of Foyer Door/Opening modifications ---
     }
 
     [MenuItem("House Tools/Create House Plan from Blueprint")]
