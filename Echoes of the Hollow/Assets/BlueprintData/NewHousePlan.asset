@@ -54,7 +54,7 @@ MonoBehaviour:
       windowIdsOnWall: []
       openingIdsOnWall: []
     - startPoint: {x: 0, y: 0, z: 0}
-      endPoint: {x: 1.4159, y: 0, z: 0}
+      endPoint: {x: 1, y: 0, z: 0}
       thickness: 0
       side: 0
       isExterior: 1

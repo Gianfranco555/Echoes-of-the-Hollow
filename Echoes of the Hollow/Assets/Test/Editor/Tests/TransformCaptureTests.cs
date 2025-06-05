@@ -386,10 +386,11 @@ public class TransformCaptureTests
             var doorOpening = sortedOpenings.FirstOrDefault(o => o.isDoorLike);
             var windowOpening = sortedOpenings.FirstOrDefault(o => o.isWindowLike);
 
-            Assert.IsNotNull(doorOpening, "Door-like opening not found or not classified correctly.");
-            Assert.IsNotNull(windowOpening, "Window-like opening not found or not classified correctly.");
+            // A better check for a struct is to see if it has the property we searched for.
+            Assert.IsTrue(doorOpening.isDoorLike, "Door-like opening not found or not classified correctly.");
+            Assert.IsTrue(windowOpening.isWindowLike, "Window-like opening not found or not classified correctly.");
 
-            if (doorOpening != null)
+            if (doorOpening.isDoorLike)
             {
                 Assert.AreEqual(1.0f, doorOpening.localPosition.x, 0.01f, "Door X pos incorrect.");
                 Assert.AreEqual(0f, doorOpening.localPosition.y, 0.01f, "Door Y pos incorrect.");
@@ -397,7 +398,7 @@ public class TransformCaptureTests
                 Assert.AreEqual(storyHeight, doorOpening.height, 0.01f, "Door height incorrect.");
             }
 
-            if (windowOpening != null)
+            if (windowOpening.isWindowLike)
             {
                 Assert.AreEqual(2.0f, windowOpening.localPosition.x, 0.1f, "Window X pos incorrect.");
                 Assert.AreEqual(windowSillY, windowOpening.localPosition.y, 0.01f, "Window Y pos incorrect.");

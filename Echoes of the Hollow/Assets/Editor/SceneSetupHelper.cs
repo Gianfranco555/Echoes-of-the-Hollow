@@ -257,6 +257,10 @@ public static class SceneSetupHelper
         wallWest.transform.SetParent(basementRoot.transform);
 
         // --- NavMesh Generation ---
+        /*
+         * Temporarily disabled due to a persistent compile error with NavMeshSurface.
+         * To bake NavMesh, please use the 'Window > AI > Navigation' menu.
+         *
         // Collect all GameObjects for NavMesh baking
         var navMeshObjects = new System.Collections.Generic.List<GameObject>
         {
@@ -285,6 +289,7 @@ public static class SceneSetupHelper
         {
             Debug.LogError("Failed to add NavMeshSurface component to basementRoot. NavMesh baking cannot proceed.");
         }
+        */
         // --- End of NavMesh Generation ---
 
         // Instantiate Breaker Box

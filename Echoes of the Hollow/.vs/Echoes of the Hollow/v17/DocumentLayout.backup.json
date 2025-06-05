@@ -3,16 +3,28 @@
   "WorkspaceRootPath": "C:\\Users\\Michael Mulder\\Echoes-of-the-Hollow\\Echoes of the Hollow\\",
   "Documents": [
     {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\Michael Mulder\\Echoes-of-the-Hollow\\Echoes of the Hollow\\Assets\\Editor\\NavMeshTest.cs||{3B902123-F8A7-4915-9F01-361F908088D0}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:Assets\\Editor\\NavMeshTest.cs||{3B902123-F8A7-4915-9F01-361F908088D0}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\Michael Mulder\\Echoes-of-the-Hollow\\Echoes of the Hollow\\Assets\\Editor\\SceneSetupHelper.cs||{3B902123-F8A7-4915-9F01-361F908088D0}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:Assets\\Editor\\SceneSetupHelper.cs||{3B902123-F8A7-4915-9F01-361F908088D0}"
+    },
+    {
       "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\Michael Mulder\\Echoes-of-the-Hollow\\Echoes of the Hollow\\Assets\\Editor\\TransformCaptureWindow.cs||{3B902123-F8A7-4915-9F01-361F908088D0}",
       "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:Assets\\Editor\\TransformCaptureWindow.cs||{3B902123-F8A7-4915-9F01-361F908088D0}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\Michael Mulder\\Echoes-of-the-Hollow\\Echoes of the Hollow\\Assets\\Editor\\HousePlanDiffer.cs||{3B902123-F8A7-4915-9F01-361F908088D0}",
-      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:Assets\\Editor\\HousePlanDiffer.cs||{3B902123-F8A7-4915-9F01-361F908088D0}"
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\Michael Mulder\\Echoes-of-the-Hollow\\Echoes of the Hollow\\Assets\\Scripts\\RoomIdentifier.cs||{3B902123-F8A7-4915-9F01-361F908088D0}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:Assets\\Scripts\\RoomIdentifier.cs||{3B902123-F8A7-4915-9F01-361F908088D0}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\Michael Mulder\\Echoes-of-the-Hollow\\Echoes of the Hollow\\Assets\\Test\\Editor\\Tests\\TransformCaptureTests.cs||{3B902123-F8A7-4915-9F01-361F908088D0}",
       "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:Assets\\Test\\Editor\\Tests\\TransformCaptureTests.cs||{3B902123-F8A7-4915-9F01-361F908088D0}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\Michael Mulder\\Echoes-of-the-Hollow\\Echoes of the Hollow\\Assets\\Editor\\HousePlanDiffer.cs||{3B902123-F8A7-4915-9F01-361F908088D0}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:Assets\\Editor\\HousePlanDiffer.cs||{3B902123-F8A7-4915-9F01-361F908088D0}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\Michael Mulder\\Echoes-of-the-Hollow\\Echoes of the Hollow\\Assets\\Editor\\BlueprintImporter.cs||{3B902123-F8A7-4915-9F01-361F908088D0}",
@@ -25,10 +37,6 @@
     {
       "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\Michael Mulder\\Echoes-of-the-Hollow\\Echoes of the Hollow\\Assets\\HousePlan\\WallBuilder.cs||{3B902123-F8A7-4915-9F01-361F908088D0}",
       "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:Assets\\HousePlan\\WallBuilder.cs||{3B902123-F8A7-4915-9F01-361F908088D0}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\Michael Mulder\\Echoes-of-the-Hollow\\Echoes of the Hollow\\Assets\\Editor\\SceneSetupHelper.cs||{3B902123-F8A7-4915-9F01-361F908088D0}",
-      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:Assets\\Editor\\SceneSetupHelper.cs||{3B902123-F8A7-4915-9F01-361F908088D0}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\Michael Mulder\\Echoes-of-the-Hollow\\Echoes of the Hollow\\Assets\\HousePlan\\HousePlanSO.cs||{3B902123-F8A7-4915-9F01-361F908088D0}",
@@ -62,36 +70,58 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 1,
+          "SelectedChildIndex": 0,
           "Children": [
             {
               "$type": "Document",
-              "DocumentIndex": 1,
+              "DocumentIndex": 0,
+              "Title": "NavMeshTest.cs",
+              "DocumentMoniker": "C:\\Users\\Michael Mulder\\Echoes-of-the-Hollow\\Echoes of the Hollow\\Assets\\Editor\\NavMeshTest.cs",
+              "RelativeDocumentMoniker": "Assets\\Editor\\NavMeshTest.cs",
+              "ToolTip": "C:\\Users\\Michael Mulder\\Echoes-of-the-Hollow\\Echoes of the Hollow\\Assets\\Editor\\NavMeshTest.cs",
+              "RelativeToolTip": "Assets\\Editor\\NavMeshTest.cs",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-06-05T21:29:36.681Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 3,
+              "Title": "RoomIdentifier.cs",
+              "DocumentMoniker": "C:\\Users\\Michael Mulder\\Echoes-of-the-Hollow\\Echoes of the Hollow\\Assets\\Scripts\\RoomIdentifier.cs",
+              "RelativeDocumentMoniker": "Assets\\Scripts\\RoomIdentifier.cs",
+              "ToolTip": "C:\\Users\\Michael Mulder\\Echoes-of-the-Hollow\\Echoes of the Hollow\\Assets\\Scripts\\RoomIdentifier.cs",
+              "RelativeToolTip": "Assets\\Scripts\\RoomIdentifier.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-06-05T20:38:03.252Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 5,
               "Title": "HousePlanDiffer.cs",
               "DocumentMoniker": "C:\\Users\\Michael Mulder\\Echoes-of-the-Hollow\\Echoes of the Hollow\\Assets\\Editor\\HousePlanDiffer.cs",
               "RelativeDocumentMoniker": "Assets\\Editor\\HousePlanDiffer.cs",
               "ToolTip": "C:\\Users\\Michael Mulder\\Echoes-of-the-Hollow\\Echoes of the Hollow\\Assets\\Editor\\HousePlanDiffer.cs",
               "RelativeToolTip": "Assets\\Editor\\HousePlanDiffer.cs",
-              "ViewState": "AgIAAC0AAAAAAAAAAAAAACEAAAApAAAAAAAAAA==",
+              "ViewState": "AgIAAA4AAAAAAAAAAADgvx4AAAATAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2025-06-05T04:43:10.488Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 0,
+              "DocumentIndex": 2,
               "Title": "TransformCaptureWindow.cs",
               "DocumentMoniker": "C:\\Users\\Michael Mulder\\Echoes-of-the-Hollow\\Echoes of the Hollow\\Assets\\Editor\\TransformCaptureWindow.cs",
               "RelativeDocumentMoniker": "Assets\\Editor\\TransformCaptureWindow.cs",
               "ToolTip": "C:\\Users\\Michael Mulder\\Echoes-of-the-Hollow\\Echoes of the Hollow\\Assets\\Editor\\TransformCaptureWindow.cs",
               "RelativeToolTip": "Assets\\Editor\\TransformCaptureWindow.cs",
-              "ViewState": "AgIAAEAIAAAAAAAAAAAAAFQIAAA1AAAAAAAAAA==",
+              "ViewState": "AgIAALoFAAAAAAAAAAAjwMYFAAAlAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-06-05T04:26:56.837Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-06-05T04:26:56.837Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 2,
+              "DocumentIndex": 4,
               "Title": "TransformCaptureTests.cs",
               "DocumentMoniker": "C:\\Users\\Michael Mulder\\Echoes-of-the-Hollow\\Echoes of the Hollow\\Assets\\Test\\Editor\\Tests\\TransformCaptureTests.cs",
               "RelativeDocumentMoniker": "Assets\\Test\\Editor\\Tests\\TransformCaptureTests.cs",
@@ -103,7 +133,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 4,
+              "DocumentIndex": 7,
               "Title": "WindowPlacer.cs",
               "DocumentMoniker": "C:\\Users\\Michael Mulder\\Echoes-of-the-Hollow\\Echoes of the Hollow\\Assets\\HousePlan\\WindowPlacer.cs",
               "RelativeDocumentMoniker": "Assets\\HousePlan\\WindowPlacer.cs",
@@ -115,7 +145,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 7,
+              "DocumentIndex": 9,
               "Title": "HousePlanSO.cs",
               "DocumentMoniker": "C:\\Users\\Michael Mulder\\Echoes-of-the-Hollow\\Echoes of the Hollow\\Assets\\HousePlan\\HousePlanSO.cs",
               "RelativeDocumentMoniker": "Assets\\HousePlan\\HousePlanSO.cs",
@@ -127,7 +157,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 11,
+              "DocumentIndex": 13,
               "Title": "ScenePortal.cs",
               "DocumentMoniker": "C:\\Users\\Michael Mulder\\Echoes-of-the-Hollow\\Echoes of the Hollow\\Assets\\Scripts\\ScenePortal.cs",
               "RelativeDocumentMoniker": "Assets\\Scripts\\ScenePortal.cs",
@@ -139,7 +169,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 10,
+              "DocumentIndex": 12,
               "Title": "PortalPlacer.cs",
               "DocumentMoniker": "C:\\Users\\Michael Mulder\\Echoes-of-the-Hollow\\Echoes of the Hollow\\Assets\\Editor\\PortalPlacer.cs",
               "RelativeDocumentMoniker": "Assets\\Editor\\PortalPlacer.cs",
@@ -151,7 +181,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 8,
+              "DocumentIndex": 10,
               "Title": "RoomBuilder.cs",
               "DocumentMoniker": "C:\\Users\\Michael Mulder\\Echoes-of-the-Hollow\\Echoes of the Hollow\\Assets\\HousePlan\\RoomBuilder.cs",
               "RelativeDocumentMoniker": "Assets\\HousePlan\\RoomBuilder.cs",
@@ -163,7 +193,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 5,
+              "DocumentIndex": 8,
               "Title": "WallBuilder.cs",
               "DocumentMoniker": "C:\\Users\\Michael Mulder\\Echoes-of-the-Hollow\\Echoes of the Hollow\\Assets\\HousePlan\\WallBuilder.cs",
               "RelativeDocumentMoniker": "Assets\\HousePlan\\WallBuilder.cs",
@@ -175,7 +205,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 12,
+              "DocumentIndex": 14,
               "Title": "RoofBuilder.cs",
               "DocumentMoniker": "C:\\Users\\Michael Mulder\\Echoes-of-the-Hollow\\Echoes of the Hollow\\Assets\\HousePlan\\RoofBuilder.cs",
               "RelativeDocumentMoniker": "Assets\\HousePlan\\RoofBuilder.cs",
@@ -187,19 +217,19 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 6,
+              "DocumentIndex": 1,
               "Title": "SceneSetupHelper.cs",
               "DocumentMoniker": "C:\\Users\\Michael Mulder\\Echoes-of-the-Hollow\\Echoes of the Hollow\\Assets\\Editor\\SceneSetupHelper.cs",
               "RelativeDocumentMoniker": "Assets\\Editor\\SceneSetupHelper.cs",
               "ToolTip": "C:\\Users\\Michael Mulder\\Echoes-of-the-Hollow\\Echoes of the Hollow\\Assets\\Editor\\SceneSetupHelper.cs",
               "RelativeToolTip": "Assets\\Editor\\SceneSetupHelper.cs",
-              "ViewState": "AgIAAJwAAAAAAAAAAAAAAAYAAAAaAAAAAAAAAA==",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAUAAAAUAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2025-06-03T22:08:17.826Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 9,
+              "DocumentIndex": 11,
               "Title": "HousePlanTests.cs",
               "DocumentMoniker": "C:\\Users\\Michael Mulder\\Echoes-of-the-Hollow\\Echoes of the Hollow\\Assets\\Test\\Editor\\Tests\\HousePlanTests.cs",
               "RelativeDocumentMoniker": "Assets\\Test\\Editor\\Tests\\HousePlanTests.cs",
@@ -211,7 +241,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 3,
+              "DocumentIndex": 6,
               "Title": "BlueprintImporter.cs",
               "DocumentMoniker": "C:\\Users\\Michael Mulder\\Echoes-of-the-Hollow\\Echoes of the Hollow\\Assets\\Editor\\BlueprintImporter.cs",
               "RelativeDocumentMoniker": "Assets\\Editor\\BlueprintImporter.cs",
