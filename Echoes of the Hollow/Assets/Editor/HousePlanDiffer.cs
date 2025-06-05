@@ -103,6 +103,22 @@ public static class HousePlanDiffer
         return allWallsWithIds;
     }
 
+    private static List<WallSegment> FlattenWallsFromPlan(HousePlanSO plan)
+    {
+        List<WallSegment> flatList = new List<WallSegment>();
+        if (plan != null && plan.rooms != null)
+        {
+            foreach (var room in plan.rooms)
+            {
+                if (room.walls != null)
+                {
+                    flatList.AddRange(room.walls);
+                }
+            }
+        }
+        return flatList;
+    }
+
     public static DiffResultSet ComparePlanToScene(
         HousePlanSO existingPlan,
         List<RoomData> capturedRooms,
@@ -131,9 +147,9 @@ public static class HousePlanDiffer
         CompareRooms(existingPlan.rooms, capturedRooms, resultSet.roomDiffs);
 
         // Compare Walls
-        List<KeyValuePair<string, WallSegment>> targetWallEntries = GetAllWallSegments(existingPlan);
-        // Use GenerateWallEntries with the new sceneWalls parameter
-        List<KeyValuePair<string, WallSegment>> capturedWallEntries = GenerateWallEntries(sceneWalls, "CAPTURED_WALL");
+        List<WallSegment> allExistingWalls = FlattenWallsFromPlan(existingPlan);
+        List<KeyValuePair<string, WallSegment>> targetWallEntries = GenerateWallEntries(allExistingWalls);
+        List<KeyValuePair<string, WallSegment>> capturedWallEntries = GenerateWallEntries(sceneWalls);
         CompareWalls(targetWallEntries, capturedWallEntries, resultSet.wallDiffs);
 
         // Compare Doors
@@ -266,19 +282,22 @@ public static class HousePlanDiffer
         return true;
     }
 
-    private static List<KeyValuePair<string, WallSegment>> GenerateWallEntries(List<WallSegment> walls, string idPrefix)
+    private static List<KeyValuePair<string, WallSegment>> GenerateWallEntries(List<WallSegment> walls)
     {
         List<KeyValuePair<string, WallSegment>> wallEntries = new List<KeyValuePair<string, WallSegment>>();
-        if (walls != null)
+        if (walls == null) return wallEntries; // Handle null input
+
+        foreach (var wallSegment in walls)
         {
-            for (int i = 0; i < walls.Count; i++)
+            if (string.IsNullOrEmpty(wallSegment.wallId))
             {
-                // The ID here is for diffing purposes.
-                // If WallSegment has its own ID field populated from capture (e.g., from GameObject name),
-                // that should ideally be used. For now, generating a temporary one.
-                string wallId = $"{idPrefix}_{i}";
-                wallEntries.Add(new KeyValuePair<string, WallSegment>(wallId, walls[i]));
+                // Log a warning or error, as wallId should be populated by TransformCaptureWindow
+                Debug.LogWarning($"Encountered a WallSegment with null or empty wallId during diffing. This segment will be skipped.");
+                // Optionally, generate a temporary ID here as a fallback, though ideally this shouldn't happen.
+                // For now, let's assume wallId is always present for successfully added walls.
+                continue; // Skip if wallId is missing
             }
+            wallEntries.Add(new KeyValuePair<string, WallSegment>(wallSegment.wallId, wallSegment));
         }
         return wallEntries;
     }

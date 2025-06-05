@@ -107,6 +107,7 @@ public enum SlideDirection
 [System.Serializable]
 public struct WallSegment
 {
+    public string wallId; // New field
     /// <summary>
     /// Starting position of the wall relative to the room or global origin.
     /// </summary>

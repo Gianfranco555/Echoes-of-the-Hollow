@@ -1502,6 +1502,7 @@ public class TransformCaptureWindow : EditorWindow
                                     if(!wallSeg.openingIdsOnWall.Contains(os.openingId)) wallSeg.openingIdsOnWall.Add(os.openingId);
                                 }
                             }
+                            wallSeg.wallId = wallGO.name; // Assign wallId from GameObject name
                             roomData.walls.Add(wallSeg);
                         }
                     }
@@ -1721,6 +1722,7 @@ public class TransformCaptureWindow : EditorWindow
                             if(!wallSeg.openingIdsOnWall.Contains(os.openingId)) wallSeg.openingIdsOnWall.Add(os.openingId);
                         }
                     }
+                    wallSeg.wallId = go.name; // Assign wallId from GameObject name
                     capturedWalls.Add(wallSeg);
                     break;
             }
