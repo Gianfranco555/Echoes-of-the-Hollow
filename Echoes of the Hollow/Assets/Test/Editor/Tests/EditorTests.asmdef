@@ -3,28 +3,22 @@
     "rootNamespace": "",
     "references": [
         "HousePlan",
-        "EditorScripts"
+        "EditorScripts",
+        "UnityEngine.TestRunner",
+        "UnityEditor.TestRunner"
     ],
     "includePlatforms": [
         "Editor"
     ],
     "excludePlatforms": [],
     "allowUnsafeCode": false,
-    "overrideReferences": true,
+    "overrideReferences": false,
     "precompiledReferences": [
+        "nunit.framework.dll",
         "nunit.framework.dll"
     ],
     "autoReferenced": false,
     "defineConstraints": [],
-    "versionDefines": [
-        {
-            "name": "com.unity.test-framework",
-            "expression": "",
-            "define": "UNITY_INCLUDE_TESTS"
-        }
-    ],
-    "noEngineReferences": false,
-    "optionalUnityReferences": [
-        "TestAssemblies"
-    ]
+    "versionDefines": [],
+    "noEngineReferences": false
 }

@@ -1477,10 +1477,10 @@ public class TransformCaptureWindow : EditorWindow
                                         os.type = global::OpeningType.CasedOpening;
                                         UnityEngine.Debug.LogWarning($"Opening {os.openingId} on wall {wallGO.name} was not classified as door-like or window-like by WallSegmentAnalyzer. Defaulting to CasedOpening.");
                                     }
-                                    os.width = openingData.size.x;
-                                    os.height = openingData.size.y;
+                                    os.width = openingData.width;
+                                    os.height = openingData.height;
                                     // Position needs to be world space.
-                                    os.position = wallGO.transform.TransformPoint(openingData.localPositionOnWall);
+                                    os.position = wallGO.transform.TransformPoint(openingData.localPosition);
                                     os.wallId = wallGO.name; // Associate with this wall.
                                     // connectsRoomA/B_Id are hard to determine here.
 
