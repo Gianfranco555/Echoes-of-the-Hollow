@@ -103,12 +103,30 @@ public static class HousePlanDiffer
         return allWallsWithIds;
     }
 
+    private static List<WallSegment> FlattenWallsFromPlan(HousePlanSO plan)
+    {
+        List<WallSegment> flatList = new List<WallSegment>();
+        if (plan != null && plan.rooms != null)
+        {
+            foreach (var room in plan.rooms)
+            {
+                if (room.walls != null)
+                {
+                    flatList.AddRange(room.walls);
+                }
+            }
+        }
+        return flatList;
+    }
+
     public static DiffResultSet ComparePlanToScene(
         HousePlanSO existingPlan,
         List<RoomData> capturedRooms,
         List<DoorSpec> capturedDoors,
         List<WindowSpec> capturedWindows,
-        List<OpeningSpec> capturedOpenings)
+        List<OpeningSpec> capturedOpenings,
+        List<WallSegment> sceneWalls // New parameter
+        )
     {
         if (existingPlan == null)
         {
@@ -117,6 +135,7 @@ public static class HousePlanDiffer
         }
         // Null checks for captured lists
         if (capturedRooms == null) { Debug.LogWarning("HousePlanDiffer: Captured rooms list is null. Room comparison will be limited."); capturedRooms = new List<RoomData>(); }
+        if (sceneWalls == null) { Debug.LogWarning("HousePlanDiffer: Captured sceneWalls list is null. Wall comparison will be limited."); sceneWalls = new List<WallSegment>(); } // Added null check for sceneWalls
         if (capturedDoors == null) { Debug.LogWarning("HousePlanDiffer: Captured doors list is null. Door comparison will be limited."); capturedDoors = new List<DoorSpec>(); }
         if (capturedWindows == null) { Debug.LogWarning("HousePlanDiffer: Captured windows list is null. Window comparison will be limited."); capturedWindows = new List<WindowSpec>(); }
         if (capturedOpenings == null) { Debug.LogWarning("HousePlanDiffer: Captured openings list is null. Opening comparison will be limited."); capturedOpenings = new List<OpeningSpec>(); }
@@ -128,8 +147,9 @@ public static class HousePlanDiffer
         CompareRooms(existingPlan.rooms, capturedRooms, resultSet.roomDiffs);
 
         // Compare Walls
-        List<KeyValuePair<string, WallSegment>> targetWallEntries = GetAllWallSegments(existingPlan);
-        List<KeyValuePair<string, WallSegment>> capturedWallEntries = GetAllWallSegmentsFromRooms(capturedRooms);
+        List<WallSegment> allExistingWalls = FlattenWallsFromPlan(existingPlan);
+        List<KeyValuePair<string, WallSegment>> targetWallEntries = GenerateWallEntries(allExistingWalls);
+        List<KeyValuePair<string, WallSegment>> capturedWallEntries = GenerateWallEntries(sceneWalls);
         CompareWalls(targetWallEntries, capturedWallEntries, resultSet.wallDiffs);
 
         // Compare Doors
@@ -260,6 +280,26 @@ public static class HousePlanDiffer
             if (!set1.Contains(item)) return false;
         }
         return true;
+    }
+
+    private static List<KeyValuePair<string, WallSegment>> GenerateWallEntries(List<WallSegment> walls)
+    {
+        List<KeyValuePair<string, WallSegment>> wallEntries = new List<KeyValuePair<string, WallSegment>>();
+        if (walls == null) return wallEntries; // Handle null input
+
+        foreach (var wallSegment in walls)
+        {
+            if (string.IsNullOrEmpty(wallSegment.wallId))
+            {
+                // Log a warning or error, as wallId should be populated by TransformCaptureWindow
+                Debug.LogWarning($"Encountered a WallSegment with null or empty wallId during diffing. This segment will be skipped.");
+                // Optionally, generate a temporary ID here as a fallback, though ideally this shouldn't happen.
+                // For now, let's assume wallId is always present for successfully added walls.
+                continue; // Skip if wallId is missing
+            }
+            wallEntries.Add(new KeyValuePair<string, WallSegment>(wallSegment.wallId, wallSegment));
+        }
+        return wallEntries;
     }
 
 // New CompareWalls structure:
