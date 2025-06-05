@@ -1,6 +1,7 @@
 using UnityEditor;
 using UnityEngine;
 using System.Text;
+using System.Globalization; // Add this line
 
 public class TransformCaptureWindow : EditorWindow
 {
@@ -48,16 +49,16 @@ public class TransformCaptureWindow : EditorWindow
 
             // Position
             Vector3 position = obj.transform.position;
-            sb.AppendLine($"Vector3 position = new Vector3({position.x.ToString("f3")}f, {position.y.ToString("f3")}f, {position.z.ToString("f3")}f);");
+            sb.AppendLine($"Vector3 position = new Vector3({position.x.ToString("f3", CultureInfo.InvariantCulture)}f, {position.y.ToString("f3", CultureInfo.InvariantCulture)}f, {position.z.ToString("f3", CultureInfo.InvariantCulture)}f);");
 
             // Rotation (World Euler Angles)
             Vector3 eulerAngles = obj.transform.eulerAngles;
-            sb.AppendLine($"Quaternion rotation = Quaternion.Euler({eulerAngles.x.ToString("f1")}f, {eulerAngles.y.ToString("f1")}f, {eulerAngles.z.ToString("f1")}f); // World rotation");
+            sb.AppendLine($"Quaternion rotation = Quaternion.Euler({eulerAngles.x.ToString("f1", CultureInfo.InvariantCulture)}f, {eulerAngles.y.ToString("f1", CultureInfo.InvariantCulture)}f, {eulerAngles.z.ToString("f1", CultureInfo.InvariantCulture)}f); // World rotation");
 
             // Scale (Local)
             Vector3 scale = obj.transform.localScale;
-            sb.AppendLine($"Vector3 scale = new Vector3({scale.x.ToString("f3")}f, {scale.y.ToString("f3")}f, {scale.z.ToString("f3")}f); // Local scale");
-            sb.AppendLine(); // Add a blank line for readability between objects
+            sb.AppendLine($"Vector3 scale = new Vector3({scale.x.ToString("f3", CultureInfo.InvariantCulture)}f, {scale.y.ToString("f3", CultureInfo.InvariantCulture)}f, {scale.z.ToString("f3", CultureInfo.InvariantCulture)}f); // Local scale");
+            sb.AppendLine();
         }
         generatedCode = sb.ToString();
     }
