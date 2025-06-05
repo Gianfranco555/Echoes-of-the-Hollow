@@ -1325,7 +1325,7 @@ public class TransformCaptureWindow : EditorWindow
         Repaint(); // Update UI
 
         var capturedData = CaptureSceneDataAsStructs(loadedPlan);
-        generatedCode += $"Scene data capture attempt finished. Rooms: {capturedData.rooms.Count}, Doors: {capturedData.doors.Count}, Windows: {capturedData.windows.Count}, Openings: {capturedData.openings.Count}\n";
+        generatedCode += $"Scene data capture attempt finished. Rooms: {capturedData.rooms.Count}, Walls: {capturedData.walls.Count}, Doors: {capturedData.doors.Count}, Windows: {capturedData.windows.Count}, Openings: {capturedData.openings.Count}\n";
         Repaint(); // Update UI
 
         generatedCode += "Performing comparison with HousePlanDiffer...\n";
@@ -1336,7 +1336,8 @@ public class TransformCaptureWindow : EditorWindow
             capturedData.rooms,
             capturedData.doors,
             capturedData.windows,
-            capturedData.openings
+            capturedData.openings,
+            capturedData.walls // Add this
         );
 
         if (diffResult == null)
@@ -1351,7 +1352,7 @@ public class TransformCaptureWindow : EditorWindow
         Repaint(); // Update UI
     }
 
-    private (List<RoomData> rooms, List<DoorSpec> doors, List<WindowSpec> windows, List<OpeningSpec> openings) CaptureSceneDataAsStructs(HousePlanSO existingPlanForContext)
+    private (List<RoomData> rooms, List<DoorSpec> doors, List<WindowSpec> windows, List<OpeningSpec> openings, List<WallSegment> walls) CaptureSceneDataAsStructs(HousePlanSO existingPlanForContext)
     {
         InitializeCaches();
         generatedCode += "\nStarting scene data capture...\n";
@@ -1359,6 +1360,7 @@ public class TransformCaptureWindow : EditorWindow
         List<DoorSpec> capturedDoors = new List<DoorSpec>();
         List<WindowSpec> capturedWindows = new List<WindowSpec>();
         List<OpeningSpec> capturedOpenings = new List<OpeningSpec>();
+        List<WallSegment> capturedWalls = new List<WallSegment>();
 
         // Use existing FindAllHouseComponents to get all relevant GameObjects.
         // This method might need refinement if it doesn't find all desired objects or finds too many.
@@ -1646,11 +1648,86 @@ public class TransformCaptureWindow : EditorWindow
                     }
                     capturedWindows.Add(windowSpec);
                     break;
+
+                case HouseComponentType.Wall:
+                    // Logic to process go as a wall object
+                    float storyHeightForWall = existingPlanForContext?.storyHeight ?? 2.7f;
+                    float defaultWallThicknessForWall = existingPlanForContext?.exteriorWallThickness ?? 0.15f;
+
+                    float wallRoomFloorY = 0f; // Default
+                    GameObject wallRoomContext = GetRoomContext(go);
+                    if (wallRoomContext != null) {
+                        wallRoomFloorY = GetRoomFloorY(wallRoomContext);
+                    } else {
+                        // Fallback if no room context
+                        wallRoomFloorY = go.transform.position.y;
+                        Debug.LogWarning($"Wall '{go.name}' has no room context. Using its own Y position ({wallRoomFloorY}) as floor Y for analysis. StoryHeight: {storyHeightForWall}, Thickness: {defaultWallThicknessForWall}");
+                    }
+
+                    WallSegmentAnalyzer.AnalyzedWallData analyzedWall = WallSegmentAnalyzer.AnalyzeWallGeometry(
+                        go,
+                        wallRoomFloorY,
+                        storyHeightForWall,
+                        defaultWallThicknessForWall
+                    );
+
+                    WallSegment wallSeg = new WallSegment();
+                    // wallSeg.wallId = go.name; // Or some other unique identifier
+
+                    Vector3 center = go.transform.position;
+                    // Ensure analyzedWall.wallLength is valid. If it's zero, halfLengthDir will be zero.
+                    Vector3 halfLengthDir = go.transform.right * analyzedWall.wallLength / 2f;
+                    wallSeg.startPoint = center - halfLengthDir;
+                    wallSeg.endPoint = center + halfLengthDir;
+
+                    wallSeg.thickness = analyzedWall.determinedThickness;
+                    wallSeg.isExterior = analyzedWall.isLikelyExterior;
+                    // wallSeg.side = WallSide.North; // Default, as inferring side is complex.
+
+                    wallSeg.doorIdsOnWall = new List<string>();
+                    wallSeg.windowIdsOnWall = new List<string>();
+                    wallSeg.openingIdsOnWall = new List<string>();
+
+                    foreach (Transform itemOnWallTransform in go.transform)
+                    {
+                        GameObject itemGO = itemOnWallTransform.gameObject;
+                        HouseComponentType itemType = DetectComponentType(itemGO);
+                        string itemId = itemGO.name;
+                        if (itemType == HouseComponentType.Door) wallSeg.doorIdsOnWall.Add(itemId);
+                        else if (itemType == HouseComponentType.Window) wallSeg.windowIdsOnWall.Add(itemId);
+                        // Potentially handle other child types if necessary
+                    }
+
+                    if (analyzedWall.openings != null)
+                    {
+                        int openingIdx = 0;
+                        foreach (var openingData in analyzedWall.openings)
+                        {
+                            OpeningSpec os = new OpeningSpec();
+                            os.openingId = $"{go.name}_AnalyzedOpening_{openingIdx++}";
+
+                            if (openingData.isDoorLike) os.type = global::OpeningType.CasedOpening; // Or more specific
+                            else if (openingData.isWindowLike) os.type = global::OpeningType.CasedOpening; // Or more specific
+                            else os.type = global::OpeningType.CasedOpening; // Default
+
+                            os.width = openingData.width;
+                            os.height = openingData.height;
+                            os.position = go.transform.TransformPoint(openingData.localPosition);
+                            os.wallId = go.name; // Associate with this wall.
+
+                            bool alreadyCapturedOpen = capturedOpenings.Any(co => co.openingId == os.openingId);
+                            if(!alreadyCapturedOpen) capturedOpenings.Add(os);
+
+                            if(!wallSeg.openingIdsOnWall.Contains(os.openingId)) wallSeg.openingIdsOnWall.Add(os.openingId);
+                        }
+                    }
+                    capturedWalls.Add(wallSeg);
+                    break;
             }
         }
-        generatedCode += $"Finished scene data capture. Rooms: {capturedRooms.Count}, Doors: {capturedDoors.Count}, Windows: {capturedWindows.Count}, Openings: {capturedOpenings.Count}.\n";
+        generatedCode += $"Finished scene data capture. Rooms: {capturedRooms.Count}, Doors: {capturedDoors.Count}, Windows: {capturedWindows.Count}, Openings: {capturedOpenings.Count}, Walls: {capturedWalls.Count}.\n";
         Repaint();
-        return (capturedRooms, capturedDoors, capturedWindows, capturedOpenings);
+        return (capturedRooms, capturedDoors, capturedWindows, capturedOpenings, capturedWalls);
     }
 
     private void DisplayDiffResults(DiffResultSet diffResultSet)
@@ -1819,7 +1896,8 @@ public class TransformCaptureWindow : EditorWindow
                 capturedDataForUpdate.rooms,
                 capturedDataForUpdate.doors,
                 capturedDataForUpdate.windows,
-                capturedDataForUpdate.openings
+                capturedDataForUpdate.openings,
+                capturedDataForUpdate.walls // Add this
             );
         } else {
             diffResultForUpdate = new DiffResultSet(); // Fallback to empty if plan load fails

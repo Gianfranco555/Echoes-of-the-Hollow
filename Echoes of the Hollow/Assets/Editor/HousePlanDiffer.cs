@@ -108,7 +108,9 @@ public static class HousePlanDiffer
         List<RoomData> capturedRooms,
         List<DoorSpec> capturedDoors,
         List<WindowSpec> capturedWindows,
-        List<OpeningSpec> capturedOpenings)
+        List<OpeningSpec> capturedOpenings,
+        List<WallSegment> sceneWalls // New parameter
+        )
     {
         if (existingPlan == null)
         {
@@ -117,6 +119,7 @@ public static class HousePlanDiffer
         }
         // Null checks for captured lists
         if (capturedRooms == null) { Debug.LogWarning("HousePlanDiffer: Captured rooms list is null. Room comparison will be limited."); capturedRooms = new List<RoomData>(); }
+        if (sceneWalls == null) { Debug.LogWarning("HousePlanDiffer: Captured sceneWalls list is null. Wall comparison will be limited."); sceneWalls = new List<WallSegment>(); } // Added null check for sceneWalls
         if (capturedDoors == null) { Debug.LogWarning("HousePlanDiffer: Captured doors list is null. Door comparison will be limited."); capturedDoors = new List<DoorSpec>(); }
         if (capturedWindows == null) { Debug.LogWarning("HousePlanDiffer: Captured windows list is null. Window comparison will be limited."); capturedWindows = new List<WindowSpec>(); }
         if (capturedOpenings == null) { Debug.LogWarning("HousePlanDiffer: Captured openings list is null. Opening comparison will be limited."); capturedOpenings = new List<OpeningSpec>(); }
@@ -129,7 +132,8 @@ public static class HousePlanDiffer
 
         // Compare Walls
         List<KeyValuePair<string, WallSegment>> targetWallEntries = GetAllWallSegments(existingPlan);
-        List<KeyValuePair<string, WallSegment>> capturedWallEntries = GetAllWallSegmentsFromRooms(capturedRooms);
+        // Use GenerateWallEntries with the new sceneWalls parameter
+        List<KeyValuePair<string, WallSegment>> capturedWallEntries = GenerateWallEntries(sceneWalls, "CAPTURED_WALL");
         CompareWalls(targetWallEntries, capturedWallEntries, resultSet.wallDiffs);
 
         // Compare Doors
@@ -260,6 +264,23 @@ public static class HousePlanDiffer
             if (!set1.Contains(item)) return false;
         }
         return true;
+    }
+
+    private static List<KeyValuePair<string, WallSegment>> GenerateWallEntries(List<WallSegment> walls, string idPrefix)
+    {
+        List<KeyValuePair<string, WallSegment>> wallEntries = new List<KeyValuePair<string, WallSegment>>();
+        if (walls != null)
+        {
+            for (int i = 0; i < walls.Count; i++)
+            {
+                // The ID here is for diffing purposes.
+                // If WallSegment has its own ID field populated from capture (e.g., from GameObject name),
+                // that should ideally be used. For now, generating a temporary one.
+                string wallId = $"{idPrefix}_{i}";
+                wallEntries.Add(new KeyValuePair<string, WallSegment>(wallId, walls[i]));
+            }
+        }
+        return wallEntries;
     }
 
 // New CompareWalls structure:
