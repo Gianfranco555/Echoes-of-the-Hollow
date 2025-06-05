@@ -2,6 +2,7 @@ using UnityEditor;
 using UnityEngine;
 using System.Text;
 using System.Globalization; // Add this line
+using System.Collections.Generic; // Added for List<T>
 
 public class TransformCaptureWindow : EditorWindow
 {
@@ -63,13 +64,17 @@ public class TransformCaptureWindow : EditorWindow
                         sb.AppendLine(FormatAsRoomData(obj));
                         break;
                     case HouseComponentType.Wall:
-                        sb.AppendLine(FormatAsWallSegment(obj));
+                        float defaultRoomFloorY = 0.0f;
+                        float defaultStoryHeight = 2.7f;
+                        float defaultWallThickness = 0.1f;
+                        sb.AppendLine(FormatAsWallSegment(obj, defaultRoomFloorY, defaultStoryHeight, defaultWallThickness));
                         break;
                     case HouseComponentType.Door:
                         sb.AppendLine(FormatAsDoorSpec(obj));
                         break;
                     case HouseComponentType.Window:
-                        sb.AppendLine(FormatAsWindowSpec(obj));
+                        float defaultRoomFloorYForWindow = 0.0f;
+                        sb.AppendLine(FormatAsWindowSpec(obj, defaultRoomFloorYForWindow));
                         break;
                     case HouseComponentType.Foundation:
                     case HouseComponentType.Roof:
@@ -280,6 +285,49 @@ public class TransformCaptureWindow : EditorWindow
         return wallSegmentRootTransform.InverseTransformPoint(worldPosition);
     }
 
+    private float GetRoomFloorY(GameObject obj)
+    {
+        GameObject roomObject = GetRoomContext(obj);
+
+        if (roomObject != null)
+        {
+            Transform floorChild = null;
+            for (int i = 0; i < roomObject.transform.childCount; i++)
+            {
+                Transform child = roomObject.transform.GetChild(i);
+                if (child.name.Equals("Floor", System.StringComparison.OrdinalIgnoreCase))
+                {
+                    floorChild = child;
+                    break;
+                }
+            }
+
+            if (floorChild != null)
+            {
+                MeshRenderer floorRenderer = floorChild.GetComponent<MeshRenderer>();
+                if (floorRenderer != null)
+                {
+                    return floorRenderer.bounds.min.y;
+                }
+                else
+                {
+                    Debug.LogWarning($"GetRoomFloorY: Floor child named '{floorChild.name}' found for room '{roomObject.name}', but it has no MeshRenderer. Using room's Y position as fallback.");
+                    return roomObject.transform.position.y;
+                }
+            }
+            else
+            {
+                // No child explicitly named "Floor", use the room's main Y position.
+                return roomObject.transform.position.y;
+            }
+        }
+        else
+        {
+            Debug.LogWarning($"GetRoomFloorY: Could not determine room context for object '{(obj != null ? obj.name : "null")}'. Defaulting roomFloorY to 0.0f.");
+            return 0.0f;
+        }
+    }
+
     private string GetProcessedPositionString(GameObject obj, Vector3 worldPosition, string componentTypeName)
     {
         Vector3 positionToOutput = worldPosition;
@@ -334,55 +382,339 @@ public class TransformCaptureWindow : EditorWindow
         return $"Vector3 position = new Vector3({positionToOutput.x.ToString("f3", CultureInfo.InvariantCulture)}f, {positionToOutput.y.ToString("f3", CultureInfo.InvariantCulture)}f, {positionToOutput.z.ToString("f3", CultureInfo.InvariantCulture)}f);{positionComment}";
     }
 
-    private string FormatAsRoomData(GameObject obj)
-    {
-        // TODO: Implement full RoomData formatting
-        return $"// Detected Room: {obj.name} - RoomData formatting pending.\n";
-    }
-
-    private string FormatAsWallSegment(GameObject obj)
-    {
-        // TODO: Implement full WallSegment formatting
-        return $"// Detected Wall: {obj.name} - WallSegment formatting pending.\n";
-    }
-
-    private string FormatAsDoorSpec(GameObject obj)
+    private string FormatAsRoomData(GameObject roomObject) // Changed parameter name for clarity
     {
         StringBuilder sb = new StringBuilder();
-        sb.AppendLine($"// Door Specification for \"{obj.name}\" (InstanceID: {obj.GetInstanceID()})");
 
-        Vector3 worldPosition = obj.transform.position;
-        sb.AppendLine(GetProcessedPositionString(obj, worldPosition, "Door"));
+        // Derive roomId and roomLabel from roomObject.name
+        string roomId = roomObject.name; // Assuming name is unique and suitable for ID
+        string roomLabel = roomObject.name; // Can be the same as ID or processed further if needed
 
-        // Retain existing rotation and scale logic (world rotation, local scale)
-        Vector3 eulerAngles = obj.transform.eulerAngles;
-        sb.AppendLine($"Quaternion rotation = Quaternion.Euler({eulerAngles.x.ToString("f1", CultureInfo.InvariantCulture)}f, {eulerAngles.y.ToString("f1", CultureInfo.InvariantCulture)}f, {eulerAngles.z.ToString("f1", CultureInfo.InvariantCulture)}f); // World rotation");
-        Vector3 scale = obj.transform.localScale;
-        sb.AppendLine($"Vector3 scale = new Vector3({scale.x.ToString("f3", CultureInfo.InvariantCulture)}f, {scale.y.ToString("f3", CultureInfo.InvariantCulture)}f, {scale.z.ToString("f3", CultureInfo.InvariantCulture)}f); // Local scale");
+        // Calculate dimensions
+        Vector2 dimensions;
+        MeshRenderer meshRenderer = roomObject.GetComponent<MeshRenderer>();
+        if (meshRenderer != null && meshRenderer.bounds.size != Vector3.zero)
+        {
+            dimensions = new Vector2(meshRenderer.bounds.size.x, meshRenderer.bounds.size.z);
+        }
+        else
+        {
+            dimensions = new Vector2(3f, 3f); // Placeholder dimensions
+            Debug.LogWarning($"Room '{roomObject.name}': MeshRenderer not found or bounds are zero. Using placeholder dimensions ({dimensions.x.ToString("f3", CultureInfo.InvariantCulture)}f, {dimensions.y.ToString("f3", CultureInfo.InvariantCulture)}f).");
+        }
 
-        // TODO: Add other Door-specific properties here if needed in future
-        sb.AppendLine("// Add other Door-specific properties here");
+        // Use roomObject.transform.position for position
+        Vector3 position = roomObject.transform.position;
+
+        // Initialize walls, connectedRoomIds, notes, and atticHatchLocalPosition
+
+        sb.AppendLine($"// RoomData for \"{roomObject.name}\" (InstanceID: {roomObject.GetInstanceID()})");
+        sb.AppendLine("new RoomData");
+        sb.AppendLine("{");
+        sb.AppendLine($"    roomId = \"{roomId}\",");
+        sb.AppendLine($"    roomLabel = \"{roomLabel}\",");
+        sb.AppendLine($"    dimensions = new Vector2({dimensions.x.ToString("f3", CultureInfo.InvariantCulture)}f, {dimensions.y.ToString("f3", CultureInfo.InvariantCulture)}f),");
+        sb.AppendLine($"    position = new Vector3({position.x.ToString("f3", CultureInfo.InvariantCulture)}f, {position.y.ToString("f3", CultureInfo.InvariantCulture)}f, {position.z.ToString("f3", CultureInfo.InvariantCulture)}f), // World Position");
+        sb.AppendLine("    walls = new List<WallSegment>(), // Placeholder for actual wall data");
+        sb.AppendLine("    connectedRoomIds = new List<string>(), // Placeholder for actual connected room IDs");
+        sb.AppendLine("    notes = \"\",");
+        sb.AppendLine($"    atticHatchLocalPosition = new Vector3({Vector3.zero.x.ToString("f3", CultureInfo.InvariantCulture)}f, {Vector3.zero.y.ToString("f3", CultureInfo.InvariantCulture)}f, {Vector3.zero.z.ToString("f3", CultureInfo.InvariantCulture)}f)");
+        sb.AppendLine("};");
         sb.AppendLine();
+
         return sb.ToString();
     }
 
-    private string FormatAsWindowSpec(GameObject obj)
+    private string FormatAsWallSegment(GameObject wallRootObject, float roomFloorY, float storyHeight, float wallThickness)
     {
         StringBuilder sb = new StringBuilder();
-        sb.AppendLine($"// Window Specification for \"{obj.name}\" (InstanceID: {obj.GetInstanceID()})");
 
-        Vector3 worldPosition = obj.transform.position;
-        sb.AppendLine(GetProcessedPositionString(obj, worldPosition, "Window"));
+        // Call WallSegmentAnalyzer.AnalyzeWallGeometry
+        // Ensure WallSegmentAnalyzer and AnalyzedWallData are defined and accessible
+        WallSegmentAnalyzer.AnalyzedWallData analyzedData = WallSegmentAnalyzer.AnalyzeWallGeometry(wallRootObject, roomFloorY, storyHeight, wallThickness);
 
-        // Retain existing rotation and scale logic (world rotation, local scale)
-        Vector3 eulerAngles = obj.transform.eulerAngles;
-        sb.AppendLine($"Quaternion rotation = Quaternion.Euler({eulerAngles.x.ToString("f1", CultureInfo.InvariantCulture)}f, {eulerAngles.y.ToString("f1", CultureInfo.InvariantCulture)}f, {eulerAngles.z.ToString("f1", CultureInfo.InvariantCulture)}f); // World rotation");
-        Vector3 scale = obj.transform.localScale;
-        sb.AppendLine($"Vector3 scale = new Vector3({scale.x.ToString("f3", CultureInfo.InvariantCulture)}f, {scale.y.ToString("f3", CultureInfo.InvariantCulture)}f, {scale.z.ToString("f3", CultureInfo.InvariantCulture)}f); // Local scale");
+        // Set startPoint to wallRootObject.transform.position
+        Vector3 startPoint = wallRootObject.transform.position;
 
-        // TODO: Add other Window-specific properties here
-        sb.AppendLine("// Add other Window-specific properties here");
+        // Calculate endPoint using analyzedData.localEndPoint transformed to world space
+        Vector3 endPoint = wallRootObject.transform.TransformPoint(analyzedData.localEndPoint);
+
+        // Use wallThickness parameter for the thickness field.
+        // The requirement is to use the wallThickness parameter, which was also passed to AnalyzeWallGeometry.
+        // If AnalyzeWallGeometry could modify it and return it as determinedThickness, that could also be an option.
+        // For now, sticking to the passed-in wallThickness for the WallSegment's thickness.
+        float currentThickness = wallThickness;
+
+        // Use analyzedData.isLikelyExterior for isExterior
+        bool isExterior = analyzedData.isLikelyExterior;
+
+        // Initialize doorIdsOnWall, windowIdsOnWall, and openingIdsOnWall
+        // These would be populated if child objects representing doors/windows were analyzed,
+        // which is beyond the current scope.
+
+        sb.AppendLine($"// WallSegment for \"{wallRootObject.name}\" (InstanceID: {wallRootObject.GetInstanceID()})");
+        sb.AppendLine("new WallSegment");
+        sb.AppendLine("{");
+        sb.AppendLine($"    startPoint = new Vector3({startPoint.x.ToString("f3", CultureInfo.InvariantCulture)}f, {startPoint.y.ToString("f3", CultureInfo.InvariantCulture)}f, {startPoint.z.ToString("f3", CultureInfo.InvariantCulture)}f), // World Space");
+        sb.AppendLine($"    endPoint = new Vector3({endPoint.x.ToString("f3", CultureInfo.InvariantCulture)}f, {endPoint.y.ToString("f3", CultureInfo.InvariantCulture)}f, {endPoint.z.ToString("f3", CultureInfo.InvariantCulture)}f), // World Space");
+        sb.AppendLine($"    thickness = {currentThickness.ToString("f3", CultureInfo.InvariantCulture)}f,");
+        sb.AppendLine($"    isExterior = {isExterior.ToString().ToLowerInvariant()},"); // Format bool as lowercase true/false
+        sb.AppendLine("    doorIdsOnWall = new List<string>(), // Placeholder for actual door IDs");
+        sb.AppendLine("    windowIdsOnWall = new List<string>(), // Placeholder for actual window IDs");
+        sb.AppendLine("    openingIdsOnWall = new List<string>() // Placeholder for actual opening IDs");
+        sb.AppendLine("};");
         sb.AppendLine();
+
+        return sb.ToString();
+    }
+
+    private string FormatAsDoorSpec(GameObject doorObject) // Changed param name
+    {
+        StringBuilder sb = new StringBuilder();
+
+        string doorId = doorObject.name;
+
+        // Infer Type - Assuming DoorType enum exists (e.g., DoorType.Hinged, DoorType.Sliding)
+        DoorType type = DoorType.Hinged; // Default
+        if (doorObject.name.IndexOf("Sliding", System.StringComparison.OrdinalIgnoreCase) >= 0)
+        {
+            type = DoorType.Sliding;
+        }
+
+        // Get Width and Height from Renderer bounds
+        float width = 0.8f; // Default placeholder
+        float height = 2.0f; // Default placeholder
+        Renderer renderer = doorObject.GetComponent<Renderer>();
+        if (renderer != null && renderer.bounds.size != Vector3.zero)
+        {
+            width = renderer.bounds.size.x;
+            height = renderer.bounds.size.y; // Assuming Y is height for a door
+        }
+        else
+        {
+            Debug.LogWarning($"Door '{doorObject.name}': Renderer not found or bounds are zero. Using placeholder dimensions (Width: {width.ToString("f3", CultureInfo.InvariantCulture)}f, Height: {height.ToString("f3", CultureInfo.InvariantCulture)}f).");
+        }
+
+        // Position - Replicating GetProcessedPositionString logic for correct formatting here
+        Vector3 worldPos = doorObject.transform.position;
+        Vector3 positionToOutput = worldPos;
+        string positionComment = " // Position (World Space)"; // Default
+
+        switch (selectedCoordinateSpace)
+        {
+            case CoordinateSpaceSetting.RoomRelative:
+                GameObject roomCtx = GetRoomContext(doorObject);
+                if (roomCtx != null) {
+                    positionToOutput = ConvertToRoomRelative(worldPos, GetRoomOrigin(doorObject)); // GetRoomOrigin uses GetRoomContext
+                    positionComment = $" // Door Position (Room Relative to '{roomCtx.name}')";
+                } else {
+                     // No room context, fallback to parent if available, else world
+                    if (doorObject.transform.parent != null) {
+                        positionToOutput = ConvertToRoomRelative(worldPos, doorObject.transform.parent.position);
+                        positionComment = $" // Door Position (Relative to parent '{doorObject.transform.parent.name}')";
+                        Debug.LogWarning($"'{doorObject.name}' (Door): RoomRelative selected, no room context. Outputting relative to parent '{doorObject.transform.parent.name}'.");
+                    } else {
+                        positionComment = $" // Door Position (World Space - RoomRelative selected, but no Room Context or parent found)";
+                        Debug.LogWarning($"'{doorObject.name}' (Door): RoomRelative selected, but no Room Context or parent found. Defaulting to World Space.");
+                    }
+                }
+                break;
+            case CoordinateSpaceSetting.WallRelative:
+                Transform parentWall = null;
+                if (doorObject.transform.parent != null) {
+                    if (DetectComponentType(doorObject.transform.parent.gameObject) == HouseComponentType.Wall) {
+                        parentWall = doorObject.transform.parent;
+                    }
+                }
+                if (parentWall != null) {
+                    positionToOutput = ConvertToWallRelative(worldPos, parentWall);
+                    positionComment = $" // Door Position (Wall Relative to '{parentWall.name}')";
+                } else {
+                    positionComment = $" // Door Position (World Space - WallRelative selected, but no parent Wall found)";
+                    Debug.LogWarning($"'{doorObject.name}' (Door): WallRelative selected, but no parent Wall found. Defaulting to World Space.");
+                }
+                break;
+            case CoordinateSpaceSetting.World:
+            default:
+                // positionToOutput is already worldPos; positionComment is already set
+                break;
+        }
+        string formattedPosition = $"new Vector3({positionToOutput.x.ToString("f3", CultureInfo.InvariantCulture)}f, {positionToOutput.y.ToString("f3", CultureInfo.InvariantCulture)}f, {positionToOutput.z.ToString("f3", CultureInfo.InvariantCulture)}f)";
+
+        // Wall ID
+        string wallId = "UNKNOWN_WALL_ID";
+        if (doorObject.transform.parent != null)
+        {
+            if (DetectComponentType(doorObject.transform.parent.gameObject) == HouseComponentType.Wall)
+            {
+                wallId = doorObject.transform.parent.name;
+            }
+            else
+            {
+                 Debug.LogWarning($"Door '{doorObject.name}': Parent '{doorObject.transform.parent.name}' is not detected as a Wall. Using placeholder wallId.");
+            }
+        }
+        else
+        {
+            Debug.LogWarning($"Door '{doorObject.name}': No parent found. Using placeholder wallId.");
+        }
+
+        // Default values for other properties - Assuming SwingDirection and SlideDirection enums exist
+        SwingDirection swingDirection = SwingDirection.InwardNorth;
+        SlideDirection slideDirection = SlideDirection.SlidesLeft;
+        bool isExterior = false;
+        string connectsRoomA_Id = "";
+        string connectsRoomB_Id = "";
+
+        sb.AppendLine($"// DoorSpec for \"{doorObject.name}\" (InstanceID: {doorObject.GetInstanceID()})");
+        sb.AppendLine("new DoorSpec");
+        sb.AppendLine("{");
+        sb.AppendLine($"    doorId = \"{doorId}\",");
+        sb.AppendLine($"    type = DoorType.{type.ToString()},"); // Assumes DoorType enum
+        sb.AppendLine($"    width = {width.ToString("f3", CultureInfo.InvariantCulture)}f,");
+        sb.AppendLine($"    height = {height.ToString("f3", CultureInfo.InvariantCulture)}f,");
+        sb.AppendLine($"    position = {formattedPosition},{positionComment}");
+        sb.AppendLine($"    wallId = \"{wallId}\",");
+        sb.AppendLine($"    swingDirection = SwingDirection.{swingDirection.ToString()},"); // Assumes SwingDirection enum
+        if (type == DoorType.Sliding)
+        {
+            sb.AppendLine($"    slideDirection = SlideDirection.{slideDirection.ToString()},"); // Assumes SlideDirection enum
+        }
+        sb.AppendLine($"    isExterior = {isExterior.ToString().ToLowerInvariant()},");
+        sb.AppendLine($"    connectsRoomA_Id = \"{connectsRoomA_Id}\",");
+        sb.AppendLine($"    connectsRoomB_Id = \"{connectsRoomB_Id}\"");
+        sb.AppendLine("};");
+        sb.AppendLine();
+
+        return sb.ToString();
+    }
+
+    private string FormatAsWindowSpec(GameObject windowObject, float roomFloorY) // Added roomFloorY, changed param name
+    {
+        StringBuilder sb = new StringBuilder();
+
+        string windowId = windowObject.name;
+
+        // Infer Type - Defaulting as WindowPlaceholder is not confirmed to exist.
+        // Assumes a WindowType enum (e.g. WindowType.SingleHung) is defined elsewhere.
+        WindowType type = WindowType.SingleHung; // Default
+
+        // Commented out WindowPlaceholder logic as the component presence is unconfirmed by ls()
+        // WindowPlaceholder placeholder = windowObject.GetComponent<WindowPlaceholder>();
+        // if (placeholder != null)
+        // {
+        //     // Assumes WindowPlaceholder.PlaceholderType enum values match string names of WindowType enum values
+        //     if (System.Enum.TryParse(placeholder.placeholderType.ToString(), out WindowType parsedType))
+        //     {
+        //         type = parsedType;
+        //     }
+        //     else
+        //     {
+        //         Debug.LogWarning($"Window '{windowObject.name}': Could not parse WindowPlaceholder.PlaceholderType '{placeholder.placeholderType.ToString()}' to WindowType. Defaulting to {type}.");
+        //     }
+        // }
+
+        // Get Width and Height from Renderer bounds
+        float width = 1.0f; // Default placeholder
+        float height = 1.2f; // Default placeholder
+        Renderer renderer = windowObject.GetComponent<Renderer>();
+        if (renderer != null && renderer.bounds.size != Vector3.zero)
+        {
+            width = renderer.bounds.size.x;
+            height = renderer.bounds.size.y; // Assuming Y is height for a window
+        }
+        else
+        {
+            Debug.LogWarning($"Window '{windowObject.name}': Renderer not found or bounds are zero. Using placeholder dimensions (Width: {width.ToString("f3", CultureInfo.InvariantCulture)}f, Height: {height.ToString("f3", CultureInfo.InvariantCulture)}f).");
+        }
+
+        // Position - Adapting GetProcessedPositionString logic
+        Vector3 worldPos = windowObject.transform.position;
+        Vector3 positionToOutput = worldPos;
+        string positionComment = " // Position (World Space)"; // Default
+
+        switch (selectedCoordinateSpace)
+        {
+            case CoordinateSpaceSetting.RoomRelative:
+                GameObject roomCtx = GetRoomContext(windowObject);
+                if (roomCtx != null) {
+                    positionToOutput = ConvertToRoomRelative(worldPos, GetRoomOrigin(windowObject));
+                    positionComment = $" // Window Position (Room Relative to '{roomCtx.name}')";
+                } else {
+                    if (windowObject.transform.parent != null) {
+                        positionToOutput = ConvertToRoomRelative(worldPos, windowObject.transform.parent.position);
+                        positionComment = $" // Window Position (Relative to parent '{windowObject.transform.parent.name}')";
+                        Debug.LogWarning($"'{windowObject.name}' (Window): RoomRelative selected, no room context. Outputting relative to parent '{windowObject.transform.parent.name}'.");
+                    } else {
+                        positionComment = $" // Window Position (World Space - RoomRelative selected, but no Room Context or parent found)";
+                        Debug.LogWarning($"'{windowObject.name}' (Window): RoomRelative selected, but no Room Context or parent found. Defaulting to World Space.");
+                    }
+                }
+                break;
+            case CoordinateSpaceSetting.WallRelative:
+                Transform parentWall = null;
+                if (windowObject.transform.parent != null) {
+                    if (DetectComponentType(windowObject.transform.parent.gameObject) == HouseComponentType.Wall) {
+                        parentWall = windowObject.transform.parent;
+                    }
+                }
+                if (parentWall != null) {
+                    positionToOutput = ConvertToWallRelative(worldPos, parentWall);
+                    positionComment = $" // Window Position (Wall Relative to '{parentWall.name}')";
+                } else {
+                    positionComment = $" // Window Position (World Space - WallRelative selected, but no parent Wall found)";
+                    Debug.LogWarning($"'{windowObject.name}' (Window): WallRelative selected, but no parent Wall found. Defaulting to World Space.");
+                }
+                break;
+            case CoordinateSpaceSetting.World:
+            default:
+                // positionToOutput is already worldPos; positionComment is already set
+                break;
+        }
+        string formattedPosition = $"new Vector3({positionToOutput.x.ToString("f3", CultureInfo.InvariantCulture)}f, {positionToOutput.y.ToString("f3", CultureInfo.InvariantCulture)}f, {positionToOutput.z.ToString("f3", CultureInfo.InvariantCulture)}f)";
+
+        // Sill Height
+        float sillHeight = windowObject.transform.position.y - roomFloorY;
+
+        // Wall ID
+        string wallId = "UNKNOWN_WALL_ID";
+        if (windowObject.transform.parent != null)
+        {
+            if (DetectComponentType(windowObject.transform.parent.gameObject) == HouseComponentType.Wall)
+            {
+                wallId = windowObject.transform.parent.name;
+            }
+            else
+            {
+                 Debug.LogWarning($"Window '{windowObject.name}': Parent '{windowObject.transform.parent.name}' is not detected as a Wall. Using placeholder wallId.");
+            }
+        }
+        else
+        {
+            Debug.LogWarning($"Window '{windowObject.name}': No parent found. Using placeholder wallId.");
+        }
+
+        // Default values for other properties
+        bool isOperable = true;
+        int bayPanes = 0;
+        float bayProjectionDepth = 0.0f;
+
+        sb.AppendLine($"// WindowSpec for \"{windowObject.name}\" (InstanceID: {windowObject.GetInstanceID()})");
+        sb.AppendLine("new WindowSpec");
+        sb.AppendLine("{");
+        sb.AppendLine($"    windowId = \"{windowId}\",");
+        sb.AppendLine($"    type = WindowType.{type.ToString()},"); // Assumes WindowType enum
+        sb.AppendLine($"    width = {width.ToString("f3", CultureInfo.InvariantCulture)}f,");
+        sb.AppendLine($"    height = {height.ToString("f3", CultureInfo.InvariantCulture)}f,");
+        sb.AppendLine($"    position = {formattedPosition},{positionComment}");
+        sb.AppendLine($"    sillHeight = {sillHeight.ToString("f3", CultureInfo.InvariantCulture)}f,");
+        sb.AppendLine($"    wallId = \"{wallId}\",");
+        sb.AppendLine($"    isOperable = {isOperable.ToString().ToLowerInvariant()},");
+        sb.AppendLine($"    bayPanes = {bayPanes.ToString(CultureInfo.InvariantCulture)},"); // int, no "f"
+        sb.AppendLine($"    bayProjectionDepth = {bayProjectionDepth.ToString("f3", CultureInfo.InvariantCulture)}f");
+        sb.AppendLine("};");
+        sb.AppendLine();
+
         return sb.ToString();
     }
 }
