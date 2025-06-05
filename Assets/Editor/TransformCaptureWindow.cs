@@ -1058,16 +1058,43 @@ public class TransformCaptureWindow : EditorWindow
                     doorSpec.width = doorRenderer != null ? doorRenderer.bounds.size.x : 0.8f;
                     doorSpec.height = doorRenderer != null ? doorRenderer.bounds.size.y : 2.0f;
 
-                    if (go.name.ToLower().Contains("sliding")) doorSpec.type = global::DoorType.Sliding;
-                    else if (go.name.ToLower().Contains("pocket")) doorSpec.type = global::DoorType.Pocket; // Assuming Pocket is in HousePlanSO.DoorType
-                    else if (go.name.ToLower().Contains("bifold")) doorSpec.type = global::DoorType.BiFold; // Assuming BiFold is in HousePlanSO.DoorType
-                    else if (go.name.ToLower().Contains("overhead")) doorSpec.type = global::DoorType.Overhead; // Assuming Overhead is in HousePlanSO.DoorType
+                    // Initial type inference
+                    if (go.name.ToLower().Contains("pocket")) doorSpec.type = global::DoorType.Pocket;
+                    else if (go.name.ToLower().Contains("bifold")) doorSpec.type = global::DoorType.BiFold;
+                    else if (go.name.ToLower().Contains("overhead")) doorSpec.type = global::DoorType.Overhead;
+                    else if (go.name.ToLower().Contains("sliding")) doorSpec.type = global::DoorType.Sliding;
                     else doorSpec.type = global::DoorType.Hinged; // Default
 
-                    doorSpec.swingDirection = global::SwingDirection.InwardEast; // Default
-                    doorSpec.slideDirection = global::SlideDirection.SlidesLeft; // Default if sliding
+                    // Check for SlidingDoorController component to override type to Sliding if present
+                    var slidingController = go.GetComponent("SlidingDoorController");
+                    if (slidingController != null) {
+                        doorSpec.type = global::DoorType.Sliding;
+                    }
+
+                    // TODO: Implement robust inference for swingDirection and slideDirection.
+                    // Currently using hardcoded defaults.
+                    if (doorSpec.type == global::DoorType.Sliding) {
+                        doorSpec.slideDirection = global::SlideDirection.SlidesLeft; // Default for sliding doors
+                        doorSpec.swingDirection = global::SwingDirection.InwardNorth; // Or a "None" if available in HousePlanSO.SwingDirection
+                    } else {
+                        doorSpec.swingDirection = global::SwingDirection.InwardEast; // Default for hinged/other doors
+                        doorSpec.slideDirection = global::SlideDirection.SlidesLeft; // Or a "None" if available in HousePlanSO.SlideDirection
+                    }
+
                     doorSpec.isExterior = go.name.ToLower().Contains("exterior");
-                    doorSpec.wallId = go.transform.parent?.name ?? "";
+
+                    // Assign wallId based on parent, if parent is a wall
+                    if (go.transform.parent != null) {
+                        GameObject parentObject = go.transform.parent.gameObject;
+                        if (DetectComponentType(parentObject) == HouseComponentType.Wall) {
+                            doorSpec.wallId = parentObject.name;
+                        } else {
+                            doorSpec.wallId = "UNASSIGNED_OR_PARENT_NOT_WALL";
+                        }
+                    } else {
+                        doorSpec.wallId = "NO_PARENT";
+                    }
+
                     // doorSpec.connectsRoomA_Id / B_Id - hard to determine from this capture method
                     capturedDoors.Add(doorSpec);
                     break;
@@ -1081,28 +1108,85 @@ public class TransformCaptureWindow : EditorWindow
                     windowSpec.width = windowRenderer != null ? windowRenderer.bounds.size.x : 1.2f;
                     windowSpec.height = windowRenderer != null ? windowRenderer.bounds.size.y : 1.0f;
 
-                    float parentRoomFloorY = 0;
-                    if(go.transform.parent != null) { // Try to get wall's parent (room) for floor Y
-                        GameObject wallObj = go.transform.parent.gameObject;
-                        if(DetectComponentType(wallObj) == HouseComponentType.Wall && wallObj.transform.parent != null) {
-                             parentRoomFloorY = GetRoomFloorY(wallObj.transform.parent.gameObject);
-                        } else { // If parent is not a wall, or wall has no parent, try GetRoomContext directly for window
-                            parentRoomFloorY = GetRoomFloorY(go);
+                    float parentRoomFloorY = 0f; // Default to 0
+                    bool floorYFound = false;
+
+                    // Attempt 1: Get floor Y via room context (either window's room or parent wall's room)
+                    GameObject roomForFloorContext = null;
+                    if (go.transform.parent != null) {
+                        GameObject parentObj = go.transform.parent.gameObject;
+                        if (DetectComponentType(parentObj) == HouseComponentType.Wall) {
+                            // Wall's parent should be the room
+                            if (parentObj.transform.parent != null) {
+                                roomForFloorContext = parentObj.transform.parent.gameObject;
+                            } else {
+                                // Wall has no parent, try window's room context directly
+                                roomForFloorContext = GetRoomContext(go);
+                                if(roomForFloorContext != null) Debug.LogWarning($"TransformCaptureWindow: Window '{go.name}'s parent wall '{parentObj.name}' has no parent room. Using window's direct room context '{roomForFloorContext.name}'.");
+                                else Debug.LogWarning($"TransformCaptureWindow: Window '{go.name}'s parent wall '{parentObj.name}' has no parent room, and window has no direct room context.");
+                            }
+                        } else {
+                            // Parent is not a wall, try window's room context directly
+                            roomForFloorContext = GetRoomContext(go);
+                             if(roomForFloorContext != null) Debug.LogWarning($"TransformCaptureWindow: Window '{go.name}'s parent '{parentObj.name}' is not a wall. Using window's direct room context '{roomForFloorContext.name}'.");
+                             else Debug.LogWarning($"TransformCaptureWindow: Window '{go.name}'s parent '{parentObj.name}' is not a wall, and window has no direct room context.");
                         }
-                    } else { // No parent for window, try GetRoomContext directly
-                        parentRoomFloorY = GetRoomFloorY(go);
+                    } else {
+                        // Window has no parent, try window's room context directly
+                        roomForFloorContext = GetRoomContext(go);
+                        if(roomForFloorContext != null) Debug.LogWarning($"TransformCaptureWindow: Window '{go.name}' has no parent. Using window's direct room context '{roomForFloorContext.name}'.");
+                        else Debug.LogWarning($"TransformCaptureWindow: Window '{go.name}' has no parent and no direct room context.");
                     }
+
+                    if (roomForFloorContext != null && DetectComponentType(roomForFloorContext) == HouseComponentType.Room) {
+                        parentRoomFloorY = GetRoomFloorY(roomForFloorContext);
+                        floorYFound = true;
+                        Debug.Log($"TransformCaptureWindow: Window '{go.name}' using floor Y {parentRoomFloorY} from room context '{roomForFloorContext.name}'.");
+                    }
+
+                    if (!floorYFound) {
+                        Debug.LogWarning($"TransformCaptureWindow: Window '{go.name}' could not determine floor Y from room context. Attempting raycast.");
+                        float raycastDistance = (existingPlanForContext?.storyHeight ?? 2.7f) * 1.5f;
+                        RaycastHit hitInfo;
+                        if (Physics.Raycast(go.transform.position, Vector3.down, out hitInfo, raycastDistance)) {
+                            if (hitInfo.collider.CompareTag("Floor")) {
+                                parentRoomFloorY = hitInfo.point.y;
+                                floorYFound = true;
+                                Debug.Log($"TransformCaptureWindow: Window '{go.name}' found floor via raycast at Y: {parentRoomFloorY} (object: {hitInfo.collider.name}).");
+                            } else {
+                                Debug.LogWarning($"TransformCaptureWindow: Window '{go.name}' raycast hit '{hitInfo.collider.name}' but it was not tagged 'Floor'.");
+                                // Optionally use hitInfo.point.y anyway if any hit is better than none, but be cautious.
+                            }
+                        } else {
+                             Debug.LogWarning($"TransformCaptureWindow: Window '{go.name}' raycast downwards found no floor within {raycastDistance}m.");
+                        }
+                    }
+
+                    if (!floorYFound) {
+                        parentRoomFloorY = 0f;
+                        Debug.LogWarning($"TransformCaptureWindow: Window '{go.name}' failed to find any floor reference. Sill height will be calculated relative to world origin Y=0.");
+                    }
+
                     windowSpec.sillHeight = go.transform.position.y - parentRoomFloorY;
 
-
+                    // Infer type from name
                     if (go.name.ToLower().Contains("bay")) windowSpec.type = global::WindowType.Bay;
                     else if (go.name.ToLower().Contains("sliding")) windowSpec.type = global::WindowType.Sliding;
-                    else if (go.name.ToLower().Contains("skylight")) windowSpec.type = global::WindowType.SkylightQuad; // Assuming SkylightQuad
+                    else if (go.name.ToLower().Contains("skylight")) windowSpec.type = global::WindowType.SkylightQuad;
                     else windowSpec.type = global::WindowType.SingleHung; // Default
 
                     windowSpec.isOperable = true; // Default
-                    windowSpec.wallId = go.transform.parent?.name ?? "";
-                    // Bay specific properties (bayPanes, bayProjectionDepth) would need more detailed capture.
+                    // Assign wallId based on parent, if parent is a wall
+                    if (go.transform.parent != null) {
+                        GameObject parentObject = go.transform.parent.gameObject;
+                        if (DetectComponentType(parentObject) == HouseComponentType.Wall) {
+                            windowSpec.wallId = parentObject.name;
+                        } else {
+                            windowSpec.wallId = "UNASSIGNED_OR_PARENT_NOT_WALL";
+                        }
+                    } else {
+                        windowSpec.wallId = "NO_PARENT";
+                    }
                     capturedWindows.Add(windowSpec);
                     break;
             }

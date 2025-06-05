@@ -52,8 +52,11 @@ public static class HousePlanDiffer
 
     public static HousePlanSO LoadTargetHousePlan(string assetPath = "Assets/BlueprintData/NewHousePlan.asset")
     {
-        if (string.IsNullOrEmpty(assetPath))
+        // Add Debug.Assert here
+        Debug.Assert(!string.IsNullOrEmpty(assetPath), "HousePlanDiffer: Asset path is null or empty. Cannot load HousePlanSO.");
+        if (string.IsNullOrEmpty(assetPath)) // Keep the original check for robustness, though assert should catch it in editor
         {
+            // Optionally, change LogError to LogWarning if assert is primary error mechanism in editor
             Debug.LogError("HousePlanDiffer: Asset path is null or empty. Cannot load HousePlanSO.");
             return null;
         }
@@ -73,20 +76,30 @@ public static class HousePlanDiffer
     }
 
     // Add this new helper method
-    private static List<WallSegment> GetAllWallSegmentsFromRooms(List<RoomData> rooms)
+    private static List<KeyValuePair<string, WallSegment>> GetAllWallSegmentsFromRooms(List<RoomData> rooms)
     {
-        List<WallSegment> allWalls = new List<WallSegment>();
+        List<KeyValuePair<string, WallSegment>> allWallsWithIds = new List<KeyValuePair<string, WallSegment>>();
         if (rooms != null)
         {
             foreach (var room in rooms)
             {
+                if (string.IsNullOrEmpty(room.roomId))
+                {
+                    // This case should ideally be handled by the calling capture logic to ensure rooms always have IDs.
+                    Debug.LogWarning($"HousePlanDiffer: Captured room '{room.roomLabel}' has a null or empty roomId. Walls from this room will use 'CAPTURED_UNKNOWN_ROOM' for ID generation.");
+                }
                 if (room.walls != null)
                 {
-                    allWalls.AddRange(room.walls);
+                    for (int i = 0; i < room.walls.Count; i++)
+                    {
+                        string roomIdPart = string.IsNullOrEmpty(room.roomId) ? "CAPTURED_UNKNOWN_ROOM" : room.roomId;
+                        string wallId = $"{roomIdPart}_Wall{i}";
+                        allWallsWithIds.Add(new KeyValuePair<string, WallSegment>(wallId, room.walls[i]));
+                    }
                 }
             }
         }
-        return allWalls;
+        return allWallsWithIds;
     }
 
     public static DiffResultSet ComparePlanToScene(
@@ -114,9 +127,9 @@ public static class HousePlanDiffer
         CompareRooms(existingPlan.rooms, capturedRooms, resultSet.roomDiffs);
 
         // Compare Walls
-        List<WallSegment> targetWalls = GetAllWallSegments(existingPlan); // Existing helper
-        List<WallSegment> capturedRoomWalls = GetAllWallSegmentsFromRooms(capturedRooms); // New helper
-        CompareWalls(targetWalls, capturedRoomWalls, resultSet.wallDiffs);
+        List<KeyValuePair<string, WallSegment>> targetWallEntries = GetAllWallSegments(existingPlan);
+        List<KeyValuePair<string, WallSegment>> capturedWallEntries = GetAllWallSegmentsFromRooms(capturedRooms);
+        CompareWalls(targetWallEntries, capturedWallEntries, resultSet.wallDiffs);
 
         // Compare Doors
         CompareDoors(existingPlan.doors, capturedDoors, resultSet.doorDiffs);
@@ -131,20 +144,29 @@ public static class HousePlanDiffer
         return resultSet;
     }
 
-    private static List<WallSegment> GetAllWallSegments(HousePlanSO plan)
+    private static List<KeyValuePair<string, WallSegment>> GetAllWallSegments(HousePlanSO plan)
     {
-        List<WallSegment> allWalls = new List<WallSegment>();
+        List<KeyValuePair<string, WallSegment>> allWallsWithIds = new List<KeyValuePair<string, WallSegment>>();
         if (plan != null && plan.rooms != null)
         {
             foreach (var room in plan.rooms)
             {
+                if (string.IsNullOrEmpty(room.roomId))
+                {
+                    Debug.LogWarning($"HousePlanDiffer: Room '{room.roomLabel}' has a null or empty roomId. Walls from this room will use 'UNKNOWN_ROOM' for ID generation.");
+                }
                 if (room.walls != null)
                 {
-                    allWalls.AddRange(room.walls);
+                    for (int i = 0; i < room.walls.Count; i++)
+                    {
+                        string roomIdPart = string.IsNullOrEmpty(room.roomId) ? "UNKNOWN_ROOM" : room.roomId;
+                        string wallId = $"{roomIdPart}_Wall{i}";
+                        allWallsWithIds.Add(new KeyValuePair<string, WallSegment>(wallId, room.walls[i]));
+                    }
                 }
             }
         }
-        return allWalls;
+        return allWallsWithIds;
     }
 
     private static void CompareRooms(List<RoomData> targetRooms, List<RoomData> capturedRooms, List<DiffEntry<RoomData>> diffList)
@@ -239,112 +261,151 @@ public static class HousePlanDiffer
         return true;
     }
 
-    private static void CompareWalls(List<WallSegment> targetWalls, List<WallSegment> capturedWalls, List<DiffEntry<WallSegment>> diffList)
-    {
-        Debug.Log($"HousePlanDiffer: Comparing walls. Target count: {targetWalls?.Count ?? 0}, Captured count: {capturedWalls?.Count ?? 0}");
-        diffList.Clear();
+// New CompareWalls structure:
+private static void CompareWalls(
+    List<KeyValuePair<string, WallSegment>> targetWallEntries,
+    List<KeyValuePair<string, WallSegment>> capturedWallEntries,
+    List<DiffEntry<WallSegment>> diffList)
+{
+    Debug.Log($"HousePlanDiffer: Comparing walls. Target count: {targetWallEntries?.Count ?? 0}, Captured count: {capturedWallEntries?.Count ?? 0}");
+    diffList.Clear();
 
-        // Create a dictionary of captured walls for easier lookup.
-        // This is a naive approach and might need significant improvement for robustness.
-        // A more robust key might involve room ID + wall side, or a spatial hashing approach.
-        Dictionary<string, WallSegment> capturedWallsDict = new Dictionary<string, WallSegment>(); // Using naive keying
-        if (capturedWalls != null)
+    Dictionary<string, WallSegment> capturedWallsDict = capturedWallEntries.ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
+    List<KeyValuePair<string, WallSegment>> unmatchedTargetWalls = new List<KeyValuePair<string, WallSegment>>();
+
+    // 1. Match by ID
+    foreach (var targetEntry in targetWallEntries)
+    {
+        if (capturedWallsDict.TryGetValue(targetEntry.Key, out WallSegment capturedWall))
         {
-            foreach (var wall in capturedWalls)
+            List<string> differences = new List<string>();
+            CompareWallProperties(targetEntry.Value, capturedWall, differences); // Helper for property comparison
+
+            if (differences.Count > 0)
             {
-                string key = $"{RoundVector3(wall.startPoint, 2)}-{RoundVector3(wall.endPoint, 2)}";
-                if (!capturedWallsDict.ContainsKey(key))
+                diffList.Add(new DiffEntry<WallSegment>(targetEntry.Key, ChangeType.Modified, targetEntry.Value, capturedWall, differences));
+            }
+            else
+            {
+                diffList.Add(new DiffEntry<WallSegment>(targetEntry.Key, ChangeType.Unchanged, targetEntry.Value, capturedWall));
+            }
+            capturedWallsDict.Remove(targetEntry.Key); // Matched
+        }
+        else
+        {
+            unmatchedTargetWalls.Add(targetEntry); // No ID match
+        }
+    }
+
+    // 2. Tolerant Spatial Matching for Unmatched Walls
+    List<KeyValuePair<string, WallSegment>> remainingCapturedWallEntries = capturedWallsDict.Select(kvp => new KeyValuePair<string, WallSegment>(kvp.Key, kvp.Value)).ToList();
+    List<KeyValuePair<string, WallSegment>> spatiallyMatchedTargetWalls = new List<KeyValuePair<string, WallSegment>>();
+    List<KeyValuePair<string, WallSegment>> spatiallyMatchedCapturedWalls = new List<KeyValuePair<string, WallSegment>>();
+
+    const float SPATIAL_MATCH_TOLERANCE = 0.1f; // 10cm tolerance for start/end points to be considered a match
+
+    foreach (var targetEntry in unmatchedTargetWalls)
+    {
+        KeyValuePair<string, WallSegment> bestMatchCapturedEntry = default;
+        float minDistance = float.MaxValue;
+        bool foundSpatialMatch = false;
+
+        // Need to iterate using index to allow safe removal or use a temporary list for matches
+        for (int i = 0; i < remainingCapturedWallEntries.Count; i++)
+        {
+            var capturedEntry = remainingCapturedWallEntries[i];
+            // Skip if this captured wall has already been spatially matched to another target wall
+            if (spatiallyMatchedCapturedWalls.Any(kvp => kvp.Key == capturedEntry.Key)) continue;
+
+            float distStart = Vector3.Distance(targetEntry.Value.startPoint, capturedEntry.Value.startPoint);
+            float distEnd = Vector3.Distance(targetEntry.Value.endPoint, capturedEntry.Value.endPoint);
+
+            if (distStart < SPATIAL_MATCH_TOLERANCE && distEnd < SPATIAL_MATCH_TOLERANCE)
+            {
+                if ((distStart + distEnd) < minDistance)
                 {
-                    capturedWallsDict.Add(key, wall);
-                }
-                else
-                {
-                    // This indicates a duplicate wall key based on current naive keying.
-                    // Could be two walls with very similar start/end points, or an issue with the keying.
-                    Debug.LogWarning($"Duplicate key for captured wall: {key}. Wall comparison might be inaccurate.");
+                    minDistance = distStart + distEnd;
+                    bestMatchCapturedEntry = capturedEntry;
+                    foundSpatialMatch = true;
                 }
             }
         }
 
-        if (targetWalls != null)
+        if (foundSpatialMatch)
         {
-            foreach (var targetWall in targetWalls)
-            {
-                string targetKey = $"{RoundVector3(targetWall.startPoint, 2)}-{RoundVector3(targetWall.endPoint, 2)}";
-                WallSegment capturedWall = default;
-                bool foundMatch = false;
+            List<string> differences = new List<string>();
+            differences.Add($"Spatially matched. Target ID '{targetEntry.Key}' matched to captured wall originally identified as '{bestMatchCapturedEntry.Key}'.");
+            CompareWallProperties(targetEntry.Value, bestMatchCapturedEntry.Value, differences);
 
-                // Try direct key match first
-                if (capturedWallsDict.TryGetValue(targetKey, out capturedWall))
-                {
-                    foundMatch = true;
-                }
-                // If not found by exact key, try searching with tolerance (more expensive)
-                // This is a fallback and indicates the keying strategy might be insufficient.
-                // For now, this part is simplified; a full tolerant search is complex.
-                // else {
-                //     // Search for a match within tolerance if not found by key
-                //     // This would involve iterating capturedWallsDict.Values and checking Vector3.Distance
-                // }
+            diffList.Add(new DiffEntry<WallSegment>(targetEntry.Key, ChangeType.Modified, targetEntry.Value, bestMatchCapturedEntry.Value, differences));
 
-
-                if (foundMatch)
-                {
-                    List<string> differences = new List<string>();
-                    if (!Mathf.Approximately(targetWall.thickness, capturedWall.thickness))
-                        differences.Add($"Thickness changed from {targetWall.thickness.ToString("F3")} to {capturedWall.thickness.ToString("F3")}.");
-                    if (targetWall.isExterior != capturedWall.isExterior)
-                        differences.Add($"IsExterior changed from {targetWall.isExterior} to {capturedWall.isExterior}.");
-                    if (targetWall.side != capturedWall.side)
-                        differences.Add($"Side changed from {targetWall.side} to {capturedWall.side}.");
-
-                    if (!AreEquivalentStringLists(targetWall.doorIdsOnWall, capturedWall.doorIdsOnWall))
-                        differences.Add($"Door IDs on wall changed. From [{string.Join(", ", targetWall.doorIdsOnWall ?? new List<string>())}] to [{string.Join(", ", capturedWall.doorIdsOnWall ?? new List<string>())}]");
-                    if (!AreEquivalentStringLists(targetWall.windowIdsOnWall, capturedWall.windowIdsOnWall))
-                        differences.Add($"Window IDs on wall changed. From [{string.Join(", ", targetWall.windowIdsOnWall ?? new List<string>())}] to [{string.Join(", ", capturedWall.windowIdsOnWall ?? new List<string>())}]");
-                    if (!AreEquivalentStringLists(targetWall.openingIdsOnWall, capturedWall.openingIdsOnWall))
-                        differences.Add($"Opening IDs on wall changed. From [{string.Join(", ", targetWall.openingIdsOnWall ?? new List<string>())}] to [{string.Join(", ", capturedWall.openingIdsOnWall ?? new List<string>())}]");
-
-                    if (Vector3.Distance(targetWall.startPoint, capturedWall.startPoint) > CMP_EPSILON || Vector3.Distance(targetWall.endPoint, capturedWall.endPoint) > CMP_EPSILON)
-                        differences.Add($"Points changed. Start: {targetWall.startPoint.ToString("F3")}->{capturedWall.startPoint.ToString("F3")}, End: {targetWall.endPoint.ToString("F3")}->{capturedWall.endPoint.ToString("F3")}");
-
-                    if (differences.Count > 0)
-                    {
-                        // Use the targetKey or a more robust ID if available
-                        diffList.Add(new DiffEntry<WallSegment>(targetKey, ChangeType.Modified, targetWall, capturedWall, differences));
-                    }
-                    else
-                    {
-                        diffList.Add(new DiffEntry<WallSegment>(targetKey, ChangeType.Unchanged, targetWall, capturedWall));
-                    }
-                    capturedWallsDict.Remove(targetKey); // Processed
-                }
-                else
-                {
-                    diffList.Add(new DiffEntry<WallSegment>(targetKey, ChangeType.Removed, targetWall, default(WallSegment)));
-                }
-            }
+            spatiallyMatchedTargetWalls.Add(targetEntry);
+            spatiallyMatchedCapturedWalls.Add(bestMatchCapturedEntry);
         }
-
-        // Any walls left in capturedWallsDict are new (added)
-        foreach (var capturedWallEntry in capturedWallsDict)
-        {
-            // The key here is the ID we generated (which is based on rounded points)
-            diffList.Add(new DiffEntry<WallSegment>(capturedWallEntry.Key, ChangeType.Added, default(WallSegment), capturedWallEntry.Value));
-        }
-        Debug.Log($"HousePlanDiffer: Wall comparison finished. Diffs found: {diffList.Count}");
     }
 
-    // Helper to round Vector3 for more stable key generation for the dictionary key
-    private static Vector3 RoundVector3(Vector3 vector, int decimalPlaces)
+    // Filter out the spatially matched target walls from the unmatchedTargetWalls list
+    unmatchedTargetWalls = unmatchedTargetWalls.Where(t => !spatiallyMatchedTargetWalls.Any(smt => smt.Key == t.Key)).ToList();
+
+    // Filter out the spatially matched captured walls from the remaining captured entries before declaring them as "Added"
+    var finalCapturedWallsDict = new Dictionary<string, WallSegment>();
+    foreach(var entry in remainingCapturedWallEntries)
     {
-        float multiplier = Mathf.Pow(10, decimalPlaces);
-        return new Vector3(
-            Mathf.Round(vector.x * multiplier) / multiplier,
-            Mathf.Round(vector.y * multiplier) / multiplier,
-            Mathf.Round(vector.z * multiplier) / multiplier
-        );
+        if (!spatiallyMatchedCapturedWalls.Any(smc => smc.Key == entry.Key))
+        {
+            finalCapturedWallsDict[entry.Key] = entry.Value;
+        }
     }
+
+    // 3. Process remaining as Added or Removed
+    foreach (var targetEntry in unmatchedTargetWalls) // These are targets that had no ID match and no spatial match
+    {
+        diffList.Add(new DiffEntry<WallSegment>(targetEntry.Key, ChangeType.Removed, targetEntry.Value, default(WallSegment)));
+    }
+
+    foreach (var capturedEntryKvp in finalCapturedWallsDict) // These are captured walls that had no ID match and were not spatially matched
+    {
+        diffList.Add(new DiffEntry<WallSegment>(capturedEntryKvp.Key, ChangeType.Added, default(WallSegment), capturedEntryKvp.Value));
+    }
+
+    Debug.Log($"HousePlanDiffer: Wall comparison finished. Diffs found: {diffList.Count}");
+}
+
+// Helper method for comparing properties of two WallSegments
+private static void CompareWallProperties(WallSegment targetWall, WallSegment capturedWall, List<string> differences)
+{
+    if (!Mathf.Approximately(targetWall.thickness, capturedWall.thickness))
+        differences.Add($"Thickness changed from {targetWall.thickness.ToString("F3")} to {capturedWall.thickness.ToString("F3")}.");
+    if (targetWall.isExterior != capturedWall.isExterior)
+        differences.Add($"IsExterior changed from {targetWall.isExterior} to {capturedWall.isExterior}.");
+    if (targetWall.side != capturedWall.side)
+        differences.Add($"Side changed from {targetWall.side} to {capturedWall.side}.");
+
+    if (!AreEquivalentStringLists(targetWall.doorIdsOnWall, capturedWall.doorIdsOnWall))
+        differences.Add($"Door IDs on wall changed. Existing: [{string.Join(", ", targetWall.doorIdsOnWall ?? new List<string>())}], Captured: [{string.Join(", ", capturedWall.doorIdsOnWall ?? new List<string>())}]");
+    if (!AreEquivalentStringLists(targetWall.windowIdsOnWall, capturedWall.windowIdsOnWall))
+        differences.Add($"Window IDs on wall changed. Existing: [{string.Join(", ", targetWall.windowIdsOnWall ?? new List<string>())}], Captured: [{string.Join(", ", capturedWall.windowIdsOnWall ?? new List<string>())}]");
+    if (!AreEquivalentStringLists(targetWall.openingIdsOnWall, capturedWall.openingIdsOnWall))
+        differences.Add($"Opening IDs on wall changed. Existing: [{string.Join(", ", targetWall.openingIdsOnWall ?? new List<string>())}], Captured: [{string.Join(", ", capturedWall.openingIdsOnWall ?? new List<string>())}]");
+
+    // This check is important for spatially matched walls to show how close their points are.
+    // For ID-matched walls, it would only trigger if points changed but ID (Room_Index) somehow remained same (unlikely).
+    if (Vector3.Distance(targetWall.startPoint, capturedWall.startPoint) > CMP_EPSILON || Vector3.Distance(targetWall.endPoint, capturedWall.endPoint) > CMP_EPSILON)
+    {
+        differences.Add($"Points differ (even if spatially matched within tolerance). Start: {targetWall.startPoint.ToString("F3")}->{capturedWall.startPoint.ToString("F3")}, End: {targetWall.endPoint.ToString("F3")}->{capturedWall.endPoint.ToString("F3")}");
+    }
+}
+    // The RoundVector3 method is no longer needed by CompareWalls with the new ID strategy.
+    // It can be removed if not used elsewhere in this class.
+    // private static Vector3 RoundVector3(Vector3 vector, int decimalPlaces)
+    // {
+    //     float multiplier = Mathf.Pow(10, decimalPlaces);
+    //     return new Vector3(
+    //         Mathf.Round(vector.x * multiplier) / multiplier,
+    //         Mathf.Round(vector.y * multiplier) / multiplier,
+    //         Mathf.Round(vector.z * multiplier) / multiplier
+    //     );
+    // }
 
     private static void CompareDoors(List<DoorSpec> targetDoors, List<DoorSpec> capturedDoors, List<DiffEntry<DoorSpec>> diffList)
     {
