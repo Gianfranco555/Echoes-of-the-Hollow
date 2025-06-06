@@ -30,23 +30,20 @@ public static class WallBuilder
                 continue;
             }
 
-            int wallIndex = 0;
             foreach (WallSegment segment in room.walls)
             {
                 if (!segment.isExterior)
                 {
-                    wallIndex++;
                     continue;
                 }
 
                 GameObject wallObj = BuildWallSegment(segment, room.position, storyHeight, housePlan.exteriorWallThickness, housePlan); // Added housePlan argument
                 if (wallObj != null)
                 {
-                    wallObj.name = $"Wall_{room.roomId}_{wallIndex}";
+                    wallObj.name = segment.wallId;
                     wallObj.transform.SetParent(root.transform, false);
                     // ProcessWallCutouts(segment, wallObj.name, housePlan); // Removed call
                 }
-                wallIndex++;
             }
         }
 

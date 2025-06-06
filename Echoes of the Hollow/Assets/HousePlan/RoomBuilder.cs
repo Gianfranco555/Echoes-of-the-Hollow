@@ -25,7 +25,6 @@ public static class RoomBuilder
 
         GameObject root = new GameObject("Walls_Interior");
         HashSet<string> builtKeys = new HashSet<string>();
-        int wallIndex = 0;
 
         foreach (RoomData room in housePlan.rooms)
         {
@@ -51,10 +50,9 @@ public static class RoomBuilder
                 GameObject wall = BuildWallSegment(segment, room.position, storyHeight, housePlan.interiorWallThickness, housePlan);
                 if (wall != null)
                 {
-                    wall.name = $"Wall_{room.roomId}_{wallIndex}";
+                    wall.name = segment.wallId;
                     wall.transform.SetParent(root.transform, false);
                     // ProcessWallCutouts(segment, wall.name, housePlan); // Removed call
-                    wallIndex++;
                 }
             }
         }
