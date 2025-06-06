@@ -147,7 +147,25 @@ public static class HousePlanDiffer
         CompareRooms(existingPlan.rooms, capturedRooms, resultSet.roomDiffs);
 
         // Compare Walls
-        List<WallSegment> allExistingWalls = FlattenWallsFromPlan(existingPlan);
+// --- START: NEW World-Space Conversion Logic ---
+List<WallSegment> allExistingWalls = new List<WallSegment>();
+if (existingPlan != null && existingPlan.rooms != null)
+{
+    foreach (var room in existingPlan.rooms)
+    {
+        if (room.walls == null) continue;
+
+        foreach (var localWall in room.walls)
+        {
+            WallSegment worldWall = localWall; // Copy the struct
+            // Convert local start/end points to world space using the room's position
+            worldWall.startPoint = room.position + localWall.startPoint;
+            worldWall.endPoint = room.position + localWall.endPoint;
+            allExistingWalls.Add(worldWall);
+        }
+    }
+}
+// --- END: NEW World-Space Conversion Logic ---
         List<KeyValuePair<string, WallSegment>> targetWallEntries = GenerateWallEntries(allExistingWalls);
         List<KeyValuePair<string, WallSegment>> capturedWallEntries = GenerateWallEntries(sceneWalls);
         CompareWalls(targetWallEntries, capturedWallEntries, resultSet.wallDiffs);

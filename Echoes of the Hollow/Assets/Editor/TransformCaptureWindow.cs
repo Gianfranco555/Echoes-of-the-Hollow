@@ -1638,10 +1638,8 @@ public class TransformCaptureWindow : EditorWindow
 
                     WallSegment wallSeg = new WallSegment();
 
-                    Vector3 center = go.transform.position;
-                    Vector3 halfLengthDir = go.transform.right * analyzedWall.wallLength / 2f;
-                    wallSeg.startPoint = center - halfLengthDir;
-                    wallSeg.endPoint = center + halfLengthDir;
+                                wallSeg.startPoint = go.transform.position;
+                                wallSeg.endPoint = go.transform.position + (go.transform.right * analyzedWall.wallLength);
 
                     wallSeg.thickness = analyzedWall.determinedThickness;
                     wallSeg.isExterior = analyzedWall.isLikelyExterior;
